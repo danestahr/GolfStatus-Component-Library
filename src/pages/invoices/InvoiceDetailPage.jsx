@@ -1,9 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { invoices } from '../../data/mockInvoices.js'
-
-// ─── Drop InvoiceProducts and LineItemsList in here ───
-// import InvoiceProducts from '../../components/invoice/InvoiceProducts.jsx'
-// import LineItemsList from '../../components/invoice/LineItemsList.jsx'
+import InvoiceProducts from '../../components/invoice/InvoiceProducts.jsx'
 
 export default function InvoiceDetailPage() {
   const { id } = useParams()
@@ -18,10 +15,7 @@ export default function InvoiceDetailPage() {
         <h1 style={{ fontSize: 20, fontWeight: 600 }}>{invoice.id}</h1>
       </div>
 
-      {/* Swap this placeholder out for <InvoiceProducts /> once imported */}
-      <div style={{ padding: 24, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8', color: '#aaa', fontSize: 13 }}>
-        ← InvoiceProducts component goes here
-      </div>
+      <InvoiceProducts />
     </div>
   )
 }
