@@ -5,6 +5,15 @@ import InvoiceListPage from './pages/invoices/InvoiceListPage.jsx'
 import InvoiceDetailPage from './pages/invoices/InvoiceDetailPage.jsx'
 import TournamentsPage from './pages/tournaments/TournamentsPage.jsx'
 import SettingsPage from './pages/settings/SettingsPage.jsx'
+import ScorecardListPage from './pages/scorecards/ScorecardListPage.jsx'
+import ScorecardDetailPage from './pages/scorecards/ScorecardDetailPage.jsx'
+import ComparisonPage from './pages/compare/ComparisonPage.jsx'
+import InfiniteListPage from './pages/infinite-list/InfiniteListPage.jsx'
+import ExclusionPage from './pages/exclusion/ExclusionPage.jsx'
+import ExclusionPageV2 from './pages/exclusion/ExclusionPageV2.jsx'
+import TournamentSchedulerListPage from './pages/scheduler/TournamentSchedulerListPage.jsx'
+import TournamentSchedulerPage from './pages/scheduler/TournamentSchedulerPage.jsx'
+import MessageDraftPage from './pages/messaging/MessageDraftPage.jsx'
 
 // To add a new prototype page:
 // 1. Create the file in src/pages/
@@ -14,7 +23,7 @@ import SettingsPage from './pages/settings/SettingsPage.jsx'
 export default function App() {
   return (
     <BrowserRouter>
-      <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', height: '100vh' }}>
 
         {/* Sidebar nav */}
         <nav style={{
@@ -25,18 +34,34 @@ export default function App() {
             GOLFSTATUS
           </div>
           <NavItem to="/invoices" label="Invoices" />
+          <NavItem to="/scorecards" label="Scorecards" />
           <NavItem to="/tournaments" label="Tournaments" />
           <NavItem to="/settings" label="Settings" />
+          <NavItem to="/compare" label="Compare" />
+          <NavItem to="/infinite-list" label="Infinite List" />
+          <NavItem to="/exclusion" label="Exclusion V1" />
+          <NavItem to="/exclusion-v2" label="Exclusion V2" />
+          <NavItem to="/scheduler" label="Hole Assignments" />
+          <NavItem to="/messaging" label="Message Draft" />
         </nav>
 
         {/* Page content */}
-        <main style={{ flex: 1, background: '#f7f7f7', overflowY: 'auto' }}>
+        <main style={{ flex: 1, background: '#f7f7f7', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <Routes>
             <Route path="/" element={<InvoiceListPage />} />
             <Route path="/invoices" element={<InvoiceListPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+            <Route path="/scorecards" element={<ScorecardListPage />} />
+            <Route path="/scorecards/:id" element={<ScorecardDetailPage />} />
             <Route path="/tournaments" element={<TournamentsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/compare" element={<ComparisonPage />} />
+            <Route path="/infinite-list" element={<InfiniteListPage />} />
+            <Route path="/exclusion" element={<ExclusionPage />} />
+            <Route path="/exclusion-v2" element={<ExclusionPageV2 />} />
+            <Route path="/scheduler" element={<TournamentSchedulerListPage />} />
+            <Route path="/scheduler/:tournamentId" element={<TournamentSchedulerPage />} />
+            <Route path="/messaging" element={<MessageDraftPage />} />
           </Routes>
         </main>
 

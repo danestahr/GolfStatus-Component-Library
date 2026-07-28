@@ -1,0 +1,152 @@
+@import '../styles/golfstatus.scss';
+
+$nav-width: 300px;
+$mobile-logo-dimension: 48px;
+
+gs-app-layout {
+  height: 100%;
+  width: 100%;
+  display: inline-grid;
+  grid-template-columns:  auto 1fr;
+  grid-template-rows:  auto auto 1fr;
+  grid-template-areas: 
+  "nav header"
+  "nav notifications"
+  "nav main";
+  transition: $fast;
+  overflow: hidden;
+  @include large-phone(){
+    grid-template-columns: [first] 0 [second] 100%;
+    > .app-navigation{
+      transform: translateX(-$nav-width);
+      z-index: 100;
+      &.open{
+        transform: translateX(0);
+      }
+    }
+  }
+  >.notifications{
+    grid-row-start: span notifications;
+  }
+  >.mobile-header{
+    @include padding($large-pad);
+    background: $black;
+    color: $white;
+    display: none;
+    cursor: pointer;
+    >gs-action-bar{
+      >.head{
+        @include h-stack(unset, unset);
+        >.title{
+          @include h-stack(unset, unset);
+        }
+      }
+    }
+    @include large-phone(){
+      display: inline-flex;
+    }
+    
+    gs-app-navigation-header{
+      padding: 0;
+      .app-title{
+        gap: $large-pad;
+        > .nav-header-title{
+          font-size: $xx-small-font;
+          @include small-phone(){
+            display: none;
+          }
+        }
+        .title-logo{
+          @include flex-height($mobile-logo-dimension,$mobile-logo-dimension,$mobile-logo-dimension);
+          @include flex-width($mobile-logo-dimension,$mobile-logo-dimension,$mobile-logo-dimension);
+        }
+      }
+    }
+    
+    
+  }
+  > .app-navigation{
+    height: 100%;
+    grid-row-start: 1;
+    grid-row-end: span nav;
+    transition: $fast;
+  }
+  &.none{
+    grid-template-columns: [first] 0 [second] 100%;
+    > .app-navigation{
+      transform: translateX(-$nav-width);
+      z-index: 100;
+      &.open{
+        transform: translateX(0);
+      }
+    }
+  }
+  &.top{
+    grid-template-columns: [first] 0 [second] 100%;
+    > .app-navigation{
+      transform: translateX(-$nav-width);
+      z-index: 100;
+      &.open{
+        transform: translateX(0);
+      }
+    }
+    >.mobile-header{
+      display: inline-flex;
+    }
+  }
+  > .app-content{
+    grid-row-start: main;
+    grid-column-start: main;
+    overflow-y: auto;
+    overflow-x: hidden;
+    > .no-router{
+      width: 100%;
+      @include padding($large-pad);
+      text-align: center;
+    }
+  }
+}
+
+.light{
+  gs-app-layout{
+    .hover-outline{
+      cursor: pointer;
+      transition: $fast;
+      &:hover{
+        box-shadow: 0 0 0 4px rgba($grey-700, .5);
+        outline: none;
+      }
+    }
+
+    .hover-color-shift{
+    transition: $fast;
+    cursor: pointer;
+    &:hover{
+      filter: brightness(95%);
+    }
+  }
+  }
+}
+.dark{
+  gs-app-layout{
+    .hover-outline{
+      cursor: pointer;
+      transition: $fast;
+      &:hover {
+        box-shadow: 0 0 0 4px rgba($grey-200, .5);;
+        outline: none;
+      }
+    }
+     .hover-color-shift{
+    transition: $fast;
+    cursor: pointer;
+    &:hover{
+      filter: brightness(140%);
+    }
+  }
+    .app-content{
+      background: $grey-900;
+    }
+  }
+  
+}

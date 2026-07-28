@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const PRODUCTS = [
   { id: "tech",   name: "Technology Sponsorship", basePrice: 899.00 },
-  { id: "flags",  name: "Flags",                  basePrice: 899.00 },
-  { id: "hio",    name: "Hole In One Insurance",  basePrice: 199.00 },
-  { id: "signs",  name: "Hole Signs",             basePrice: 25.00  },
+  { id: "flags",  name: "Flags",                  basePrice: 450.00, startingAt: 450   },
+  { id: "hio",    name: "Hole In One Insurance",  basePrice: 499.00, startingAt: 499   },
+  { id: "signs",  name: "Hole Signs",             basePrice: 25.00,  startingAt: 625   },
+];
+
+const FLAG_TIERS = [
+  { value: 9,        label: "9",   price: 450  },
+  { value: 18,       label: "18",  price: 899  },
+  { value: 27,       label: "27",  price: 1349 },
+  { value: 36,       label: "36",  price: 1798 },
+  { value: "custom", label: "Custom", price: null },
 ];
 
 function Label({ children, required }) {
@@ -23,20 +31,29 @@ function TextInput({ value, onChange, placeholder }) {
 }
 
 function PriceInput({ value, onChange, readOnly }) {
+  const [raw, setRaw] = useState(String(value ?? ""));
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setRaw(String(value ?? ""));
+  }, [value]);
+
   return (
     <div style={{ display: "flex", border: "1px solid #e2e2e2", borderRadius: 6, overflow: "hidden", background: readOnly ? "#f9f9f9" : "#fff" }}>
       <span style={{ padding: "10px 11px", fontSize: 13.5, color: "#888", borderRight: "1px solid #e2e2e2", background: "#f5f5f5", fontWeight: 500 }}>$</span>
-      <input type="number" value={value} min="0" step="0.01" readOnly={readOnly}
-        onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
+      <input type="number" value={raw} min="0" step="0.01" readOnly={readOnly}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; if (!raw) setRaw(String(value ?? "")); }}
+        onChange={e => { setRaw(e.target.value); const n = parseFloat(e.target.value); if (!isNaN(n)) onChange?.(n); }}
         style={{ flex: 1, padding: "10px 12px", fontSize: 13.5, border: "none", background: "transparent", color: readOnly ? "#888" : "#111", outline: "none" }} />
     </div>
   );
 }
 
-function QuantityStepper({ value, onChange }) {
+function QuantityStepper({ value, onChange, min = 1 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", border: "1px solid #e2e2e2", borderRadius: 6, background: "#fff", overflow: "hidden" }}>
-      <button type="button" onClick={() => onChange(Math.max(1, value - 1))}
+      <button type="button" onClick={() => onChange(Math.max(min, value - 1))}
         style={{ width: 44, height: 42, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer" }}>
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9" stroke="#555" strokeWidth="1.5" strokeLinecap="round"/></svg>
       </button>
@@ -56,7 +73,7 @@ function RadioGroup({ options, value, onChange }) {
         const active = value === opt.value;
         return (
           <button key={opt.value} type="button" onClick={() => onChange(opt.value)}
-            style={{ flex: 1, padding: "9px 12px", borderRadius: 6, border: `1px solid ${active ? "#111" : "#e2e2e2"}`, background: active ? "#111" : "#fff", color: active ? "#fff" : "#555", fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.12s" }}>
+            style={{ flex: 1, padding: "9px 12px", borderRadius: 6, border: `1.5px solid ${active ? "#111" : "#e2e2e2"}`, background: "#fff", color: active ? "#111" : "#555", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", transition: "all 0.12s" }}>
             {opt.label}
           </button>
         );
@@ -105,38 +122,117 @@ function PriceSummaryRow({ label, value }) {
   );
 }
 
-function TechOptions() {
+function BreakdownTotal({ label = "Total", computedTotal, priceOverride, onPriceOverride }) {
+  const overriding = priceOverride !== null;
+  return (
+    <div style={{ borderTop: "1px solid #e2e2e2", paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{label}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: overriding ? "#aaa" : "#111", textDecoration: overriding ? "line-through" : "none" }}>
+          ${computedTotal.toFixed(2)}
+        </span>
+      </div>
+      {!overriding && (
+        <button type="button" onClick={() => onPriceOverride(computedTotal)}
+          style={{ fontSize: 11, color: "#888", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0, alignSelf: "flex-start" }}>
+          Override price
+        </button>
+      )}
+      {overriding && (
+        <>
+          <PriceInput value={priceOverride} onChange={onPriceOverride} />
+          <button type="button" onClick={() => onPriceOverride(null)}
+            style={{ fontSize: 11, color: "#888", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "2px 0 0", alignSelf: "flex-start" }}>
+            Reset to ${computedTotal.toFixed(2)}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function TechOptions({ priceOverride, onPriceOverride }) {
   return (
     <>
-      <SectionDivider>Includes</SectionDivider>
-      <InfoBadge>Invoicing &amp; Discounts — included at no extra charge</InfoBadge>
+      <SectionDivider>Price Breakdown</SectionDivider>
+      <div style={{ background: "#f5f5f5", borderRadius: 6, padding: "10px 13px", border: "1px solid #e8e8e8", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+          <span>Technology Sponsorship</span>
+          <span>$899.00</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+          <span>Invoicing &amp; Discounts</span>
+          <span>Included</span>
+        </div>
+        <BreakdownTotal computedTotal={899} priceOverride={priceOverride} onPriceOverride={onPriceOverride} />
+      </div>
     </>
   );
 }
 
-function FlagsOptions({ multiLogo, rush, onMultiLogo, onRush }) {
-  const surcharge = (multiLogo || rush) ? 299 : 0;
-  const total = 899 + surcharge;
+function FlagsOptions({ flagTier, onFlagTier, customFlagCount, onCustomFlagCount, multiVariation, rush, onMultiVariation, onRush, priceOverride, onPriceOverride }) {
+  const tier = FLAG_TIERS.find(t => t.value === flagTier);
+  const basePrice = flagTier === "custom" ? 50 * customFlagCount : tier.price;
+  const variationUpcharge = flagTier === "custom" ? 10 * customFlagCount : (flagTier / 18) * 200;
+  const variationSurcharge = multiVariation ? variationUpcharge : 0;
+  const rushFee = rush && !multiVariation ? 200 : 0;
+  const total = basePrice + variationSurcharge + rushFee;
   return (
     <>
-      <SectionDivider>Add-ons</SectionDivider>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <Toggle label="Multiple Logos" sublabel="+$299" checked={multiLogo} onChange={onMultiLogo} />
-        <Toggle label="Rush Order" sublabel="+$299" checked={rush} onChange={onRush} />
+      <SectionDivider>Number of Flags</SectionDivider>
+      <div style={{ display: "flex", gap: 6 }}>
+        {FLAG_TIERS.map(t => {
+          const active = flagTier === t.value;
+          return (
+            <button key={t.value} type="button" onClick={() => onFlagTier(t.value)}
+              style={{ flex: 1, padding: "9px 4px", borderRadius: 6, border: `1.5px solid ${active ? "#111" : "#e2e2e2"}`, background: "#fff", color: active ? "#111" : "#555", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", transition: "all 0.12s" }}>
+              {t.label}
+            </button>
+          );
+        })}
       </div>
-      {surcharge > 0 && (
-        <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#888", padding: "7px 13px", background: "#fafafa", borderRadius: 6, border: "1px solid #eee" }}>
-          <span>Add-on surcharge (one-time)</span>
-          <span style={{ fontWeight: 600, color: "#555" }}>+$299</span>
+      {flagTier === "custom" && (
+        <div>
+          <Label required>Number of Flags</Label>
+          <QuantityStepper value={customFlagCount} onChange={onCustomFlagCount} min={9} />
         </div>
       )}
-      <PriceSummaryRow label="Price per unit" value={`$${total.toFixed(2)}`} />
+      <SectionDivider>Add-ons</SectionDivider>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <Toggle label="4+ Flag Variations" checked={multiVariation} onChange={onMultiVariation} />
+        <Toggle label="Rush Order" checked={rush} onChange={onRush} />
+      </div>
+      <div style={{ background: "#f5f5f5", borderRadius: 6, padding: "10px 13px", border: "1px solid #e8e8e8", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+          <span>{flagTier === "custom" ? `Flags (${customFlagCount} × $${multiVariation ? 60 : 50})` : `Flags (${flagTier})`}</span>
+          <span>${(flagTier === "custom" ? (multiVariation ? 60 : 50) * customFlagCount : basePrice).toFixed(2)}</span>
+        </div>
+        {variationSurcharge > 0 && flagTier !== "custom" && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+            <span>4+ Flag Variations</span>
+            <span>+${variationSurcharge.toFixed(2)}</span>
+          </div>
+        )}
+        {rushFee > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+            <span>Rush Order</span>
+            <span>+$200.00</span>
+          </div>
+        )}
+        {rush && multiVariation && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#888" }}>
+            <span>Rush Order</span>
+            <span>Waived</span>
+          </div>
+        )}
+        <BreakdownTotal computedTotal={total} priceOverride={priceOverride} onPriceOverride={onPriceOverride} />
+      </div>
     </>
   );
 }
 
-function HIOOptions({ holeCount, onHoleCount }) {
-  const price = holeCount === 1 ? 199 : 899;
+function HIOOptions({ holeCount, onHoleCount, priceOverride, onPriceOverride }) {
+  const price = holeCount === 1 ? 499 : 899;
   return (
     <>
       <SectionDivider>Coverage</SectionDivider>
@@ -144,11 +240,36 @@ function HIOOptions({ holeCount, onHoleCount }) {
         value={holeCount}
         onChange={onHoleCount}
         options={[
-          { value: 1, label: "1 Hole — $199" },
+          { value: 1, label: "1 Hole — $499" },
           { value: 4, label: "4 Holes — $899" },
         ]}
       />
-      <PriceSummaryRow label="Price" value={`$${price.toFixed(2)}`} />
+      <div style={{ background: "#f5f5f5", borderRadius: 6, padding: "10px 13px", border: "1px solid #e8e8e8", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+          <span>{holeCount === 1 ? "1 Hole" : "4 Holes"}</span>
+          <span>${price.toFixed(2)}</span>
+        </div>
+        <BreakdownTotal computedTotal={price} priceOverride={priceOverride} onPriceOverride={onPriceOverride} />
+      </div>
+    </>
+  );
+}
+
+function SignsOptions({ quantity, onQuantityChange, priceOverride, onPriceOverride }) {
+  const total = quantity * 25;
+  const totalOverride = priceOverride !== null ? priceOverride * quantity : null;
+  return (
+    <>
+      <SectionDivider>Quantity</SectionDivider>
+      <QuantityStepper value={quantity} onChange={onQuantityChange} min={25} />
+      <SectionDivider>Price Breakdown</SectionDivider>
+      <div style={{ background: "#f5f5f5", borderRadius: 6, padding: "10px 13px", border: "1px solid #e8e8e8", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#555" }}>
+          <span>Hole Signs ({quantity} × $25.00)</span>
+          <span>${total.toFixed(2)}</span>
+        </div>
+        <BreakdownTotal computedTotal={total} priceOverride={totalOverride} onPriceOverride={v => onPriceOverride(v / quantity)} />
+      </div>
     </>
   );
 }
@@ -162,7 +283,7 @@ function ProductSelect({ value, onChange, options }) {
         style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 13px", background: "#fff", border: "1px solid #e2e2e2", borderRadius: 6, cursor: "pointer", textAlign: "left" }}>
         <div>
           {selected
-            ? <><div style={{ fontWeight: 500, fontSize: 14, color: "#111" }}>{selected.name}</div><div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>${selected.basePrice.toFixed(2)}</div></>
+            ? <><div style={{ fontWeight: 500, fontSize: 14, color: "#111" }}>{selected.name}</div><div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{selected.startingAt != null ? `Starting at $${selected.startingAt.toFixed(2)}` : `$${selected.basePrice.toFixed(2)}`}</div></>
             : <span style={{ fontSize: 14, color: "#aaa" }}>Select a product</span>}
         </div>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
@@ -170,15 +291,18 @@ function ProductSelect({ value, onChange, options }) {
         </svg>
       </button>
       {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 3px)", left: 0, right: 0, background: "#fff", border: "1px solid #e2e2e2", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.09)", zIndex: 20, overflow: "hidden" }}>
-          {options.map(opt => (
-            <button key={opt.id} type="button" onClick={() => { onChange(opt); setOpen(false); }}
-              style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 13px", background: opt.id === value ? "#f5f5f5" : "#fff", border: "none", borderBottom: "1px solid #f0f0f0", cursor: "pointer", textAlign: "left" }}>
-              <span style={{ fontSize: 13.5, color: "#111", fontWeight: opt.id === value ? 500 : 400 }}>{opt.name}</span>
-              <span style={{ fontSize: 12, color: "#888" }}>${opt.basePrice.toFixed(2)}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 19 }} onClick={() => setOpen(false)} />
+          <div style={{ position: "absolute", top: "calc(100% + 3px)", left: 0, right: 0, background: "#fff", border: "1px solid #e2e2e2", borderRadius: 6, boxShadow: "0 4px 16px rgba(0,0,0,0.09)", zIndex: 20, overflow: "hidden" }}>
+            {options.map(opt => (
+              <button key={opt.id} type="button" onClick={() => { onChange(opt); setOpen(false); }}
+                style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 13px", background: opt.id === value ? "#f5f5f5" : "#fff", border: "none", borderBottom: "1px solid #f0f0f0", cursor: "pointer", textAlign: "left" }}>
+                <span style={{ fontSize: 13.5, color: "#111", fontWeight: opt.id === value ? 500 : 400 }}>{opt.name}</span>
+                <span style={{ fontSize: 12, color: "#888" }}>{opt.startingAt != null ? `Starting at $${opt.startingAt.toFixed(2)}` : `$${opt.basePrice.toFixed(2)}`}</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -247,12 +371,21 @@ export default function InvoiceProducts() {
   const [quantity, setQuantity] = useState(1);
   const [items, setItems] = useState([]);
   const [holeCount, setHoleCount] = useState(1);
-  const [multiLogo, setMultiLogo] = useState(false);
+  const [multiVariation, setMultiVariation] = useState(false);
   const [rush, setRush] = useState(false);
+  const [flagTier, setFlagTier] = useState(18);
+  const [customFlagCount, setCustomFlagCount] = useState(37);
 
   const computedPrice = (() => {
-    if (selectedId === "hio")   return holeCount === 1 ? 199 : 899;
-    if (selectedId === "flags") return 899 + ((multiLogo || rush) ? 299 : 0);
+    if (selectedId === "hio") return holeCount === 1 ? 499 : 899;
+    if (selectedId === "flags") {
+      const tier = FLAG_TIERS.find(t => t.value === flagTier);
+      const base = flagTier === "custom" ? 50 * customFlagCount : tier.price;
+      const variationUpcharge = flagTier === "custom" ? 10 * customFlagCount : (flagTier / 18) * 200;
+      const variationSurcharge = multiVariation ? variationUpcharge : 0;
+      const rushFee = rush && !multiVariation ? 200 : 0;
+      return base + variationSurcharge + rushFee;
+    }
     return PRODUCTS.find(p => p.id === selectedId)?.basePrice ?? 0;
   })();
 
@@ -261,23 +394,31 @@ export default function InvoiceProducts() {
   const handleSelect = (opt) => {
     setSelectedId(opt.id);
     setProductName(opt.name);
-    setQuantity(1);
+    setQuantity(opt.id === "signs" ? 25 : 1);
     setPriceOverride(null);
     setHoleCount(1);
-    setMultiLogo(false);
+    setMultiVariation(false);
     setRush(false);
+    setFlagTier(18);
+    setCustomFlagCount(9);
   };
 
   const handleHoleCount = (v) => { setHoleCount(v); setPriceOverride(null); };
-  const handleMultiLogo = (v) => { setMultiLogo(v); setPriceOverride(null); };
+  const handleMultiVariation = (v) => { setMultiVariation(v); setPriceOverride(null); };
   const handleRush = (v) => { setRush(v); setPriceOverride(null); };
+  const handleFlagTier = (v) => { setFlagTier(v); setPriceOverride(null); };
+  const handleCustomFlagCount = (v) => { setCustomFlagCount(v); setPriceOverride(null); };
 
   const handleAdd = () => {
     if (!selectedId) return;
     const groupId = `group-${Date.now()}`;
     const notes = [];
-    if (selectedId === "hio")                notes.push(`${holeCount} hole${holeCount > 1 ? "s" : ""}`);
-    if (selectedId === "flags" && multiLogo) notes.push("Multiple Logos");
+    if (selectedId === "hio") notes.push(`${holeCount} hole${holeCount > 1 ? "s" : ""}`);
+    if (selectedId === "flags") {
+      const count = flagTier === "custom" ? customFlagCount : flagTier;
+      notes.push(`${count} flags`);
+    }
+    if (selectedId === "flags" && multiVariation) notes.push("4+ Flag Variations");
     if (selectedId === "flags" && rush)      notes.push("Rush Order");
 
     const newItems = [
@@ -308,7 +449,8 @@ export default function InvoiceProducts() {
     setItems(prev => [...prev, ...newItems]);
     setSelectedId(null); setProductName(""); setQuantity(1);
     setPriceOverride(null);
-    setHoleCount(1); setMultiLogo(false); setRush(false);
+    setHoleCount(1); setMultiVariation(false); setRush(false);
+    setFlagTier(18); setCustomFlagCount(9);
   };
 
   const handleRemoveGroup = (groupId) => {
@@ -323,39 +465,16 @@ export default function InvoiceProducts() {
           <Label required>Product</Label>
           <ProductSelect value={selectedId} onChange={handleSelect} options={PRODUCTS} />
         </div>
-        {selectedId === "tech"  && <TechOptions />}
-        {selectedId === "flags" && <FlagsOptions multiLogo={multiLogo} rush={rush} onMultiLogo={handleMultiLogo} onRush={handleRush} />}
-        {selectedId === "hio"   && <HIOOptions holeCount={holeCount} onHoleCount={handleHoleCount} />}
         {selectedId && (
-          <>
-            <SectionDivider>Customize</SectionDivider>
-            <div>
-              <Label required>Product Name</Label>
-              <TextInput value={productName} onChange={setProductName} placeholder="Product Name" />
-            </div>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
-                <Label required>Price</Label>
-                {priceOverride !== null && (
-                  <button type="button" onClick={() => setPriceOverride(null)}
-                    style={{ fontSize: 11, color: "#888", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
-                    Reset to ${computedPrice.toFixed(2)}
-                  </button>
-                )}
-              </div>
-              <PriceInput value={effectivePrice} onChange={setPriceOverride} />
-              {priceOverride !== null && (
-                <div style={{ fontSize: 11.5, color: "#856404", marginTop: 5 }}>
-                  Overriding default price of ${computedPrice.toFixed(2)}
-                </div>
-              )}
-            </div>
-            <div>
-              <Label required>Quantity</Label>
-              <QuantityStepper value={quantity} onChange={setQuantity} />
-            </div>
-          </>
+          <div>
+            <Label required>Product Name</Label>
+            <TextInput value={productName} onChange={setProductName} placeholder="Product Name" />
+          </div>
         )}
+        {selectedId === "tech"  && <TechOptions priceOverride={priceOverride} onPriceOverride={setPriceOverride} />}
+        {selectedId === "flags" && <FlagsOptions flagTier={flagTier} onFlagTier={handleFlagTier} customFlagCount={customFlagCount} onCustomFlagCount={handleCustomFlagCount} multiVariation={multiVariation} rush={rush} onMultiVariation={handleMultiVariation} onRush={handleRush} priceOverride={priceOverride} onPriceOverride={setPriceOverride} />}
+        {selectedId === "hio"   && <HIOOptions holeCount={holeCount} onHoleCount={handleHoleCount} priceOverride={priceOverride} onPriceOverride={setPriceOverride} />}
+        {selectedId === "signs" && <SignsOptions quantity={quantity} onQuantityChange={setQuantity} priceOverride={priceOverride} onPriceOverride={setPriceOverride} />}
         <button type="button" onClick={handleAdd} disabled={!selectedId}
           style={{ padding: "12px 20px", background: selectedId ? "#111" : "#e0e0e0", color: selectedId ? "#fff" : "#aaa", border: "none", borderRadius: 6, fontSize: 11.5, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", cursor: selectedId ? "pointer" : "not-allowed", transition: "background 0.15s" }}>
           Add to Invoice

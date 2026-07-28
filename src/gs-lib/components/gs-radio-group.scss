@@ -1,0 +1,14 @@
+@import '../styles/golfstatus.scss';
+
+
+gs-radio-group {
+  @include v-stack(flex-start, flex-start);
+  gap: $medium-large-pad;
+
+  &.is-ltr {
+    flex-direction: row;
+    overflow: auto;
+    @include padding($medium-pad);
+  }
+
+}

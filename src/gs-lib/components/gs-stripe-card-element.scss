@@ -1,0 +1,15 @@
+@import '../styles/golfstatus.scss';
+
+gs-stripe-card-element {
+  width: 100%;
+  min-height: 100%;
+
+  .border {
+    background-color: $very-light-gray;
+    border: $light-border;
+    border-radius: $medium-border-radius;
+    box-shadow: $base-layer-shadow;
+    font-weight: $bold-font-weight;
+    padding: $medium-pad $large-pad;
+  }
+}

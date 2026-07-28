@@ -1,0 +1,195 @@
+// Original colors
+$bright-green: #8be200;
+$link-green: #88e400;
+$purple: #8f68dd;
+$remove-red: #ff2200;
+$cyan: #00CCCC;
+$light-cyan: #D5FEF7;
+
+//cyan
+$cyan-50: #E0F8F8;
+$cyan-100: #BFF6F6;
+$cyan-200: #9EF4F3;
+$cyan-300: #4FE0E0;
+$cyan-400: #00CCCC;
+$cyan-500: #01AFB1;
+$cyan-600: #019397;
+$cyan-700: #00767C;
+$cyan-800: #003B3E;
+
+
+//green
+$green-800: #003E0C;
+$green-700: #007C19;
+$green-600: #3CC357;
+$green-500: #3CC357;
+$green-400: #86E99A;
+$green-300: #86E99A;
+$green-200: #B5F6C2;
+$green-100: #DDFFE4;
+$green-50: #DDFFE4;
+
+$green: $green-400;
+$bright-green: $green-200;
+
+$bright-green-gradient: linear-gradient (to right, $green, $green-200);
+
+//design language orange;
+$orange-800: #ff6900;
+$orange-700: #ff8800;
+$orange-600: #ffab00;
+$orange-500: #ffbd33;
+$orange-400: #ffbd33;
+$orange-300: #ffcd65;
+$orange-200: #ffcd65;
+$orange-100: #fff2d6;
+$orange-50: #FFF2D6;
+
+$orange: $orange-400;
+
+//design language red
+$red-800: #8b1400;
+$red-700: #ba1900;
+$red-600: #e91f00;
+$red-500: #ED4B33;
+$red-400: #ED4B33;
+$red-300: #f17a66;
+$red-200: #f17a66;
+$red-100: #FDD6D0;
+$red-50: #FDD6D0;
+$red: $red-400;
+
+
+//design language greyscale
+$black: #000000;
+$grey-900: #111111;
+$grey-800: #232323;
+$grey-700: #404040;
+$grey-600: #5d5d5d;
+$grey-500: #979797;
+$grey-400: #bebebe;
+$grey-300: #b9b9b9;
+$grey-200: #dcdcdc;
+$grey-100: #eeeeee;
+$grey-50: #F3f3f3;
+$white: #fff;
+$transparent: transparent;
+
+
+
+$black-90-percent: rgba(0,0,0,.9);
+$black-80-percent: rgba(0,0,0,.8);
+$black-70-percent: rgba(0,0,0,.7);
+$black-60-percent: rgba(0,0,0,.6);
+$black-50-percent: rgba(0,0,0,.5);
+$black-40-percent: rgba(0,0,0,.4);
+$black-30-percent: rgba(0,0,0,.3);
+$black-20-percent: rgba(0,0,0,.2);
+$black-10-percent: rgba(0,0,0,.1);
+
+//Design language transparencies
+$dark-90-percent: rgba(35,35,35,.9);
+$dark-80-percent: rgba(35,35,35,.8);
+$dark-70-percent: rgba(35,35,35,.7);
+$dark-60-percent: rgba(35,35,35,.6);
+$dark-50-percent: rgba(35,35,35,.5);
+$dark-40-percent: rgba(35,35,35,.4);
+$dark-30-percent: rgba(35,35,35,.3);
+$dark-20-percent: rgba(35,35,35,.2);
+$dark-10-percent: rgba(35,35,35,.1);
+
+$light-90-percent: rgba(255,255,255,.9);
+$light-80-percent: rgba(255,255,255,.8);
+$light-70-percent: rgba(255,255,255,.7);
+$light-60-percent: rgba(255,255,255,.6);
+$light-50-percent: rgba(255,255,255,.5);
+$light-40-percent: rgba(255,255,255,.4);
+$light-30-percent: rgba(255,255,255,.3);
+$light-20-percent: rgba(255,255,255,.2);
+$light-10-percent: rgba(255,255,255,.1);
+
+
+//design laguage gradients
+$black-grey-gradient: linear-gradient(to right, $black, $grey-800);
+$grey-white-gradient: linear-gradient(to right, $grey-100, $white);
+$green-bright-green-gradient: linear-gradient(to right, $green, $bright-green);
+$orange-600-orange-200-gradient: linear-gradient(to right, $orange-600, $orange-200);
+$red-red-200-gradient: linear-gradient(to right, $red, $red-200);
+
+//Design language Backgrounds
+$light-primary-background: $white;
+$light-primary-contrast-text: $grey-800;
+$light-secondary-background: $grey-100;
+$light-secondary-contrast-text: $grey-800;
+
+$dark-primary-background: $grey-800;
+$dark-primary-contrast-text: $white;
+$dark-secondary-background: $black;
+$dark-secondary-contrast-text: $white;
+
+//golfstatus-colors
+$golfstatus-brand: $green;
+$golfstatus-orange: $orange;
+$golfstatus-purple: $purple;
+$golfstatus-black: #1a1a1a;
+$warning-red: $red;
+
+// Generic colors
+$very-light-gray: #fafafa;
+$whitesmoke-white: #f3f3f3;
+$whitesmoke: #f5f5f5;
+$light-gray: #e5e5e5;
+$mid-gray: #c7c7c7;
+$gray: #8e8e8e; //7c7c7c
+$mid-dark-gray: #444;
+$dark-gray: #232323;
+
+$error-orange: #fa755a;
+$stripe-blue: #6772e5;
+
+// Brand colors
+$facebook-blue: #3b5998;
+
+// Background & disabled colors
+$disabled: #a2a2a2;
+$background-gray: $light-gray;
+$disabled-background: $light-gray;
+$incomplete: $golfstatus-orange;
+$translucent-white: rgba(255, 255, 255, .95);
+$translucent-white-half: rgba(255, 255, 255, .5);
+$light-gray: $light-gray;
+$dark-alternative-line: rgba(0,0,0,.15);
+$light-alternative_line: rgba(200,200,200,.2);
+
+$light-border-color: rgba(0,0,0,.15);
+$medium-border-color: rgba(0,0,0,.4);
+
+//shadows
+$card-shadow: rgba(0, 0, 0, 0.25);
+$light-shadow: rgba(100, 100, 100, .1);
+
+// Font Colors
+$subtle-text: $gray;
+$dark-text: $mid-dark-gray;
+
+// Button and Hover Colors
+$btn-hover: #efefef;
+$pika-day-btn-hover: rgba(0, 0, 0, 0.12);
+$menu-item-active-hover: rgba($white, .1);
+
+$subtle-hover-background: rgba(100, 100, 100, .05);
+$medium-hover-background: rgba(100, 100, 100, .1);
+
+//gradients
+$background-gradient: linear-gradient(to right, #444, black);
+$light-gradient: linear-gradient(to right, $light-shadow, $transparent);
+
+//opacity
+$opague: 1;
+$heavy-opacity: .75;
+$medium-opacity: .7;
+$medium-light-opacity: .5;
+$light-opacity: .2;
+
+$team-1-color: $green;
+$team-2-color: $cyan;

@@ -1,0 +1,79 @@
+import { faChevronLeft } from '@fortawesome/free-solid-svg-icons'
+import GSSidePanel from '../gs-lib/components/gs-side-panel'
+import GSSidePanelNavigation from '../gs-lib/components/gs-side-panel-navigation'
+import GSActionDrawer from '../gs-lib/components/gs-action-drawer'
+import './AppSidePanel.scss'
+
+/**
+ * Standard app-wide side panel wrapper.
+ *
+ * Props:
+ *   isOpen        boolean
+ *   onClose       () => void
+ *   title         string
+ *   rightIcon     FA icon (optional)
+ *   onRightAction () => void (optional)
+ *   actions       GSActionDrawer actions array (optional)
+ *   expanded      boolean — widen panel to viewport minus 220px on tablet/desktop (optional)
+ *   animateWidth  boolean — animate the expand/collapse width change; leave false so viewport resizes stay instant (optional)
+ *   noTransition  boolean — skip the open/close slide animation, e.g. for a panel opened on top of another (optional)
+ *   dimOverlay    boolean — darken the backdrop (default true); pass false when this panel opens on top of
+ *                 another already-dimmed AppSidePanel, so the two overlays don't stack into a darker tint (optional)
+ *   children      scrollable panel content
+ */
+export default function AppSidePanel({
+  isOpen,
+  onClose,
+  title,
+  rightIcon,
+  onRightAction,
+  actions,
+  banner,
+  bottomContent,
+  expanded,
+  animateWidth,
+  noTransition,
+  dimOverlay = true,
+  children,
+}) {
+  return (
+    <>
+      {isOpen && (
+        <div
+          className={`app-side-panel-overlay${dimOverlay ? '' : ' app-side-panel-overlay--clear'}`}
+          onClick={onClose}
+        />
+      )}
+
+      <GSSidePanel sidePanelOpen={isOpen} noTransition={noTransition} animateWidth={animateWidth}>
+        <div className={`light app-side-panel-content${expanded ? ' expanded' : ''}`}>
+          <GSSidePanelNavigation
+            title={title}
+            leftIcon={faChevronLeft}
+            leftButtonClick={onClose}
+            rightIcon={rightIcon}
+            rightButtonClick={onRightAction}
+          />
+          {banner && (
+            <div className="app-side-panel-banner">{banner}</div>
+          )}
+
+          <div className="app-side-panel-body-wrapper">
+            <div className="app-side-panel-body">
+              {children}
+            </div>
+            {bottomContent && (
+              <div className="app-side-panel-bottom">
+                {bottomContent}
+              </div>
+            )}
+          </div>
+
+          {actions?.length > 0 && (
+            <GSActionDrawer actions={actions} />
+          )}
+        </div>
+      </GSSidePanel>
+    </>
+  )
+}

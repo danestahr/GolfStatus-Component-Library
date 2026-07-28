@@ -1,0 +1,100 @@
+@import '../../src/styles/golfstatus.scss';
+
+$xxx-small-height: 28px;
+$xx-small-height: 42px;
+$x-small-height: 56px;
+$small-height: 60px;
+$medium-height: 84px;
+$large-height: 90px;
+$x-large-height: 120px;
+$xx-large-height: 180px;
+
+@mixin size($height, $scale) {
+  height: $height;
+  width: $height * $scale;
+}
+
+gs-image{
+  @include v-stack(unset, unset);
+  border: $light-border;
+  border-radius: $medium-large-border-radius;
+  overflow: hidden;
+  background: $white;
+  &.square{
+    &.x-small{
+      @include size($x-small-height, 1);
+    }
+    &.small{
+      @include size($medium-height, 1);
+    }
+    &.medium{
+      @include size($x-large-height, 1);
+    }
+    &.large{
+      @include size($xx-large-height, 1);
+    }
+  }
+  &.wide{
+    &.x-small{
+      @include size($x-small-height, 2);
+    }
+    &.small{
+      @include size($medium-height, 2);
+    }
+    &.medium{
+      @include size($x-large-height, 2);
+    }
+    &.large{
+      @include size($xx-large-height, 2);
+    }
+  }
+  &.ultra-wide{
+    &.x-small{
+      @include size($xx-small-height, 4);
+    }
+    &.small{
+      @include size($x-small-height, 4);
+    }
+    &.medium{
+      @include size($small-height, 4);
+    }
+    &.large{
+      @include size($large-height, 4);
+    }
+  }
+  &.natural{
+    &.xxx-small{
+      height: $xxx-small-height;
+    }
+    &.xx-small{
+      height: $xx-small-height;
+    }
+    &.x-small{
+      height: $x-small-height;
+    }
+    &.small{
+      height: $small-height;
+    }
+    &.medium{
+      height: $medium-height;
+    }
+    &.large{
+      height: $large-height
+    }
+    &.x-large{
+      height: $x-large-height
+    }
+    &.xx-large{
+      height: $xx-large-height
+    }
+  }
+  img{
+    @include fill();
+    object-fit: cover;
+  }
+  >.no-image{
+    @include v-stack(center, center);
+    @include padding($large-pad);
+  }
+}
+

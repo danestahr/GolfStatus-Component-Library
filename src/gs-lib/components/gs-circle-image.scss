@@ -1,0 +1,59 @@
+@import '../styles/golfstatus.scss';
+
+$small-avatar-size: 16px;
+$medium-avatar-size: 24px;
+$large-avatar-size: 36px;
+$x-large-avatar-size: 56px;
+$xx-large-avatar-size: 84px;
+
+
+gs-circle-image{
+  .avatar{
+    &.small{
+      @include square($small-avatar-size);
+    }
+    &.medium{
+      @include square($medium-avatar-size);
+    }
+    &.large{
+      @include square($large-avatar-size);
+    }
+    &.x-large{
+      @include square($x-large-avatar-size);
+    }
+    &.xx-large{
+      @include square($xx-large-avatar-size);
+    }
+
+    
+    border-radius: 100%;
+    box-sizing: border-box;
+    background: white;
+    overflow: hidden;
+    border: 2px solid rgba($grey-500, .4);
+  
+    img{
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+    
+  }
+}
+
+.light{
+  gs-circle-image{
+    .avatar{
+      border: 2px solid rgba($grey-500, .4);
+    }
+      
+  }
+}
+
+.dark{
+  gs-circle-image{
+    .avatar{
+      border: 2px solid rgba($grey-500, .4);
+    }
+  }
+}

@@ -1,0 +1,30 @@
+@import '../styles/golfstatus.scss';
+
+gs-progress-bar{
+  @include v-stack(flex-start, unset);
+  @include padding($medium-pad $large-pad);
+  background: $grey-100;
+  border-radius: $x-large-border-radius;
+  position: relative;
+  overflow: hidden;
+  
+  .percentage-bar{
+    @include v-stack(center, flex-start);
+    border-radius: $x-large-border-radius;
+    height: 100%;
+    background: linear-gradient(90deg, $green-200, $green );
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .percentage-value{
+    opacity: .5;
+    font-weight: $bold-font-weight;
+  }
+}
+
+.dark{
+  progress-bar{
+    background: $grey-800
+  }
+}

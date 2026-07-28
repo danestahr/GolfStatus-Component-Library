@@ -1,0 +1,165 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+@import '../../gs-lib/components/gs-button.scss';
+
+.scorecard-list-item-v1 {
+  padding: $x-large-pad;
+  border-bottom: $light-border;
+  background: $white;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  width: 100%;
+
+  .team-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .team-name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: $small-font;
+      font-weight: $bold-font-weight;
+      color: $grey-800;
+      line-height: $regular-line-height;
+    }
+
+    .player-names {
+      font-size: $small-font;
+      font-weight: $regular-font-weight;
+      color: rgba($grey-800, 0.7);
+      line-height: $regular-line-height;
+    }
+  }
+
+  .score-status-box {
+    border-radius: $large-radius;
+    padding: $x-large-pad;
+    display: flex;
+    flex-direction: column;
+    gap: $medium-large-pad;
+    background: $grey-50;
+  }
+
+  &.in-progress     .score-status-box { background: $cyan-50; }
+  &.complete        .score-status-box { background: $green-50; }
+  &.submitted       .score-status-box { background: $green-50; }
+  &.confirmed       .score-status-box { background: $green-50; }
+  &.needs-attention .score-status-box { background: $orange-50; }
+  &.not-generated   .score-status-box { background: $orange-50; }
+
+  .scores-row {
+    display: flex;
+    align-items: center;
+    gap: $x-large-pad;
+
+    .score-groups {
+      display: flex;
+      align-items: center;
+      gap: $x-large-pad;
+      flex: 1;
+
+      .score-divider {
+        width: 1px;
+        height: 32px;
+        background: rgba($black, 0.1);
+        flex-shrink: 0;
+      }
+    }
+
+    .score-actions {
+      display: flex;
+      align-items: center;
+      gap: $medium-pad;
+      flex-shrink: 0;
+    }
+  }
+
+  .score-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .score-label {
+      font-size: $xx-small-font;
+      font-weight: $bold-font-weight;
+      letter-spacing: $small-medium-letter-spacing;
+      text-transform: uppercase;
+      color: rgba($grey-800, 0.7);
+    }
+
+    .score-value {
+      display: flex;
+      align-items: center;
+      gap: $medium-pad;
+
+      .score-number {
+        font-size: $small-font;
+        font-weight: $bold-font-weight;
+        color: $grey-800;
+      }
+
+      .score-par {
+        font-size: $small-font;
+        font-weight: $regular-font-weight;
+        color: rgba($grey-800, 0.7);
+      }
+    }
+  }
+
+  .score-groups > .score-group {
+    > .score-label { display: none; }
+    .score-value { align-items: center; }
+    .score-number { font-size: $x-large-font; }
+  }
+
+  .in-out-scores {
+    display: flex;
+    align-items: center;
+    gap: $x-large-pad;
+  }
+
+  .incomplete-disclaimer {
+    display: flex;
+    align-items: center;
+    gap: $medium-pad;
+    padding: $medium-large-pad;
+    font-size: $small-font;
+    color: $orange-600;
+    background: $white;
+    border-radius: $medium-radius;
+
+    span { color: rgba($grey-800, 0.7); }
+  }
+
+  .not-generated-message {
+    font-size: $small-font;
+    color: rgba($grey-800, 0.7);
+    flex: 1;
+  }
+
+  .status-footer {
+    border-top: $light-border;
+    padding-top: $medium-large-pad;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $x-large-pad;
+
+    .status-message {
+      display: flex;
+      align-items: center;
+      gap: $medium-pad;
+      font-size: $small-font;
+      color: rgba($grey-800, 0.7);
+      flex: 1;
+    }
+
+    .edit-status {
+      font-size: $small-font;
+      color: rgba($grey-800, 0.5);
+      white-space: nowrap;
+    }
+  }
+}

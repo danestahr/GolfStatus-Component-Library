@@ -1,0 +1,32 @@
+@import "../styles/golfstatus.scss";
+
+gs-address-form {
+
+  @include v-stack(unset, unset);
+  width: 100%;
+  gap: $large-pad;
+
+  gs-input {
+    width: 100%;
+  }
+
+  gs-select {
+    width: 100%;
+  }
+
+  .address {
+    @include v-stack(unset, unset);
+    gap: $large-pad;
+    width: 100%;
+  }
+
+  .city-state-zip{
+    @include h-stack(unset, center);
+    gap: $large-pad;
+    width: 100%;
+    @include large-phone() {
+      @include v-stack(unset, unset);
+    }
+  }
+
+}

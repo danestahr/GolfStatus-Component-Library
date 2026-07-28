@@ -1,0 +1,41 @@
+@import "../styles/golfstatus.scss";
+
+gs-quick-filter {
+  @include v-stack(unset, unset);
+  width: 100%;
+  gap: $large-pad;
+  .selected-item {
+    @include h-stack(center, center);
+    width: 100%;
+    background: rgba($grey-200, .2);
+    border-radius: $medium-border-radius;
+    overflow: hidden;
+    >gs-button{
+      padding: $large-pad;
+    }
+  }
+  .unselected-item {
+    @include h-stack(center, center);
+    width: 100%;
+    border-radius: $medium-border-radius;
+    overflow: hidden;
+  }
+  > .filter-form {
+    @include v-stack(unset, unset);
+    width: 100%;
+    gap: $large-pad;
+    > gs-item-list {
+      width: 100%;
+      >.selectable{
+        >gs-list-item{
+          border-radius: $medium-border-radius;
+        }
+      }
+    }
+  }
+  .none-selected{
+    background: rgba($grey-200, .2);
+    border-radius: $medium-border-radius;
+    @include padding($x-large-pad)
+  }
+}

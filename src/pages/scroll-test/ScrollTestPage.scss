@@ -1,0 +1,129 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.scroll-test-page {
+  display: flex;
+  height: 100%;
+}
+
+.page-background {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.st-scenario-row {
+  display: flex;
+  gap: 24px;
+}
+
+.st-scenario-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  width: 220px;
+}
+
+.st-scenario-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #232323;
+}
+
+.st-scenario-desc {
+  font-size: 13px;
+  color: rgba(35, 35, 35, 0.55);
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.st-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.st-list-item {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+.st-player-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #232323;
+  margin-bottom: 2px;
+}
+
+.st-player-email {
+  font-size: 14px;
+  color: rgba(35, 35, 35, 0.7);
+  margin-bottom: 2px;
+}
+
+.st-player-team {
+  font-size: 14px;
+  color: rgba(35, 35, 35, 0.45);
+}
+
+.st-sentinel {
+  height: 1px;
+}
+
+.st-initial-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.st-loading-row {
+  display: flex;
+  justify-content: center;
+  padding: 28px 24px;
+  background: #fff;
+}
+
+.st-spinner {
+  font-size: $small-display-font;
+  color: $grey-800;
+  animation: st-spin 0.9s linear infinite;
+}
+
+@keyframes st-spin {
+  to { transform: rotate(360deg); }
+}
+
+.st-end-row {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: #fff;
+}
+
+.st-end-sublabel {
+  font-size: 14px;
+  color: rgba(35, 35, 35, 0.7);
+}
+
+.st-pill-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  gs-button {
+    pointer-events: auto;
+  }
+
+  &.hidden {
+    transform: translateY(110%);
+  }
+}

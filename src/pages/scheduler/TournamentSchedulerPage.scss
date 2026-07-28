@@ -1,0 +1,1035 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Background page
+.sched-page-bg {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: $grey-50;
+  font-family: $font-family;
+
+  // Header action bar (tournament name + Add Round/Team Check In/Documents)
+  > gs-action-bar {
+    background: $white;
+  }
+}
+
+// Override AppSidePanel body to allow internal column scrolling
+.app-side-panel-body:has(.sched-panel-layout) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// Root layout inside the panel body
+.sched-panel-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sched-panel-action-bar {
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+// Auto-save banner
+.sched-banner {
+  flex-shrink: 0;
+  background: rgba(35, 35, 35, 0.07);
+  padding: $large-pad;
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+}
+
+.sched-banner-icon {
+  font-size: $medium-font;
+  color: $grey-800;
+  flex-shrink: 0;
+}
+
+.sched-banner-text {
+  font-size: $x-small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+// ── Tournament select list ─────────────────────────────────────────────────────
+
+.sched-tourney-list {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  overflow-y: auto;
+}
+
+.sched-tourney-card {
+  display: flex;
+  align-items: center;
+  gap: $xx-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $grey-50;
+  }
+}
+
+.sched-tourney-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.sched-tourney-card-name {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-tourney-card-sub {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.sched-tourney-card-side {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $medium-pad;
+}
+
+.sched-tourney-card-rounds {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.sched-tourney-card-holes {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+// ── Round tab switcher ────────────────────────────────────────────────────────
+
+.sched-round-tabs {
+  // Hidden for now — round switching isn't exposed in this view.
+  display: none;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background: $white;
+}
+
+.sched-round-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $medium-pad;
+  padding: $medium-large-pad $x-large-pad;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-500;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+
+  &:hover {
+    color: $grey-800;
+  }
+
+  &--active {
+    color: $grey-800;
+    border-bottom-color: $cyan-700;
+  }
+}
+
+.sched-round-tab-count {
+  font-size: $x-small-font;
+  font-weight: $regular-font-weight;
+  color: inherit;
+  opacity: 0.7;
+}
+
+// ── Round list (tournament landing view) ───────────────────────────────────────
+
+.sched-round-list-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $white;
+}
+
+.sched-round-search {
+  flex-shrink: 0;
+  padding: $large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: $second-layer-shadow;
+
+  gs-input {
+    width: 400px;
+
+    @include large-phone {
+      width: 100%;
+    }
+  }
+}
+
+.sched-round-card {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sched-round-card-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+// ── Two-column body ───────────────────────────────────────────────────────────
+
+.sched-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sched-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &--holes {
+    flex: 2;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  &--teams {
+    flex: 1;
+    min-width: 300px;
+  }
+}
+
+// When the panel is expanded to full screen, give Unassigned Teams an even 50/50
+// split with Holes instead of the normal 1/3 share.
+.app-side-panel-content.expanded {
+  .sched-col--holes {
+    flex: 1;
+  }
+
+  .sched-col--teams {
+    flex: 1;
+  }
+}
+
+// ── Column header (title + search) ────────────────────────────────────────────
+
+// Lives as the first child *inside* the scrollable list (not a sibling outside
+// it) and is sticky, same as a hole's own header below it — that's what lets the
+// browser hand the top:0 spot off between them natively as you scroll past this
+// header's real (unset, un-guessed) height, with no measurement or hardcoded
+// pixel value needed on either side. Hiding it early via transform, before that
+// native handoff would happen on its own, is what gives it the deliberate
+// scroll-distance threshold (see the onScroll handlers in
+// TournamentSchedulerPage.jsx) instead of just however tall it happens to be.
+.sched-col-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: $x-large-pad;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  background: $white;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Slides out of view on scroll-down, slides back in on scroll-up.
+  &--hidden {
+    transform: translateY(-100%);
+  }
+}
+
+.sched-col-title {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-col-count {
+
+}
+
+// ── Teams "displaying all" notice + filter link ────────────────────────────────
+
+.sched-teams-notice {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-large-pad;
+  padding: 0 $x-large-pad $medium-large-pad;
+  background: $white;
+}
+
+.sched-teams-notice-text {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
+}
+
+.sched-teams-notice-link {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $cyan-700;
+  line-height: $regular-line-height;
+
+  &:hover {
+    color: $cyan-800;
+  }
+}
+
+// ── Filter panel form ───────────────────────────────────────────────────────────
+
+.sched-filter-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: $xx-large-pad;
+  width: 100%;
+}
+
+.sched-filter-round-list {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+}
+
+.sched-filter-stat-header {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.sched-filter-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+}
+
+.sched-filter-stat-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.sched-filter-stat-count {
+  font-size: $medium-display-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1;
+}
+
+.sched-filter-stat-label {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.sched-filter-stat-desc {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.sched-filter-round {
+  display: flex;
+  align-items: center;
+  gap: $xx-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $grey-50;
+
+  &--active {
+    background: $cyan-50;
+  }
+}
+
+.sched-filter-round-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.sched-filter-round-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.sched-filter-round-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.sched-filter-round-sub {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.sched-round-status {
+  align-self: flex-start;
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $grey-800;
+  background: rgba(122, 122, 122, 0.1);
+  border-radius: $huge-radius;
+  padding: $medium-pad;
+
+  &--ready {
+    background: $grey-800;
+    color: $white;
+  }
+}
+
+.sched-filter-round-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $medium-pad;
+}
+
+.sched-filter-round-count {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  text-align: right;
+}
+
+.sched-filter-round-selected {
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $grey-800;
+  opacity: 0.5;
+  text-align: right;
+}
+
+// Scrollable content area
+.sched-col-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $grey-200;
+    border-radius: $huge-radius;
+  }
+}
+
+.sched-empty-msg {
+  padding: $x-large-pad;
+  text-align: center;
+  font-size: $small-font;
+  color: $grey-500;
+  font-style: italic;
+}
+
+// ── Hole section ──────────────────────────────────────────────────────────────
+
+.sched-hole-section {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sched-hole-header {
+  position: sticky;
+  // Sticks below the Assigned header (both are position:sticky, and without
+  // this they'd both try to pin at the same top:0) by its *measured* height —
+  // see --col-header-offset, set in TournamentSchedulerPage.jsx — rather than a
+  // guessed pixel value. A hole not yet scrolled to isn't sticky-active yet, so
+  // this only ever affects whichever one currently is; nothing to unstick.
+  top: var(--col-header-offset, 0px);
+  z-index: 2;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $x-large-pad;
+  transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sched-hole-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sched-hole-title {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-hole-par {
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  line-height: $compact-line-height;
+}
+
+.sched-hole-course {
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  line-height: $compact-line-height;
+}
+
+// ── Grouping (A / B row) ──────────────────────────────────────────────────────
+
+.sched-grouping-list {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  // Top padding matches the button hover/focus ring's spread (box-shadow 0 0 0 4px)
+  // so the sticky hole header — which paints over anything flush beneath it —
+  // never covers the ring on the first row's button.
+  padding: $small-pad $x-large-pad $x-large-pad;
+}
+
+.sched-grouping {
+  display: flex;
+  align-items: center;
+  gap: $medium-large-pad;
+  background: $grey-50;
+  border-radius: $medium-radius;
+  padding: $medium-large-pad;
+}
+
+.sched-grouping-label {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  min-width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sched-grouping-slots {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: $medium-pad;
+  min-width: 0;
+}
+
+// Only the last (removable) group's trash button should look fully active —
+// a disabled one keeps the same transparent background and icon color as
+// enabled, just dimmed, instead of GSButton's default grey-fill disabled look.
+.sched-grouping-trash {
+  gs-button.disabled {
+    background: transparent;
+    color: inherit;
+    opacity: 0.35;
+  }
+}
+
+.sched-add-group {
+  display: flex;
+  width: 100%;
+
+  gs-button {
+    width: 100%;
+  }
+}
+
+// ── Assignment slot ───────────────────────────────────────────────────────────
+
+.sched-slot {
+  background: $white;
+  border-radius: $medium-radius;
+  min-height: 68px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease;
+  border: 4px solid transparent;
+  position: relative;
+
+  &:hover {
+    background: $grey-200;
+  }
+
+  &--highlighted {
+    background: $cyan-50;
+    border-color: $cyan-400;
+
+    .sched-slot-empty {
+      color: $cyan-800;
+    }
+
+    &:hover {
+      background: $cyan-100;
+    }
+  }
+
+  &--selected {
+    background: $cyan-800;
+    border-color: $cyan-800;
+
+    .sched-slot-empty {
+      color: $white;
+    }
+
+    &:hover {
+      background: $cyan-800;
+      border-color: $cyan-800;
+    }
+  }
+
+  &--occupied {
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 24px;
+    padding: $medium-large-pad;
+    min-height: 68px;
+    background: $cyan-700;
+    border-width: 4px;
+    border-color: $cyan-700;
+
+    &:hover {
+      background: $cyan-800;
+      border-color: $cyan-800;
+    }
+
+    .sched-team-name {
+      color: $white;
+    }
+
+    .sched-team-players,
+    .sched-team-flight {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  &--occupied#{&}--selected {
+    background: $cyan-800;
+    border-color: $cyan-800;
+  }
+
+  // Confirmation flash for a slot that was just assigned/swapped into: holds
+  // cyan-800 for 1s, then fades to the normal occupied cyan-700 over 2s.
+  &--flash {
+    animation: sched-slot-flash 3s ease forwards;
+  }
+
+  // Simulated save latency while an assignment/swap/removal is in flight. Every
+  // pending slot (occupied or not) takes on the same in-progress cyan-800 look —
+  // white keeps the spinner legible against that dark background (the pool card's
+  // spinner is grey-800 instead since its card stays white while pending).
+  // Snaps in immediately (no fade) — transition:none avoids visibly animating
+  // through the old occupied color on the way to this state.
+  &--pending {
+    cursor: default;
+    transition: none;
+    background: $cyan-800;
+    border-color: $cyan-800;
+
+    &:hover {
+      background: $cyan-800;
+      border-color: $cyan-800;
+    }
+
+    .sched-slot-spinner {
+      color: $white;
+    }
+  }
+
+  // Already-occupied slot mid-removal or mid-swap: keep its team info visible but
+  // dimmed, with the spinner overlaid on top, instead of blanking the tile out —
+  // matches the same treatment as a pool team card being assigned.
+  &--occupied#{&}--pending {
+    .sched-slot-team {
+      opacity: 0.35;
+    }
+  }
+}
+
+@keyframes sched-slot-flash {
+  0%, 33.33% {
+    background: $cyan-800;
+    border-color: $cyan-800;
+  }
+  100% {
+    background: $cyan-700;
+    border-color: $cyan-700;
+  }
+}
+
+.sched-slot-pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sched-slot-pending-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sched-slot-spinner {
+  font-size: 20px;
+  color: $grey-800;
+  animation: sched-spin 0.9s linear infinite;
+}
+
+@keyframes sched-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sched-slot-empty {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: $small-pad;
+  color: $grey-800;
+}
+
+.sched-slot-icon {
+  font-size: 14px;
+}
+
+.sched-slot-label {
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+}
+
+.sched-slot-team {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// ── Team info (shared between slot + available card) ──────────────────────────
+
+.sched-team-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-team-players {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
+}
+
+.sched-team-flight {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
+  opacity: 0.9;
+}
+
+// ── Available team card ───────────────────────────────────────────────────────
+
+.sched-teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  padding: $medium-large-pad $x-large-pad;
+}
+
+// Full-screen panel: cards vary in height (player count differs per team), so a
+// CSS multi-column ("bento") layout packs them tighter than a uniform grid would.
+// column-count is used instead of column-width — with this many (70+) tall,
+// break-inside:avoid items, Chrome's column-width auto-balancing collapses to a
+// single column instead of distributing them; a fixed count sidesteps that.
+.sched-teams-list--bento {
+  display: block;
+  column-count: 3;
+  column-gap: $medium-pad;
+
+  .sched-team-card {
+    break-inside: avoid;
+    margin-bottom: $medium-pad;
+  }
+}
+
+.sched-team-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.sched-team-card {
+  position: relative;
+  padding: $large-pad;
+  cursor: pointer;
+  border: 4px solid $grey-100;
+  border-radius: $medium-radius;
+  background: $white;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 24px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+
+  &:hover {
+    background: $grey-100;
+    border-color: $grey-100;
+  }
+
+  // Team tapped/swapped into a slot from the pool: keep the card's info visible but
+  // dimmed, with a spinner overlaid on top, rather than swapping the content out —
+  // it's about to disappear from this list once the assignment actually lands.
+  &--pending {
+    cursor: default;
+
+    &:hover {
+      background: $white;
+      border-color: $grey-100;
+    }
+
+    .sched-team-info {
+      opacity: 0.35;
+    }
+  }
+
+  &--selected {
+    background: $cyan-800;
+    border-color: $cyan-800;
+
+    .sched-team-name {
+      color: $white;
+    }
+
+    .sched-team-players,
+    .sched-team-flight {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    &:hover {
+      background: $cyan-800;
+      border-color: $cyan-800;
+    }
+  }
+
+  &--highlighted {
+    background: $cyan-50;
+    border-color: $cyan-400;
+
+    &:hover {
+      background: $cyan-100;
+      border-color: $cyan-400;
+    }
+  }
+
+  // Confirmation flash for a team just returned to the pool (bumped by a swap
+  // or removed): holds grey-100 for 1s, then fades to the normal white card
+  // fill over 2s.
+  &--flash {
+    animation: sched-team-card-flash 3s ease forwards;
+  }
+
+  // A displaced team can land back in the pool while it's also highlighted (a slot
+  // is still selected) — the animation drives background regardless of specificity,
+  // so without this the grey flash would paint over the cyan highlight the whole time.
+  &--highlighted#{&}--flash {
+    animation: none;
+  }
+}
+
+@keyframes sched-team-card-flash {
+  0%, 33.33% {
+    background: $grey-100;
+  }
+  100% {
+    background: $white;
+  }
+}
+
+.sched-team-card-pending {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sched-team-card-spinner {
+  font-size: 20px;
+  color: $grey-800;
+  animation: sched-spin 0.9s linear infinite;
+}
+
+// ── Phone layout ────────────────────────────────────────────────────────────────
+// Holes and Unassigned stack instead of sitting side by side. The whole panel body
+// (action bar included) scrolls as one unit — the banner above it is the only thing
+// that stays fixed outside that scroll — while two things stay pinned within it:
+// each hole's own header (sticky top) and the Unassigned strip (sticky bottom),
+// matching the native app's phone layout.
+@include large-phone {
+  // Promote the panel body itself to the scrolling viewport so the action bar
+  // (normally a fixed header above .sched-body) scrolls away along with everything
+  // beneath it instead of staying pinned.
+  .sched-panel-layout {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sched-body {
+    flex-direction: column;
+    overflow: visible;
+    flex: none;
+  }
+
+  .sched-col--holes {
+    flex: none;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+    > .sched-col-scroll {
+      overflow: visible;
+      flex: none;
+    }
+  }
+
+  // .sched-panel-layout is the actual scrolling element here, not .sched-col-scroll
+  // (which is overflow:visible above) — position:sticky would otherwise resolve
+  // against that far-away ancestor instead of just this column, so it's turned
+  // off in favor of the header just scrolling away with everything beneath it.
+  .sched-col-header {
+    position: static;
+    transform: none !important;
+  }
+
+  // Docked at the bottom of the panel's scroll — sticky (not fixed) so it stays
+  // pinned throughout the scroll without needing to fake its height elsewhere.
+  .sched-col--teams {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    background: $white;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+
+    > .sched-col-scroll {
+      overflow: visible;
+      flex: none;
+    }
+  }
+
+  // The primary search above (Assigned column) already covers holes/players/teams —
+  // the Unassigned list doesn't need its own second search box on phones.
+  .sched-col--teams .sched-col-header gs-input {
+    display: none;
+  }
+
+  // Keep the Filter action reachable on phones, just drop the descriptive sentence
+  // next to it so the docked strip stays compact.
+  .sched-teams-notice {
+    justify-content: flex-end;
+  }
+
+  .sched-teams-notice-text {
+    display: none;
+  }
+
+  .sched-teams-list {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: $medium-pad;
+    padding: $medium-large-pad $x-large-pad;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .sched-team-card {
+    flex: 0 0 260px;
+  }
+
+  // The panel is already full width on phones — there's no separate "full screen"
+  // state to offer, so the expand toggle in the panel's title bar is hidden.
+  .app-side-panel-content:has(.sched-panel-layout) .right-button {
+    display: none;
+  }
+
+  // Collapse the panel action bar's buttons to icon-only to save horizontal space.
+  .sched-panel-action-bar .button-title {
+    display: none;
+  }
+}

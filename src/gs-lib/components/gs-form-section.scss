@@ -1,0 +1,39 @@
+@import "../styles/golfstatus.scss";
+
+gs-form-section {
+  @include v-stack(unset, unset);
+  @include padding($small-layout-pad $x-large-pad);
+  border-bottom: $light-border;
+  width: 100%;
+  gap: $large-pad;
+
+  >gs-item-list{
+    .horizontal {
+      width: 100%;
+    }
+    > *{
+      >gs-list-item{
+        gs-field {
+          width: 100%;
+          .field {
+            width: 100%;
+          }
+        }
+      }
+    }
+  } 
+}
+
+gs-form-section > {
+  >gs-action-bar {
+    position: relative;
+  }
+  >gs-item-list > {
+    >.horizontal {
+      @include large-phone() {
+        flex-direction: column;
+        gap: $xx-large-pad;
+      }
+    }
+  }
+}

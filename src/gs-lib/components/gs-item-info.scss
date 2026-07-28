@@ -1,0 +1,27 @@
+@import '../styles/golfstatus.scss';
+
+gs-item-info{
+  @include h-stack(center, center);
+  gap: $medium-pad;
+  font-weight: $regular-font-weight;
+  line-height: $regular-line-height;
+  .icon{
+    font-size: $medium-font;
+  }
+  .item-info{
+    @include h-stack(unset, unset);
+    flex-wrap: wrap;
+    width: 100%;
+    overflow: hidden;
+    .item-value{
+      flex-wrap: wrap;
+      text-overflow: ellipsis;
+      width: 100%;
+      overflow-wrap: break-word;
+    }
+    .item-header{
+      font-weight: $bold-font-weight;
+      @include v-stack(unset, unset);
+    }
+  }
+}

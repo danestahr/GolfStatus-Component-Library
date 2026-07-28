@@ -1,0 +1,41 @@
+@import "../styles/golfstatus.scss";
+
+gs-list-page {
+  @include v-stack(unset, unset);
+  .main {
+    @include v-stack(unset, unset);
+    @include fill();
+    gs-search-page {
+      page-content {
+        width: 100%;
+        display: inline-flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        gs-page-banner {
+          flex-shrink: 0;
+          width: 100%;
+          .horizontal {
+            align-items: center;
+          }
+        }
+      }
+    }
+  }
+
+  gs-page-banner {
+    flex-shrink: 0;
+    width: 100%;
+  }
+  gs-side-panel {
+    max-width: calc(100% - 300px);
+    z-index: 2;
+    > component-router {
+      height: 100%;
+    }
+    @include large-phone() {
+      max-width: 100%;
+    }
+  }
+}
+

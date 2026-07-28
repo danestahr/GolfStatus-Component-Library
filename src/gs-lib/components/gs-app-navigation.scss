@@ -1,0 +1,39 @@
+@import "../styles/golfstatus.scss";
+
+gs-app-navigation {
+  @include flex-width(300px, 300px, 300px);
+  @include v-stack(unset, unset);
+  height: 100%;
+  background: $black;
+  color: $white;
+  transition: $fast;
+  z-index: 10;
+  position: relative;
+
+  gs-page-banner{
+    flex-shrink: 0;
+  }
+
+  .nav-header {
+    width: 100%;
+    cursor: pointer;
+  }
+  .nav-back{
+    @include padding($large-pad);
+    overflow-x: auto;
+    overflow-y: hidden
+  }
+  .main{
+    @include v-stack(unset, unset);
+    height: 100%;
+    overflow: auto;
+  }
+
+  .nav-footer {
+    border-top: 1px solid $medium-hover-background;
+    z-index: 10;
+    >gs-item-list{
+      width: 100%;
+    }
+  }
+}

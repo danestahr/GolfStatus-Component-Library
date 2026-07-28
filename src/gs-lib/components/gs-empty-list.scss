@@ -1,0 +1,40 @@
+@import "../styles/golfstatus.scss";
+
+$max-text-width: 480px;
+
+gs-empty-list {
+  @include v-stack(center, center);
+  gap: $xx-large-pad;
+  .messaging {
+    @include v-stack(center, center);
+    gap: $medium-large-pad;
+    .empty-title {
+      @include gs-font($medium-font, $bold-font-weight, inherit);
+      max-width: $max-text-width;
+    }
+    .empty-detail {
+      @include gs-font($small-font, $regular-font-weight, inherit);
+      opacity: 0.7;
+      max-width: $max-text-width;
+    }
+  }
+  >gs-item-list{
+    @include large-phone(){
+      width: 100%;
+    }
+    
+    >.horizontal{
+      &.action-buttons{
+        justify-content: center;
+      }
+      >gs-list-item{
+        @include large-phone(){
+          width: 100%;
+          gs-button{
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+}

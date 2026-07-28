@@ -1,0 +1,61 @@
+@import '../styles/golfstatus.scss';
+
+gs-app-navigation-item{
+  width: 100%;
+  transition: $medium;
+  
+  .label{
+    @include gs-font($medium-font, unset, unset);
+  }
+
+  .icon{
+    @include gs-font($x-small-font, unset, unset);
+  }
+
+  .current{
+    border-left: $small-pad solid $green;
+  }
+  
+  .nav-item{
+    @include h-stack(flex-start, center);
+    @include padding($large-pad $x-large-pad);
+    cursor: pointer;
+    width: 100%;
+    transition: $fast;
+    border-left: 0px solid transparent;
+    gap: $large-pad;
+    
+    .label{
+      width: 100%;
+    }
+    
+    &.selectable{
+      opacity: .7;
+      &:hover{
+        border-left: $small-pad solid $white;
+        opacity: 1;
+      }
+    }
+    &.active{
+      opacity: 1;
+      border-left: $small-pad solid $green;
+      color: $green;
+      &:hover{
+        border-left: $small-pad solid $green;
+      }
+    }
+    &.bold{
+      .label{
+        font-weight: $bold-font-weight;
+      }
+    }
+    &.inactive{
+      opacity: .7;
+    }
+    
+  }
+  a{
+    color: white;
+    text-decoration: none;
+  }
+}

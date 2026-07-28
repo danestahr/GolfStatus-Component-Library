@@ -1,0 +1,41 @@
+@import '../styles/golfstatus.scss';
+$box-size: 20px;
+
+gs-checkbox {
+  @include h-stack(center, center);
+  cursor: pointer;
+  gap: $medium-pad;
+  flex-shrink: 0;
+
+  .box {
+    width: $box-size;
+    height: $box-size;
+    flex-shrink: 0;
+    border: 2px solid $grey-600;
+    border-radius: $medium-border-radius;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: $fast;
+
+    &.checked {
+      background: $grey-600;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: $focus-shadow;
+    }
+  }
+
+  .box-icon {
+    font-size: $x-small-font;
+    color: white;
+  }
+
+  .label {
+    @include gs-font($small-font, $regular-font-weight, unset);
+    opacity: 0.7;
+  }
+}

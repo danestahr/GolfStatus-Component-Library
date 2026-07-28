@@ -1,0 +1,19 @@
+@import "../../styles/golfstatus.scss";
+
+scorecard-hole{
+  gs-item-list{
+    width: 100%;
+  }
+  scorecard-hole-value{
+    @include padding($medium-pad $x-small-pad);
+    margin: $xx-small-pad;
+    text-align: center;
+    width:100%;
+    abbr{
+      text-decoration: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    
+  }
+}

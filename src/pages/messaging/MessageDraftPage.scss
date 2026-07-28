@@ -1,0 +1,95 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.message-draft-page {
+  .page-background {
+    padding: $x-large-pad;
+  }
+}
+
+.msg-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $x-large-pad;
+  padding: $small-layout-pad $x-large-pad;
+  border-bottom: $light-border;
+  background: $white;
+
+  .msg-hero-info {
+    display: flex;
+    flex-direction: column;
+    gap: $medium-large-pad;
+    min-width: 0;
+
+    .msg-hero-text {
+      display: flex;
+      flex-direction: column;
+
+      .msg-hero-subject {
+        @include gs-font($large-font, $bold-font-weight, normal);
+        line-height: $compact-line-height;
+        color: $grey-800;
+      }
+
+      .msg-hero-meta {
+        @include gs-font($small-font, $regular-font-weight, normal);
+        line-height: $regular-line-height;
+        color: $grey-800;
+        opacity: $medium-opacity;
+      }
+    }
+
+    .msg-hero-created {
+      @include gs-font($small-font, $regular-font-weight, normal);
+      line-height: $regular-line-height;
+      color: $grey-800;
+    }
+
+    .msg-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: $medium-pad;
+      align-self: flex-start;
+      padding: $medium-pad $medium-large-pad;
+      border-radius: $huge-radius;
+      background: $grey-100;
+      @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+      color: $grey-800;
+      text-transform: uppercase;
+    }
+  }
+
+  .msg-hero-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: $medium-pad;
+    flex-shrink: 0;
+  }
+}
+
+.msg-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $small-layout-pad $x-large-pad;
+  border-bottom: $light-border;
+  background: $white;
+
+  .msg-form-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .msg-form-section-title {
+      @include gs-font($medium-font, $bold-font-weight, normal);
+      line-height: $compact-line-height;
+      color: $grey-800;
+    }
+  }
+
+  .msg-empty-card {
+    background: $grey-100;
+    border-radius: $medium-radius;
+    padding: $large-layout-pad $x-large-pad;
+  }
+}

@@ -1,0 +1,67 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.scorecard-detail-page {
+  .detail-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .team-section {
+    border-bottom: 8px solid $grey-50;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .team-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $x-large-pad;
+    padding: $x-large-pad;
+    border-bottom: $light-border;
+
+    .team-name {
+      font-size: $medium-font;
+      font-weight: $bold-font-weight;
+      color: $grey-800;
+    }
+
+    .override-total {
+      display: flex;
+      align-items: center;
+      gap: $medium-pad;
+
+      .toggle-label {
+        font-size: $small-font;
+        color: rgba($grey-800, 0.7);
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $large-pad $x-large-pad;
+
+    .player-name {
+      font-size: $medium-font;
+      color: $grey-800;
+      font-weight: $bold-font-weight;
+    }
+
+    .player-score {
+      font-size: $small-font;
+      font-weight: $bold-font-weight;
+      color: $grey-800;
+    }
+  }
+
+  .scorecard-wrap {
+    overflow-x: auto;
+    padding: $x-large-pad;
+  }
+}

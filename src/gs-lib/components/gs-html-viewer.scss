@@ -1,0 +1,24 @@
+@import "../styles/golfstatus.scss";
+
+gs-html-viewer {
+  @include v-stack(center, center);
+  box-sizing: border-box;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.dark {
+  gs-html-viewer {
+    a {
+      color: $cyan-200;
+    }
+  }
+}
+
+.light {
+  gs-html-viewer {
+    a {
+      color: $cyan-800;
+    }
+  }
+}

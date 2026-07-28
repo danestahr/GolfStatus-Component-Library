@@ -1,0 +1,70 @@
+@import "../styles/golfstatus.scss";
+
+gs-page-section {
+  width: 100%;
+  @include h-padding($x-large-pad );
+  @include v-padding($xx-large-pad );
+  @include v-stack(center, center);
+  border-bottom: 1px solid;
+
+
+  > gs-action-bar {
+    @include padding($x-large-pad 0);
+  }
+
+  .description {
+    padding-bottom: $x-large-pad;
+    width: 100%;
+  }
+  .section-body {
+    font-size: $small-font;
+    width: 100%;
+    border-radius: $medium-radius;
+    overflow: hidden;
+
+    video {
+      width: 100%;
+    }
+    img {
+      max-width: 100%;
+    }
+  }
+  > gs-item-list {
+    width: 100%;
+  }
+  &.center {
+    @include v-stack(center, center);
+  }
+
+  h1{
+    all: unset;
+  }
+  h2{
+    all: unset;
+  }
+  h3{
+    all: unset;
+  }
+  h4{
+    all: unset;
+  }
+  h5{
+    all: unset;
+  }
+
+}
+
+
+.light{
+  gs-page-section {
+    border-color: $grey-100;
+  }
+}
+
+
+.dark{
+  gs-page-section {
+    border-color: $grey-800;
+  }
+}
+

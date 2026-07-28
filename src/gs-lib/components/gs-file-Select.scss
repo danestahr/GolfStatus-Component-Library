@@ -1,0 +1,91 @@
+@import "../styles/golfstatus.scss";
+
+gs-file-select {
+  @include v-stack(unset, center);
+  position: relative;
+  gap: $large-pad;
+  border-radius: $medium-large-border-radius;
+  
+
+  .select-input-container {
+    @include padding($x-large-pad);
+    @include v-stack(center, center);
+    width: 100%;
+    min-height: 30px;
+    border-radius: $medium-large-border-radius;
+    gap: $large-pad;
+    cursor: pointer;
+    border: 1px dashed $grey-200;
+    transition: $fast;
+
+    &:hover{
+      background-color: rgba($grey-500, .1);
+      border-color: rgba($grey-500, 0);
+    }
+
+    &.required{
+      border-color: $orange;
+    }
+
+    input {
+      opacity: 0;
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      z-index: 0;
+    }
+
+    &.invalid{
+      border-color: $orange;
+      &:hover{
+        background-color: rgba($orange, .1);
+      }
+    }
+  }
+
+  .description{
+    @include gs-font($x-small-font, unset, unset);
+    text-align: center;
+  }
+
+  .grid {
+    gap: $large-pad;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+    gs-list-item {
+      max-width: 300px;
+    }
+  }
+  gs-item-info{
+    width: 100%;
+    justify-content: flex-start;
+    @include gs-font($x-small-font, unset, unset);
+    .icon{
+      color: $orange;
+    }
+  }
+
+  &:focus{
+    box-shadow: $focus-shadow;
+    border: none;
+    outline: none;
+  }
+
+  &.invalid{
+    .select-input-container {
+      border-color: $orange;
+      &:hover{
+        background-color: rgba($orange, .1);
+      }
+    }
+    &:focus{
+      box-shadow: $invalid-focus-shadow;
+      border: none;
+      outline: none;
+    }
+  }
+  
+}

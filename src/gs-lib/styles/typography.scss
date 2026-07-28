@@ -1,0 +1,75 @@
+$font-family: "Roboto", sans-serif;
+
+//App font sizes
+$xxx-small-font: 8px;
+$xx-small-font: 10px;
+$x-small-font: 12px;
+$small-font: 14px;
+$medium-font: 16px;
+$large-font: 20px;
+$x-large-font: 24px;
+
+//Display fonts
+$small-display-font: 28px;
+$medium-display-font: 36px;
+$large-display-font: 40px;
+$x-large-display-font: 48px;
+$xx-large-display-font: 56px;
+
+//font weights
+$thin-font-weight: 100;
+$regular-font-weight: 400;
+$medium-font-weight: 500;
+$bold-font-weight: 700;
+
+//letter-spacing
+$x-small-letter-spacing: .25px;
+$small-letter-spacing: 1px;
+$small-medium-letter-spacing: 1.5px;
+$medium-letter-spacing: 2px;
+$large-letter-spacing: 2px;
+
+//line-height
+$square: 1;
+$compact-line-height: 1.2;
+$regular-line-height: 1.4;
+$spacious-line-height: 1.6;
+
+//mixins
+@mixin gs-font($size,$weight,$spacing){
+    font-family: $font-family;
+    font-size: $size;
+    font-weight: $weight;
+    letter-spacing: $spacing;
+}
+@mixin title-font(){
+    font-weight: $thin-font-weight;
+    font-size: $large-font;
+}
+@mixin detail-text-font(){
+    font-weight: $thin-font-weight;
+    font-size: $medium-font;
+}
+@mixin subtle-text-font(){
+    font-weight: $thin-font-weight;
+    font-size: $medium-font;
+}
+@mixin faint-text(){
+    font-size: $medium-font;
+    opacity: .5;
+}
+@mixin tiny-text(){
+    font-size: $x-small-font;
+}
+@mixin h1-font {
+    font-size: $large-font;
+    line-height: $spacious-line-height;
+}
+@mixin item-font{
+    font-size: $small-font;
+    line-height: $regular-line-height;
+}
+@mixin info-font{
+    font-size: $x-small-font;
+    line-height: $regular-line-height;
+}

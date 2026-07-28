@@ -1,0 +1,26 @@
+@import "../styles/golfstatus.scss";
+
+$mobile-logo-dimension: 48px;
+
+gs-app-navigation-header {
+  @include h-stack(center, flex-start);
+  @include gs-font($x-small-font, $bold-font-weight, $large-letter-spacing);
+  @include padding($x-large-pad);
+  line-height: $regular-line-height;
+  text-transform: uppercase;
+  .app-title {
+    @include h-stack(center, center);
+    gap: $x-large-pad;
+
+    .title-logo {
+      @include flex-height($header-height,$header-height,$header-height);
+      @include flex-width($header-height,$header-height,$header-height);
+      
+      img {
+        object-fit: contain;
+        height: 100%;
+        width: 100%;
+      }
+    }
+  }
+}

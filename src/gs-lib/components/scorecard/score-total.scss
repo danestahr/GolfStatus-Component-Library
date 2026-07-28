@@ -1,0 +1,22 @@
+@import "../../styles/golfstatus.scss";
+
+score-total{
+  .score-overview{
+    @include h-stack(unset, center);
+    .label{
+      margin-right: 8px;
+    }
+    .score{
+      font-weight: bold;
+    }
+    .to-par{
+      margin-left: $small-pad;
+      font-weight: $regular-font-weight;
+      color: rgba($grey-800, .7);
+      opacity: .7;
+      &.under{
+        color: $green;
+      }
+    }
+  }
+}

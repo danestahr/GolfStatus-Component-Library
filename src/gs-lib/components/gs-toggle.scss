@@ -1,0 +1,78 @@
+@import '../styles/golfstatus.scss';
+
+$toggle-height: 20px;
+$track-height: 24px;
+$toggle-width: 40px;
+
+gs-toggle{
+  @include v-stack(unset, unset);
+  gap: $medium-pad;
+  cursor: pointer;
+  transition: $fast;
+  &:hover{
+    opacity: .8
+  }
+  &:focus{
+    outline: none ;
+    .toggle-container{
+      box-shadow: $focus-shadow;
+    }
+  }
+  >.toggle-label{
+    @include gs-font($x-small-font, $regular-font-weight, unset);
+    opacity: .7
+  }
+  .toggle-action{
+    @include h-stack(unset, center);
+    gap: $medium-pad;
+    &.disabled{
+      filter: grayscale(1);
+      opacity: .2;
+    }
+    &.rowReverse{
+      flex-direction: row-reverse;
+    }
+  }
+  .toggle-container{
+    @include flex-width($toggle-width);
+    @include flex-height($toggle-height);
+    @include h-stack(unset, unset);
+    background: $grey-600;
+    border: $light-border;
+    border-width: 2px;
+    border-radius: $large-border-radius;
+    overflow: hidden;
+    cursor: pointer;
+    transition: $fast;
+    &.true{
+      border-color: $green;
+      background: $green;
+    }
+
+    .toggle-track{
+      @include h-stack(flex-end, center);
+      width: 100%;
+      background: $green;
+      transition: $fast;
+      border-radius: $large-border-radius;
+
+      &.false{
+        transform: translateX(-50%);
+      }
+      .toggle-indicator{
+        height: $toggle-height;
+        width: $toggle-width / 2;
+        background: $white;
+        border-radius: $large-border-radius;
+      }
+    }
+  }
+  .toggle-detail{
+    .toggle-value{
+      @include gs-font($small-font, $regular-font-weight, unset);
+      line-height: $regular-line-height;
+      opacity: .7;
+    }
+  }
+  
+}

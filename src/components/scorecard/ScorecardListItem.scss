@@ -1,0 +1,323 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+@import '../../gs-lib/components/gs-button.scss';
+
+.scorecard-list-item {
+  padding: $x-large-pad;
+  border-bottom: $light-border;
+  background: $white;
+  width: 100%;
+
+  .search-highlight {
+    background: $cyan-200;
+    color: $grey-800;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: row;
+    gap: $x-large-pad;
+  }
+
+  .status-bar {
+    width: 8px;
+    border-radius: $medium-large-border-radius;
+    flex-shrink: 0;
+    background: transparent;
+    transition: width 0.2s ease;
+  }
+
+  &:hover .status-bar { width: 12px; }
+
+  .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $medium-large-pad;
+  }
+
+  &.no-activity  .status-bar { background: linear-gradient(to bottom, $grey-200,   $grey-400); }
+  &.in-progress  .status-bar { background: linear-gradient(to bottom, $cyan-500,   $cyan-700); }
+  &.complete,
+  &.submitted,
+  &.confirmed    { .status-bar { background: linear-gradient(to bottom, $green-200,  $green-400); } }
+  &.not-generated,
+  &.needs-attention { .status-bar { background: linear-gradient(to bottom, $orange-200, $orange-400); } }
+
+  &.incomplete {
+    .status-bar      { background: linear-gradient(to bottom, $orange-200, $orange-400); }
+    .score-status-box { background: $grey-100; }
+  }
+
+  .player-tile { transition: background 0.2s ease; }
+
+  &.incomplete .player-tile { background: $orange-50;}
+
+  &.no-activity:hover     .player-tile { background: $grey-100; }
+  &.in-progress:hover     .player-tile { background: $cyan-50; }
+  &.complete:hover,
+  &.submitted:hover,
+  &.confirmed:hover       { .player-tile { background: $green-50; } }
+  &.not-generated:hover,
+  &.needs-attention:hover { .player-tile { background: $orange-50; } }
+  &.incomplete:hover      { .player-tile { background: $orange-50; } }
+
+  .player-tiles .player-tile.has-missing         { background: $grey-100; }
+  &:hover .player-tiles .player-tile.has-missing { background: $orange-50; }
+
+  cursor: pointer;
+
+  .score-status-box { transition: background 0.2s ease; }
+
+  &.no-activity:hover     .score-status-box { background: $grey-100; }
+  &.in-progress:hover     .score-status-box { background: $cyan-50; }
+  &.complete:hover,
+  &.submitted:hover,
+  &.confirmed:hover       { .score-status-box { background: $green-50; } }
+  &.not-generated:hover,
+  &.needs-attention:hover { .score-status-box { background: $orange-50; } }
+  &.incomplete:hover      { .score-status-box { background: $orange-50; } }
+
+  .team-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .team-name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: $small-font;
+      font-weight: $bold-font-weight;
+      color: $grey-800;
+      line-height: $regular-line-height;
+
+    }
+
+    .player-names {
+      font-size: $small-font;
+      font-weight: $regular-font-weight;
+      color: rgba($grey-800, 0.7);
+      line-height: $regular-line-height;
+    }
+  }
+
+  // Score box — background color keyed by status
+  .score-status-box {
+    border-radius: $large-radius;
+    padding: $x-large-pad;
+    display: flex;
+    flex-direction: column;
+    gap: $medium-large-pad;
+    background: $grey-100;
+  }
+
+
+  .scores-row {
+    display: flex;
+    align-items: center;
+    gap: $x-large-pad;
+
+    .score-groups {
+      display: flex;
+      align-items: center;
+      gap: $x-large-pad;
+      flex: 1;
+
+      .score-divider {
+        width: 1px;
+        height: 32px;
+        background: rgba($black, 0.1);
+        flex-shrink: 0;
+      }
+    }
+
+    .score-actions {
+      display: flex;
+      align-items: center;
+      gap: $medium-pad;
+      flex-shrink: 0;
+    }
+  }
+
+  .score-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .score-label {
+      font-size: $xx-small-font;
+      font-weight: $bold-font-weight;
+      letter-spacing: $small-medium-letter-spacing;
+      text-transform: uppercase;
+      color: rgba($grey-800, 0.7);
+    }
+
+    .score-value {
+      display: flex;
+      align-items: baseline;
+      gap: $medium-pad;
+
+      .score-number {
+        font-size: $small-font;
+        font-weight: $bold-font-weight;
+        color: $grey-800;
+      }
+
+      .score-par {
+        font-size: $small-font;
+        font-weight: $regular-font-weight;
+        color: rgba($grey-800, 0.7);
+      }
+    }
+  }
+
+
+  // Total score — larger, to-par center-aligned, label hidden
+  .score-groups > .score-group {
+    > .score-label { display: none; }
+    .score-value { align-items: center; }
+    .score-number { font-size: $x-large-font; }
+  }
+
+  .in-out-scores {
+    display: flex;
+    align-items: center;
+    gap: $x-large-pad;
+  }
+
+  .player-tiles {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: $medium-large-pad;
+
+    .player-tile {
+      padding: $medium-large-pad;
+      border-radius: $medium-radius;
+      background: $grey-100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: $small-pad;
+
+      .player-tile-name {
+        font-size: 8px;
+        font-weight: $bold-font-weight;
+        color: rgba($grey-800, 0.7);
+        letter-spacing: $small-medium-letter-spacing;
+        text-transform: uppercase;
+        line-height: 1.2;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow-wrap: anywhere;
+      }
+
+      .player-tile-score {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: $medium-pad;
+
+        .score-number {
+          font-size: $small-font;
+          font-weight: $bold-font-weight;
+          color: $grey-800;
+        }
+
+        .score-par {
+          font-size: $small-font;
+          font-weight: $regular-font-weight;
+          color: rgba($grey-800, 0.7);
+        }
+      }
+    }
+  }
+
+  .incomplete-disclaimer {
+    display: flex;
+    align-items: center;
+    gap: $medium-pad;
+    padding: $medium-large-pad;
+    font-size: $small-font;
+    color: $orange-600;
+    background: $white;
+    border-radius: $medium-radius;
+    width: fit-content;
+
+    span {
+      color: rgba($grey-800, 0.7);
+    }
+  }
+
+  @include large-phone {
+    .score-actions gs-button .button-title { display: none; }
+    .status-bar { display: none; }
+
+    .player-tiles {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+
+      .player-tile {
+        transition: none;
+      }
+    }
+
+    .score-status-box { transition: none; }
+
+    &.no-activity     .score-status-box,
+    &.no-activity     .player-tile { background: $grey-100; }
+    &.in-progress     .score-status-box,
+    &.in-progress     .player-tile { background: $cyan-50; }
+    &.complete,
+    &.submitted,
+    &.confirmed       { .score-status-box, .player-tile { background: $green-50; } }
+    &.not-generated,
+    &.needs-attention { .score-status-box, .player-tile { background: $orange-50; } }
+    &.incomplete      .score-status-box,
+    &.incomplete      .player-tile { background: $orange-50; }
+
+    .player-tiles .player-tile.has-missing { background: $grey-100; }
+  }
+
+  @include small-phone {
+    .in-out-scores { display: none; }
+    .player-tiles  { display: none; }
+  }
+
+  .not-generated-message {
+    font-size: $small-font;
+    color: rgba($grey-800, 0.7);
+    flex: 1;
+  }
+
+  .status-footer {
+    border-top: $light-border;
+    padding-top: $medium-large-pad;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $x-large-pad;
+
+    .status-message {
+      display: flex;
+      align-items: center;
+      gap: $medium-pad;
+      font-size: $small-font;
+      color: rgba($grey-800, 0.7);
+      flex: 1;
+    }
+
+    .edit-status {
+      font-size: $small-font;
+      color: rgba($grey-800, 0.5);
+      white-space: nowrap;
+    }
+  }
+}

@@ -1,0 +1,62 @@
+@import "../styles/golfstatus.scss";
+
+gs-action-bar {
+  width: 100%;
+  @include h-stack(unset, center);
+  gap: $x-large-pad;
+  .title {
+    @include h1-font();
+    line-height: $compact-line-height;
+  }
+
+  >.head {
+    width: 100%;
+    min-width: 0;
+    font-weight: $bold-font-weight;
+    .classifier-text {
+      @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+      text-transform: uppercase;
+      opacity: 0.7;
+      line-height: $regular-line-height;
+      padding-bottom: $medium-pad;
+    }
+  }
+
+  >.actions {
+    @include h-stack(center, center);
+    gap: $medium-pad;
+    >gs-item-list{
+      >.horizontal{
+        align-items: center;
+      }
+    }
+  }
+
+  &.grey-header{
+    background: $grey-100;
+  }
+
+  &.medium-pad{
+    @include padding($medium-pad);
+  }
+  &.large-pad{
+    @include padding($large-pad);
+  }
+  &.x-large-pad{
+    @include padding($x-large-pad);
+  }
+  &.form-header{
+    @include padding($x-large-pad);
+      border-bottom: $light-border;
+      font-size: $large-font;
+  }
+}
+
+
+.dark{
+  gs-action-bar{
+    &.grey-header{
+      background: $grey-700;
+    }
+  }
+}

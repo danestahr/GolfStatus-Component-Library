@@ -1,0 +1,185 @@
+@import "../../styles/golfstatus.scss";
+
+$hole-height : 48px;
+$to-par-height : 20px;
+
+scorecard-hole-value{
+  font-weight: $bold-font-weight;
+  border-radius: $medium-border-radius;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: center;
+  @include v-stack(center, center);
+  text-transform: uppercase;
+  position: relative;
+
+  @include padding($medium-pad $x-small-pad);
+  margin: $xx-small-pad;
+  text-align: center;
+  width:100%;
+  abbr{
+    text-decoration: none;
+    cursor: pointer;
+    width: 100%;
+  }
+  
+  .values{
+    @include v-stack(center, center);
+    gs-item-list{
+      @include v-stack(center, center);
+    }
+    gs-list-item{
+      font-size: $xx-small-font;
+      line-height: $regular-line-height;
+    }
+  }
+  
+  input{
+    text-align: center;
+    font-size: $xx-small-font;
+    width: 100%;
+    background: transparent;
+    @include padding($small-pad);
+    border: none;
+    outline: none;
+  }
+  &.grey{
+    background: $grey-200;
+    color: $grey-800;
+  }
+  &.light-grey{
+    background: $grey-100;
+    color: $grey-800;
+  }
+  &.team-1{
+    background: $team-1-color;
+    box-shadow: 0 0 0 2px inset $team-1-color;
+  }
+  &.team-2{
+    background: $team-2-color;
+    box-shadow: 0 0 0 2px inset $team-2-color;
+  }
+  &.team-1-border{
+    background: rgba($team-1-color, .1);
+    box-shadow: 0 0 0 2px inset $team-1-color;
+  }
+  &.team-2-border{
+    background: rgba($team-2-color, .1);
+    box-shadow: 0 0 0 2px inset $team-2-color;
+  }
+  &.black{
+    background:  $grey-800;
+    color: white;
+  }
+  &.purple{
+    background: $purple;
+    color: white;
+  }
+  &.white{
+    background: $light-primary-background;
+    color: $light-primary-contrast-text;
+    box-shadow: 0 0 0 2px inset $black;
+  }
+  &.outline{
+    border: 1px solid rgba($grey-500, 0.5);
+  }
+  &.bold{
+    font-weight: $bold-font-weight;
+  }
+  &.eagle{
+    .values{
+      border-radius: 100%;
+      border: 2px solid $grey-800;
+      background: rgba($grey-200, 1);
+      color: $grey-800;
+    }
+  }
+  &.birdie{
+    .values{
+      border-radius: 100%;
+      border: 2px solid $grey-800;
+    }
+  }
+  &.bogey{
+    .values{
+      border-radius: $medium-border-radius;
+      border: 2px solid $grey-800;
+    }
+  }
+  &.double{
+    .values{
+      border-radius: $medium-border-radius;
+      border: 2px solid $grey-800;
+      background: $grey-200;
+      color: $grey-800;
+    }
+  }
+  &.score{
+    height: 38px;
+    .values{
+      @include flex-height($to-par-height, $to-par-height, $to-par-height);
+      @include flex-width($to-par-height, $to-par-height, $to-par-height);
+    }
+  }
+  .pops{
+    position: absolute;
+    @include h-stack(center, center);
+    top: 0;
+    gap: $small-pad;
+    width: 100%;
+    .pop{
+      @include square($small-pad);
+      border-radius: $small-pad;
+      background: $grey-800;
+      width: 100%;
+    }
+  }
+
+  
+}
+
+.dark{
+  scorecard-hole-value{
+    &.grey{
+      background: $grey-600;
+      color: $white;
+    }
+    &.light-grey{
+      background: $grey-700;
+      color: $grey-100;
+    }
+    &.team-1{
+      background: $team-1-color;
+      box-shadow: 0 0 0 2px inset $team-1-color;
+    }
+    &.team-2{
+      background: $team-2-color;
+      box-shadow: 0 0 0 2px inset $team-2-color;
+    }
+    &.team-1-border{
+      background: rgba($team-1-color, .1);
+      box-shadow: 0 0 0 2px inset $team-1-color;
+    }
+    &.team-2-border{
+      background: rgba($team-2-color, .1);
+      box-shadow: 0 0 0 2px inset $team-2-color;
+    }
+    &.black{
+      background:  $black;
+      color: $white;
+    }
+    &.purple{
+      background: $purple;
+      color: $white;
+    }
+    &.white{
+      background: $light-primary-background;
+      color: $light-primary-contrast-text;
+      box-shadow: 0 0 0 2px inset $black;
+    }
+    &.outline{
+      border: 1px solid rgba($grey-500, 0.5);
+    }
+  }
+}

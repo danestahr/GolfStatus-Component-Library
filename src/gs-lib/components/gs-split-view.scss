@@ -1,0 +1,43 @@
+@import "../styles/golfstatus.scss";
+
+gs-split-view {
+  @include v-stack(unset, unset);
+  .split-view-content {
+    @include h-stack(flex-start, stretch);
+    gap: $x-large-pad;
+    .split-view-left {
+      width: 100%;
+      min-height: 100%;
+    }
+    .split-view-right {
+      width: 100%;
+    }
+    @include large-phone() {
+      @include v-stack(flex-start, flex-start);
+    }
+    .divider {
+      background: $grey-200;
+      width: 1px;
+      display: inline-flex;
+      @include large-phone {
+        height: 1px;
+        width: 100%;
+      }
+    }
+  }
+}
+
+.dark {
+  .split-view-content {
+    .divider {
+      background: $grey-700;
+    }
+  }
+}
+.light {
+  .split-view-content {
+    .divider {
+      background: $grey-200;
+    }
+  }
+}

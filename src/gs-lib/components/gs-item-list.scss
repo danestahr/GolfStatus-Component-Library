@@ -1,0 +1,221 @@
+@import "../styles/golfstatus.scss";
+$checkbox-size: 20px;
+
+gs-item-list {
+  @include v-stack(unset, unset);
+
+  > .small-gap {
+    gap: $small-pad;
+  }
+  > .medium-gap {
+    gap: $medium-pad;
+  }
+  > .medium-large-gap {
+    gap: $medium-large-pad;
+  }
+  > .large-gap {
+    gap: $large-pad;
+  }
+  > .x-large-gap {
+    gap: $x-large-pad;
+  }
+  > .xx-large-gap {
+    gap: $xx-large-pad;
+  }
+  > .small-pad {
+    @include padding($small-pad);
+  }
+  > .medium-pad {
+    @include padding($medium-pad);
+  }
+  > .large-pad {
+    @include padding($large-pad);
+  }
+  > .x-large-pad {
+    @include padding($x-large-pad);
+  }
+
+  gs-list-item {
+    @include h-stack(unset, center);
+
+    &#sortee {
+      z-index: 1000;
+      background: $grey-100;
+      box-shadow: $first-layer-shadow;
+      opacity: 0.9;
+      border-radius: $medium-large-border-radius;
+      position: absolute;
+    }
+  }
+
+  > .horizontal {
+    @include h-stack(unset, unset);
+    > #sortee {
+      width: auto;
+      height: auto;
+    }
+    > .sortable-item {
+      .sortable-layout {
+        
+        @include v-stack(center, center);
+        > .sort-functions {
+          @include h-stack(center, center);
+          > .sort-grabber {
+            @include v-stack(center, center);
+            touch-action: none;
+          }
+        }
+      }
+    }
+    &.centered {
+      align-items: center;
+      justify-content: center;
+    }
+
+    &.wrapped {
+      flex-wrap: wrap;
+    }
+    > gs-list-item {
+      height: 100%;
+    }
+    &.scrollable {
+      overflow: auto;
+    }
+    &.item-fill {
+      > gs-list-item {
+        width: 100%;
+      }
+    }
+    > .stretch {
+      width: 100%;
+    }
+    > .hide-mobile {
+      @include large-phone() {
+        display: none;
+      }
+    }
+  }
+  > .rounded-empty-list {
+    > .empty {
+      border-radius: $medium-large-border-radius;
+    }
+  }
+  > .vertical {
+    @include v-stack(unset, unset);
+    width: 100%;
+
+    > #sortee {
+      
+    }
+    > .sortable-item {
+
+      > .sortable-layout {
+        width: 100%;
+        @include h-stack(center, center);
+       
+        > .sort-functions {
+          @include v-stack(center, center);
+          > .sort-grabber {
+            @include v-stack(center, center);
+            touch-action: none;
+          }
+        }
+      }
+    }
+
+    > gs-list-item {
+      width: 100%;
+      &.check-list-item {
+        gap: $medium-pad;
+      }
+    }
+
+    &.centered {
+      justify-content: center;
+    }
+
+    > .stretch {
+      height: 100%π;
+    }
+    > .hide-mobile {
+      @include large-phone() {
+        display: none;
+      }
+    }
+    > .empty {
+      @include padding($large-layout-pad $x-large-pad);
+      text-align: center;
+    }
+  }
+  .mobile-vertical {
+    @include large-phone() {
+      flex-direction: column;
+    }
+  }
+
+  > .align-end {
+    align-items: flex-end;
+  }
+  > .mobile-align-start {
+    @include large-phone() {
+      align-items: flex-start;
+    }
+  }
+  .groups {
+    @include v-stack(unset, unset);
+  }
+  .grid {
+    @include h-stack(center, unset);
+    width: 100%;
+    flex-wrap: wrap;
+    gs-list-item {
+      @include h-stack(center, center);
+      width: 100%;
+    }
+  }
+
+  .inline-grid {
+    display: inline-grid;
+  }
+
+  .checkbox {
+    @include square($checkbox-size);
+    @include padding($small-pad);
+    font-size: $x-small-font;
+    border: 2px solid $grey-600;
+    border-radius: $medium-border-radius;
+    @include h-stack(center, center);
+    &.checked {
+      background: $grey-600;
+    }
+
+    color: white;
+    cursor: pointer;
+    &:focus {
+      outline: none;
+      box-shadow: $focus-shadow;
+    }
+  }
+}
+
+.dark {
+  gs-item-list {
+    
+    > .grey-empty-list {
+      > .empty {
+        background: $grey-600;
+      }
+    }
+  }
+}
+
+.light {
+  gs-item-list {
+    
+    > .grey-empty-list {
+      > .empty {
+        background: $grey-100;
+      }
+    }
+  }
+}

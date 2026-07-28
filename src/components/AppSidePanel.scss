@@ -1,0 +1,78 @@
+@import '../gs-lib/styles/golfstatus.scss';
+
+.app-side-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba($black, 0.35);
+  z-index: 99;
+
+  // Used when this panel stacks on top of another already-dimmed AppSidePanel —
+  // keeps the click-to-close catcher without compounding the two overlays' opacity.
+  &--clear {
+    background: transparent;
+  }
+}
+
+gs-side-panel {
+  z-index: 100;
+  overflow-y: hidden !important;
+
+  // Tablet/desktop only — expanding on phones would just match the existing full-bleed width
+  @media screen and (min-width: 901px) {
+    &:has(> .app-side-panel-content.expanded) {
+      width: calc(100vw - 220px);
+      min-width: calc(100vw - 220px);
+    }
+  }
+
+  > .app-side-panel-content {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: $white;
+
+    > gs-side-panel-navigation {
+      flex-shrink: 0;
+      background: $white;
+      box-shadow: $first-layer-shadow;
+      z-index: 10;
+    }
+
+    > .app-side-panel-banner {
+      flex-shrink: 0;
+      z-index: 9;
+    }
+
+    > .app-side-panel-body-wrapper {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+
+      > .app-side-panel-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
+
+      > .app-side-panel-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 5;
+      }
+    }
+
+    > gs-action-drawer {
+      flex-shrink: 0;
+      background: $white;
+      border-top: $light-border;
+    }
+  }
+}

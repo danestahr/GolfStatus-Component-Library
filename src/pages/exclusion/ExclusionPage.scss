@@ -1,0 +1,511 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.exclusion-page {
+  display: flex;
+  height: 100%;
+}
+
+.page-background {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+// ── Notes section ─────────────────────────────────────────────────────────────
+.ex-notes-section {
+  padding: $x-large-pad;
+  border-bottom: $light-border;
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+.ex-notifications {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  background: $cyan-50;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+}
+
+.ex-notifications-header {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: rgba($grey-800, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.ex-notification {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: $x-small-font;
+  color: $grey-800;
+  line-height: 1.4;
+}
+
+.ex-notification-icon {
+  font-size: $medium-font;
+  color: $grey-800;
+  line-height: auto;
+  flex-shrink: 0;
+}
+
+
+// ── Action bar border ─────────────────────────────────────────────────────────
+.app-side-panel-body > gs-action-bar {
+  border-bottom: $light-border;
+  min-width: 100%;
+}
+
+// ── Content wrapper: XL pad, large gap between banner + sections ──────────────
+.rl-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $small-layout-pad $x-large-pad;
+}
+
+// ── Collapsable section ───────────────────────────────────────────────────────
+.rl-section {
+  background: $grey-50;
+  border-radius: $medium-large-border-radius;
+  overflow: hidden;
+}
+
+.rl-section-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 24px;
+  cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  gap: 16px;
+}
+
+.rl-section-name {
+  font-size: 16px;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rl-section-toggle {
+  font-size: 10px;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  flex-shrink: 0;
+}
+
+.rl-section-cards {
+  padding: 0 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+// ── Exclude-all toggle row ────────────────────────────────────────────────────
+.rl-exclude-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px 16px;
+  gap: 16px;
+}
+
+.rl-exclude-toggle-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rl-exclude-toggle-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1.4;
+}
+
+.rl-exclude-toggle-label {
+  font-size: $small-font;
+  color: rgba($grey-800, 0.7);
+  line-height: 1.4;
+}
+
+.rl-exclude-toggle-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rl-exclude-toggle-value {
+  font-size: $small-font;
+  color: $grey-800;
+}
+
+.rl-toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  background: $grey-400;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+
+  &--on {
+    background: $green-400;
+  }
+}
+
+.rl-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+
+  .rl-toggle-switch--on & {
+    transform: translateX(20px);
+  }
+}
+
+// ── Exclude-all disclaimer ────────────────────────────────────────────────────
+.rl-exclude-all-disclaimer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  margin: 0 24px 24px;
+  background: $grey-100;
+  border-radius: $medium-large-border-radius;
+  text-align: center;
+}
+
+.rl-exclude-all-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1.4;
+}
+
+.rl-exclude-all-subtitle {
+  font-size: $small-font;
+  color: rgba($grey-800, 0.7);
+  line-height: 1.4;
+}
+
+// ── Group card (Figma design) ─────────────────────────────────────────────────
+.rl-group-card {
+  background: #fff;
+  border-radius: $medium-large-border-radius;
+  box-shadow: $first-layer-shadow;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rl-card-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.rl-card-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+
+  &--included      { color: $green-400; }
+  &--excluded      { color: $grey-800; }
+  &--some-excluded { color: $grey-800; }
+}
+
+.rl-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rl-card-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1.4;
+}
+
+.rl-card-status {
+  font-size: $small-font;
+  color: rgba($grey-800, 0.7);
+  line-height: 1.4;
+}
+
+.rl-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rl-card-disclaimer {
+  font-size: $x-small-font;
+  color: rgba($grey-800, 0.5);
+  line-height: 1.4;
+
+  &--excluded { color: rgba($grey-800, 0.5); }
+}
+
+// ── Excluded count badge on group card ───────────────────────────────────────
+.rl-card-excluded-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $orange-400;
+  margin-top: 2px;
+}
+
+// ── Unselected group card ─────────────────────────────────────────────────────
+.rl-unselected-card {
+  background: $grey-200;
+  border-radius: $medium-large-border-radius;
+  padding: $x-large-pad;
+}
+
+.rl-unselected-icon {
+  font-size: 20px;
+  color: $grey-800;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+// ── Search bar ────────────────────────────────────────────────────────────────
+.ex-search-bar {
+  background: #fff;
+  border-bottom: $light-border;
+  padding: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+
+  gs-input {
+    width: 100%;
+    input { width: 100%; }
+  }
+}
+
+// ── Player list ───────────────────────────────────────────────────────────────
+.il-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.il-list-item {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  border-bottom: $light-border;
+  background: #fff;
+
+  &--selectable {
+    cursor: pointer;
+    &:hover { background: rgba($grey-800, 0.03); }
+  }
+}
+
+.ex-player-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ex-player-primary {
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Checkbox (matches gs-item-list global pattern) ────────────────────────────
+.ex-checkbox {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: $small-pad;
+  border: 2px solid $grey-600;
+  border-radius: $medium-border-radius;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  &--checked {
+    background: $grey-600;
+  }
+}
+
+.ex-checkbox-icon {
+  font-size: $x-small-font;
+  color: white;
+}
+
+.il-player-name {
+  font-size: $small-font;
+  line-height: $compact-line-height;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.il-player-email {
+  font-size: $small-font;
+  line-height: $compact-line-height;
+  color: rgba($grey-800, 0.7);
+}
+
+.il-player-team {
+  font-size: $small-font;
+  color: rgba($grey-800, 0.7);
+}
+
+.il-sentinel {
+  height: 1px;
+}
+
+.il-initial-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.il-loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 24px;
+  background: #fff;
+}
+
+.il-spinner {
+  font-size: $small-display-font;
+  color: $grey-800;
+  animation: il-spin 0.9s linear infinite;
+}
+
+@keyframes il-spin {
+  to { transform: rotate(360deg); }
+}
+
+.il-end-row {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: #fff;
+}
+
+.il-end-sublabel {
+  font-size: 14px;
+  color: rgba(35, 35, 35, 0.7);
+}
+
+// ── Group manage page ─────────────────────────────────────────────────────────
+.gmp-form-section {
+  background: $white;
+  border-bottom: $light-border;
+  padding: $small-layout-pad $x-large-pad;
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+}
+
+.gmp-radio-row {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+}
+
+// ── Status cards (4 styles) ───────────────────────────────────────────────────
+.gmp-status-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: $x-large-pad;
+  border-radius: $medium-large-border-radius;
+
+  &--green  { background: $green-50; }
+  &--orange { background: $orange-50; }
+  &--grey   { background: $grey-50; }
+}
+
+.gmp-status-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  color: $grey-800;
+}
+
+.gmp-status-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gmp-status-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1.4;
+}
+
+.gmp-status-subtitle {
+  font-size: $small-font;
+  color: rgba($grey-800, 0.7);
+  line-height: 1.4;
+}
+
+// ── Scroll pill ───────────────────────────────────────────────────────────────
+.il-pill-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  gs-button {
+    pointer-events: auto;
+  }
+
+  &.scrolled {
+    transform: translateY(110%);
+  }
+
+  @include large-phone {
+    display: none;
+  }
+}

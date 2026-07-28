@@ -1,0 +1,78 @@
+@import "../../styles/golfstatus.scss";
+
+gs-scorecard{
+  @include v-stack(unset, unset);
+  gap: $large-pad;
+  >.scorecard{
+    @include h-stack(unset, unset);
+    &.split{
+      @include v-stack(unset,unset);
+      gap: $x-large-pad;
+    }
+    
+  }
+  scorecard-hole{
+    width: 100%;
+    @include h-stack(unset, unset);
+    //@include padding($medium-pad);
+    gs-button{
+      @include h-stack(unset, unset);
+      margin: $x-small-pad;
+      width: 100%;
+    }
+  }
+  .item-flex-start{
+    >gs-list-item{
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+  }
+
+  .item-flex-center{
+    >gs-list-item{
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+
+  .header{
+    font-size: $x-small-font;
+    font-weight: $bold-font-weight;
+    margin: $medium-pad 0;
+    width: 100%;
+  }
+
+  .small-header{
+    @include gs-font($xxx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+    width: 100%;
+    @include padding($medium-pad 0);
+    opacity: .7;
+    text-transform: uppercase;
+    &.hide{
+      opacity: 0;
+    }
+  }
+
+  .border-bottom{
+    border-bottom: $light-border;
+    @include padding(0 0 $medium-pad 0)
+  }
+
+  .border-top{
+    border-top: $light-border;
+  }
+
+  .border-left-team-1{
+    border: 2px solid $team-1-color;
+    border-radius: $medium-border-radius;
+    background: rgba($team-1-color, .1);
+    @include padding($medium-pad);
+  }
+
+  .border-left-team-2{
+    border: 2px solid $team-2-color;
+    border-radius: $medium-border-radius;
+    background: rgba($team-2-color, .1);
+    @include padding($medium-pad);
+  }
+}

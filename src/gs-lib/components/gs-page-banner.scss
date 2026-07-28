@@ -1,0 +1,191 @@
+@import "../styles/golfstatus.scss";
+
+gs-page-banner {
+  @include v-stack(flex-end, flex-start);
+  width: 100%;
+  transition: $fast;
+  overflow: hidden;
+  min-height: 30px;
+
+  .gs-banner-content {
+    @include h-stack(center, center);
+    gap: $xx-large-pad;
+    @include padding($large-pad);
+    width: 100%;
+    transition: $fast;
+    gs-action-bar {
+      width: 100%;
+      font-size: 12px;
+      gs-button {
+        white-space: nowrap;
+      }
+    }
+    @include large-phone() {
+      flex-direction: column;
+      gap: $large-pad;
+      gs-page-navigation {
+        width: 100%;
+        .paging-info {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .banner-timer {
+    height: 4px;
+    width: 0;
+    background: $grey-800;
+    transition: 5s;
+    &.count {
+      animation-name: progressAnim;
+    }
+    @keyframes progressAnim {
+      from {
+        width: 0;
+      }
+      to {
+        width: 100%;
+      }
+    }
+  }
+
+  &.grey {
+    .gs-banner-content {
+      background: rgba($grey-800, 0.07);
+    }
+  }
+
+  &.warning {
+    background: $white;
+    .gs-banner-content {
+      background: rgba($orange, 0.2);
+      color: $grey-800;
+    }
+
+    .icon {
+      color: $orange;
+    }
+    .banner-timer {
+      background: $orange;
+    }
+  }
+
+  &.success {
+    background: White;
+    .gs-banner-content {
+      background: rgba($green, 0.2);
+      color: $grey-800;
+    }
+
+    .icon {
+      color: $green;
+    }
+    .banner-timer {
+      background: $green;
+    }
+  }
+
+  &.white {
+    .gs-banner-content {
+      background: $white;
+      color: $grey-800;
+    }
+  }
+
+  &.black {
+    .gs-banner-content {
+      background: $black;
+      color: $white;
+    }
+    .banner-timer {
+      background: $white;
+    }
+  }
+
+  &.transparent {
+    .gs-banner-content {
+      background: transparent;
+      color: inherit;
+    }
+  }
+
+  &.closed {
+    height: 0;
+    min-height: 0;
+    display: none;
+  }
+}
+
+
+.dark{
+  gs-page-banner{
+    &.grey {
+      .gs-banner-content {
+        background: rgba($grey-400, 0.07);
+      }
+    }
+  
+    &.warning {
+      background: $white;
+      .gs-banner-content {
+        background: rgba($orange, 0.2);
+        color: $grey-100;
+      }
+  
+      .icon {
+        color: $orange;
+      }
+      .banner-timer {
+        background: $orange;
+      }
+    }
+  
+    &.success {
+      background: black;
+      .gs-banner-content {
+        background: rgba($green, 0.2);
+        color: $white;
+      }
+  
+      .icon {
+        color: $green;
+      }
+      .banner-timer {
+        background: $green;
+      }
+    }
+  
+    &.white {
+      .gs-banner-content {
+        background: $white;
+        color: $grey-800;
+      }
+    }
+  
+    &.black {
+      .gs-banner-content {
+        background: $black;
+        color: $white;
+      }
+      .banner-timer {
+        background: $white;
+      }
+    }
+  
+    &.transparent {
+      .gs-banner-content {
+        background: transparent;
+        color: inherit;
+      }
+    }
+  }
+}
+
+.light{
+  gs-page-banner{
+    &.grey {
+      background: $white;
+    }
+  }
+}

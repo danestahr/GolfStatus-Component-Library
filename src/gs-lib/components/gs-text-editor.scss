@@ -1,0 +1,49 @@
+@import "../styles/golfstatus.scss";
+
+gs-text-editor {
+  @include v-stack(unset, unset);
+  border: $textbox-border;
+  border-radius: $medium-large-border-radius;
+  gs-input {
+    width: 100%;
+  }
+  .preview{
+    @include padding($large-pad);
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+  .type-selector{
+    @include h-stack(flex-start, unset);
+    gap: $small-pad;
+    @include padding($large-pad);
+    background: rgba($grey-500, .1);
+    border-radius: $medium-large-border-radius $medium-large-border-radius 0 0;
+  }
+  gs-input{
+    border: none;
+    border-radius: 0;
+  }
+  > .quill {
+    .ql-snow {
+      border: none;
+    }
+    > .ql-toolbar {
+      background: rgba($grey-500, .1);
+    }
+  }
+  .ql-snow {
+    .ql-picker {
+      &.ql-size {
+        .ql-picker-label,
+        .ql-picker-item {
+          &::before {
+            content: attr(data-value) !important;
+          }
+        }
+      }
+    }
+  }
+  .ql-toolbar.ql-snow{
+    padding: $medium-pad $medium-large-pad;
+  }
+}

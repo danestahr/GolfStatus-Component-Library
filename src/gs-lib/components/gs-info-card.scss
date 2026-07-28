@@ -1,0 +1,40 @@
+@import '../styles/golfstatus.scss';
+
+
+$large-width: 300px;
+$medium-width: 200px;
+$small-width: 100px;
+
+gs-info-card{
+  @include v-stack(unset, unset);
+  @include padding($x-large-pad);
+  position: relative;
+  border-radius: $medium-large-border-radius;
+  box-shadow: $first-layer-shadow;
+  overflow: hidden;
+  
+  &.large{
+    min-width: $large-width;
+  }
+  &.medium{
+    min-width: $medium-width;
+  }
+  &.small{
+    min-width: $small-width;
+  }
+  &.selectable{
+    @include selectable();
+  }
+}
+
+.dark{
+  gs-info-card{
+    background: $black-30-percent;
+  }
+}
+
+.light{
+  gs-info-card{
+    background: $white;
+  }
+}

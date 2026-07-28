@@ -1,0 +1,12 @@
+@import '../styles/golfstatus.scss';
+
+gs-form{
+  @include v-stack(unset, unset);
+  width: 100%;
+  .gs-form-header{
+    @include padding($x-large-pad);
+    border-bottom: $light-border;
+    font-size: $large-font;
+  }
+
+}

@@ -1,0 +1,94 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.round-hero {
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: $light-border;
+
+  .hero-card {
+    background: $grey-50;
+    border-radius: $large-radius;
+    padding: $x-large-pad;
+    display: flex;
+    flex-direction: column;
+    gap: $x-large-pad;
+  }
+
+  .hero-top {
+    display: flex;
+    align-items: center;
+    gap: $x-large-pad;
+
+    .hero-top-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: $medium-large-pad;
+    }
+  }
+
+  .hero-pill {
+    align-self: flex-start;
+  }
+
+  .hero-subtitle {
+    font-size: $small-font;
+    color: rgba($grey-800, 0.7);
+    line-height: $regular-line-height;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $medium-large-pad;
+  }
+
+  .stat-box {
+    appearance: none;
+    text-align: center;
+    cursor: pointer;
+    background: $grey-100;
+    border: none;
+    border-radius: $medium-radius;
+    padding: $large-pad;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 2px;
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: $bold-font-weight;
+      color: $grey-800;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 8px;
+      font-weight: $bold-font-weight;
+      color: rgba($grey-800, 0.7);
+      letter-spacing: $small-medium-letter-spacing;
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    &:hover { background-color: $grey-200; }
+
+    &.active {
+      background-color: $grey-800;
+
+      .stat-value { color: $white; }
+      .stat-label { color: rgba($white, 0.7); }
+    }
+  }
+
+  @include large-phone {
+    .hero-top { flex-direction: column; align-items: stretch; }
+  }
+
+  @include small-phone {
+    .hero-stats { display: none; }
+  }
+}

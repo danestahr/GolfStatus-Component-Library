@@ -1,0 +1,61 @@
+@import '../styles/golfstatus.scss';
+
+gs-loading-spinner-overlay {
+  text-align: center;
+
+  .main-content {
+    @include v-stack(center, center);
+    height: 100%;
+  }
+
+  .loading-section {
+    @include v-stack(center, center);
+    height: 100%;
+
+    &.is-ltr {
+      @include h-stack(center, center);
+
+      .loading-spinner {
+        padding-right: $large-pad;
+      }
+
+      .text-section {
+        padding-top: $no-pad;
+      }
+    }
+
+    .loading-spinner {
+      font-size: $xx-large-display-font;
+
+      &.small {
+        font-size: $medium-font;
+      } 
+
+      &.medium {
+        font-size: $x-large-font;
+      }
+
+      &.large {
+        font-size: $medium-display-font;
+      }
+
+      &.x-large {
+        font-size: $xx-large-display-font;
+      }
+    }
+    
+    .text-section {
+      padding-top: $medium-pad;
+
+      .main-loading-text {
+        @include gs-font($small-font, $regular-font-weight, unset);
+        padding-bottom: $small-pad;
+      }
+
+      .sub-loading-text {
+        @include gs-font($x-small-font, $regular-font-weight, unset);
+        opacity: 0.7;
+      }
+    }
+  }
+}

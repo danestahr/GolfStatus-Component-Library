@@ -1,0 +1,25 @@
+@import "../styles/golfstatus.scss";
+
+gs-action-drawer {
+  width: 100%;
+  @include padding($medium-large-pad);
+  @include v-stack(unset, unset);
+  position: sticky;
+  bottom: 0;
+  left: 0;
+
+  gs-item-list {
+    width: 100%;
+
+    gs-list-item {
+      margin: $small-pad;
+      max-width: 240px;
+      @include large-phone() {
+        max-width: 100%;
+      }
+      gs-button {
+        width: 100%;
+      }
+    }
+  }
+}

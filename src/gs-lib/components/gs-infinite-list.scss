@@ -1,0 +1,10 @@
+@import '../styles/golfstatus.scss';
+
+infinite-list{
+  width: 100%;
+  overflow: auto;
+  #scroller-elements{
+    @include v-stack(unset, unset);
+    width: 100%;
+  }
+}

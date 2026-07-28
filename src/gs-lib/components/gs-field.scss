@@ -1,0 +1,82 @@
+@import "../styles/golfstatus.scss";
+
+gs-field {
+  > .field {
+    @include v-stack(unset, unset);
+    gap: $medium-pad;
+    .field-header {
+      @include h-stack(flex-start, flex-start);
+      opacity: 0.7;
+      @include gs-font(
+        $xx-small-font,
+        $bold-font-weight,
+        $small-medium-letter-spacing
+      );
+      text-transform: uppercase;
+      gap: $small-pad;
+      .required {
+        font-size: $small-font;
+        line-height: $xx-small-font;
+      }
+    }
+    .description {
+      font-size: $x-small-font;
+      opacity: 0.7;
+      line-height: $regular-line-height;
+    }
+    > .field-value {
+      font-size: $small-font;
+      @include v-stack(unset, unset);
+      gap: $medium-pad;
+      gs-input {
+        width: 100%;
+      }
+    }
+    .value-info {
+      @include h-stack(unset, flex-start);
+      @include info-font();
+      opacity: 0.7;
+      width: 100%;
+      .label {
+        width: 100%;
+        &.invalid{
+          @include h-stack(flex-start, center);
+          gap: $medium-pad;
+          .warning{
+            font-size: $medium-font;
+            @include v-stack(center, center);
+            background: $white;
+            border-radius: $circle-border-radius;
+            color: $orange;
+          }
+        }
+        
+      }
+      .character-count {
+        &.invalid {
+          color: $red;
+        }
+      }
+    }
+  }
+  > .row {
+    @include h-stack(space-between, center);
+  }
+  .align-start{
+    align-items: flex-start !important;
+  }
+
+  .invalid-input{
+    
+    gs-input{
+      border-color: rgba($orange, .5);
+      &:focus-within{
+        box-shadow: $invalid-focus-shadow;
+      }
+      &:hover{
+        background: rgba($orange, .1);
+      }
+    }
+  }
+  
+}

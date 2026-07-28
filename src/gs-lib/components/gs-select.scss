@@ -1,0 +1,216 @@
+@import '../styles/golfstatus.scss';
+
+gs-select {
+  @include gs-font($small-font, $regular-font-weight, unset);
+  
+
+  .gs-select__control {
+    box-shadow: $first-layer-shadow;
+    border-radius: $medium-large-border-radius;
+    border: none;
+    min-height: 46px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    &:hover{
+      background: rgba($grey-400, .1);
+    }
+    &:focus-within{
+      box-shadow: $focus-shadow;
+    }
+
+    &:hover {
+      cursor: pointer;
+    }
+
+    &.gs-select__control--is-disabled {
+      background-color: $disabled-background;
+      box-shadow: none;
+      .gs-select__placeholder {
+       color: $disabled;
+      }
+    }
+
+    &.gs-select__control--is-focused {
+      border-color: white;
+    }
+    &.gs-select__control--menu-is-open {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .gs-select__value-container {
+      overflow: unset;
+      padding: 0;
+      display: flex;
+      margin: $no-pad $large-pad;
+
+      .gs-select__placeholder {
+        @include gs-font($small-font, $regular-font-weight, unset);
+        opacity: 0.5;
+        padding: $no-pad;
+        line-height: $regular-line-height;
+      }
+
+      &.gs-select__value-container--is-multi {
+        margin: $no-pad $medium-pad;
+        padding: $medium-pad $no-pad;
+        width: 50%;
+
+        .gs-select__multi-value {
+          @include padding($medium-pad);
+          border-radius: $medium-large-border-radius;;
+          text-align: center;
+          cursor: pointer;
+          transition: $fast;
+          font-weight: $bold-font-weight;
+          text-transform: uppercase;
+          background: $grey-800;
+          margin-right: $small-pad;
+          max-width: 90%;
+
+          .gs-select__multi-value__label {
+            @include gs-font($xx-small-font, $bold-font-weight, $medium-letter-spacing);
+            color: $grey-100;
+
+            .custom-select-option {
+              @include v-stack(flex-start, flex-start);
+            }
+          }
+
+          .gs-select__multi-value__remove {
+            color: $grey-500;
+
+            &:hover {
+              color: $white;
+              background-color: unset;
+            }
+          }
+        }
+
+      }
+
+      .gs-select__single-value {
+        white-space: normal;
+        max-width: 90%;
+
+        .custom-select-option {
+          @include v-stack(center, unset);
+          padding: $medium-large-pad $no-pad;
+
+          .main-select-label {
+            @include gs-font($small-font, $regular-font-weight, unset);
+            line-height: $regular-line-height;
+          }
+    
+          .sub-select-label {
+            @include gs-font($x-small-font, $regular-font-weight, unset);
+            opacity: 0.7;
+            line-height: $spacious-line-height;
+          }
+        }
+      }
+
+      .multi-select-option {
+        padding: $medium-pad;
+        padding-left: $no-pad;
+      }
+
+      .gs-select__input {
+        input {
+          caret-color: transparent;
+        }
+      }
+    }
+
+    .gs-select__indicators {
+      font-size: $x-small-font;
+
+      .select-clear-indicator {
+        padding-right: $large-pad;
+      }
+      .select-dropdown-indicator {
+        padding: 0 $large-pad;
+      }
+      .gs-select__indicator-separator {
+        background-color: $light-gray;
+      }
+    }
+  }
+
+  .gs-select__menu {
+    margin-top: 0;
+    border-radius: $medium-large-border-radius;;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    box-shadow: $no-top-second-layer-shadow;
+    border: none;
+
+    .gs-select__menu-list {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      box-sizing: border-box;
+      margin: auto $small-pad;
+      
+      .gs-select__menu-notice {
+        @include gs-font($x-small-font, $regular-font-weight, unset);
+        opacity: 0.7;
+        line-height: $spacious-line-height;
+      }
+
+      .gs-select__option {
+        display: inline-block;
+        padding: $medium-large-pad;
+
+        &:hover {
+          cursor: pointer;
+        }
+
+        &.gs-select__option--is-focused {
+          background: $grey-50;  
+          transition: $fast;
+          border-radius: $medium-large-border-radius;;
+        }
+
+        &.gs-select__option--is-selected {
+          color: unset;
+          background-color: $grey-50;
+          border-radius: $medium-radius;
+        }
+
+        .custom-select-option {
+          @include v-stack(center, unset);
+          margin: auto;
+
+          .main-select-label {
+            @include gs-font($small-font, $regular-font-weight, unset);
+            line-height: $spacious-line-height;
+          }
+    
+          .sub-select-label {
+            @include gs-font($x-small-font, $regular-font-weight, unset);
+            opacity: 0.7;
+            line-height: $spacious-line-height;
+          }
+        }
+      }
+    }    
+  }
+
+  .gs-select--is-disabled {
+    .select-dropdown-indicator {
+      opacity: 0.3;
+    }
+
+    .gs-select__value-container {
+      opacity: 0.5;
+    }
+  }
+}
+
+.dark{
+  gs-select{
+    color: $grey-800;
+  }
+}

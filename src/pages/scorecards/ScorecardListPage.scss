@@ -1,0 +1,92 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.scorecard-list-page {
+  height: 100%;
+  min-height: 100vh;
+
+  .page-background {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  .list-action-bar {
+    background: $white;
+    border-bottom: $light-border;
+  }
+
+  .search-area {
+    flex-shrink: 0;
+    padding: $x-large-pad;
+    border-bottom: $light-border;
+    display: flex;
+    align-items: center;
+    gap: $x-large-pad;
+
+    gs-input {
+      flex: 1;
+    }
+
+    gs-select {
+      flex-shrink: 0;
+      width: 180px;
+
+      &:last-child { width: 130px; }
+    }
+
+    @include large-phone {
+      flex-direction: column;
+      align-items: stretch;
+
+      gs-select {
+        width: 100%;
+      }
+    }
+  }
+
+  .hole-group-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    font-size: $medium-font;
+
+
+    gs-action-bar { background: $grey-50; }
+  }
+
+  .empty-state {
+    padding: $x-large-pad;
+    text-align: center;
+    font-size: $small-font;
+    color: rgba($grey-800, 0.5);
+  }
+
+  .sl-initial-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .sl-spinner {
+    font-size: $small-display-font;
+    color: $grey-800;
+    animation: sl-spin 0.9s linear infinite;
+  }
+
+  @keyframes sl-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .sl-pill-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    gs-button { pointer-events: auto; }
+
+    &.scrolled { transform: translateY(110%); }
+  }
+}

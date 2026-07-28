@@ -1,0 +1,70 @@
+@import '../styles/golfstatus.scss';
+
+gs-side-panel-page{
+  position: relative;
+  @include v-stack(unset, unset);
+  width: 100%;
+  opacity: 1;
+  >*{
+    transition: $medium;
+  }
+  &.loading{
+    >*{
+      opacity: 0;
+      transition: none;
+    }
+  }
+  >gs-side-panel-navigation{
+    opacity: 1 !important;
+  }
+  
+  >gs-loading-spinner-overlay{
+    position: absolute;
+    @include fill();
+    opacity: 1 !important;
+  }
+
+  >gs-side-panel-navigation{
+    position: sticky;
+    top:0;
+    box-shadow: $second-layer-shadow;
+  }
+  >gs-action-drawer{
+    position: sticky;
+    bottom:0;
+    background: $white;
+  }
+  >gs-page-banner{
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+  }
+}
+
+.light{
+  gs-side-panel-page{
+    background: $white;
+    >gs-side-panel-navigation{
+      background: $white;
+    }
+
+    >gs-action-drawer{
+      background: $white;
+    }
+  }
+
+}
+
+.dark{
+  gs-side-panel-page{
+    background: $grey-800;
+
+    >gs-side-panel-navigation{
+      background: $grey-800;
+    }
+
+    >gs-action-drawer{
+      background: $grey-800;
+    }
+  }
+}

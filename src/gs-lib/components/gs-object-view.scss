@@ -1,0 +1,20 @@
+@import '../styles/golfstatus.scss';
+
+gs-object-view{
+  gs-field{
+    margin-bottom: $xx-large-pad;
+  }
+
+  width: 100%;
+  @include v-stack(unset, unset);
+  .details{
+    @include v-stack(unset, unset);
+    @include padding($xx-large-pad $x-large-pad);
+    overflow: auto;
+    
+    .link{
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  }
+}

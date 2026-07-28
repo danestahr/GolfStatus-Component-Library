@@ -1,0 +1,91 @@
+@import "../styles/golfstatus.scss";
+
+gs-file-select-item {
+  @include fill();
+  .file-select-item {
+    @include v-stack(unset, unset);
+    height: 100%;
+    width: 100%;
+    min-width: 200px;
+    box-shadow: $first-layer-shadow;
+    border-radius: $medium-large-border-radius;
+    position: relative;
+    @include padding($medium-pad);
+
+    gap: $medium-pad;
+
+    gs-action-bar{
+      gs-item-info{
+        @include gs-font($x-small-font, $regular-font-weight, unset);
+        >.item-info{
+          >.item-value{
+            opacity: .7;
+          }
+        }
+        .icon{
+          color: $orange;
+        }
+      }
+    }
+
+    .file-select-image{
+      @include fill();
+      @include v-stack(unset, flex-end);
+      border: 1px solid rgba($grey-500, .4);
+      border-radius: $small-border-radius;
+      overflow: hidden;
+      box-sizing: border-box;
+      img {
+        @include fill();
+      }
+      .image-resolution
+      {
+        padding: $large-pad;
+        color: $grey-800;
+        opacity: .6;
+      }
+    }
+    
+    video {
+      @include fill();
+      object-fit: cover;
+      border-radius: $small-border-radius;
+    }
+    .select-document {
+      @include v-stack(center, center);
+      @include fill();
+      @include padding($large-pad);
+      gap: $large-pad;
+      background: $grey-100;
+      .icon {
+        font-size: $large-display-font;
+      }
+      .name {
+        @include gs-font($x-small-font, unset, unset);
+      }
+      &.excel {
+        .icon {
+          color: $green;
+        }
+      }
+    }
+  }
+}
+
+
+.dark{
+  gs-file-select-item{
+    .file-select-item{
+      background: $grey-800;
+    }
+  }
+}
+
+.light
+{
+  gs-file-select-item{
+    .file-select-item{
+      background: $white;
+    }
+  }
+}

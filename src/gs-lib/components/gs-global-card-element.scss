@@ -1,0 +1,96 @@
+@import '../styles/golfstatus.scss';
+
+gs-global-card-element {
+  display: grid;
+  width: 100%;
+  grid-gap: $xx-large-pad;
+
+  #exp-cvv{
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: unset;
+    align-items: center;
+    gap: $large-pad;
+    width: 100%;
+
+    @include large-phone(){
+      @include v-stack(unset, unset);
+      #card-expiration-wrapper{
+        gap: 0px !important;
+        grid-gap: 0px !important;
+      }
+    }
+  }
+
+  #card-expiration-wrapper{
+    padding-right: $large-pad;
+  }
+
+  .outer{
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: unset;
+    align-items: unset;
+    gap: $medium-pad;
+    width: 100%;
+  }
+  .outer:focus-within{
+    box-shadow: $focus-shadow;
+  }
+
+  .full-width{
+    width: 100%;
+  }
+
+  .global-input-wrapper{
+    &:focus-within{
+      box-shadow: 0 0 0 4px rgba($grey-400, .2);
+    }
+    &:hover{
+      background: rgba($grey-400, .1);
+    }
+  
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(190, 190, 190, 0.5);
+    padding: $medium-pad;
+    box-sizing: border-box;
+    border-radius: $medium-large-border-radius;
+    white-space: nowrap;
+    font-size: $small-font;
+    min-height: 46px;
+    transition: 0.3s;
+  }
+
+  #card-number-wrapper{
+    width: 100%;
+  }
+
+  .label{
+    font-size: $xx-small-font;
+    font-weight: $bold-font-weight;
+    letter-spacing: $small-medium-letter-spacing;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .asterisk{
+    font-size: $small-font;
+    line-height: 10px;
+  }
+
+  iframe{
+    width: 100%;
+    display: block;
+  }
+}
+
+iframe[name='submit']{
+  max-width: 240px;
+  @include large-phone(){
+    max-width: 100%;
+    width: 100%;
+  }
+}

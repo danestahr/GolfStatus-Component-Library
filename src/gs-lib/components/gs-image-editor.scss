@@ -1,0 +1,167 @@
+@import "../styles/golfstatus.scss";
+
+gs-image-editor {
+  @include v-stack(unset, unset);
+  overflow: hidden;
+  position: relative;
+  
+  .image {
+    @include v-stack(unset, unset);
+    opacity: 1;
+    
+    background-image: repeating-linear-gradient(
+        45deg,
+        $grey-600 25%,
+        transparent 25%,
+        transparent 75%,
+        $grey-600 75%,
+        $grey-600
+      ),
+      repeating-linear-gradient(
+        45deg,
+        $grey-600 25%,
+        $grey-500 25%,
+        $grey-500 75%,
+        $grey-600 75%,
+        $grey-600
+      );
+    background-position: 0 0, 10px 10px;
+    background-size: 20px 20px;
+    overflow: hidden;
+    border-radius: $small-radius;
+    user-select: none;
+    touch-action: none;
+    #source-edit-image {
+      @include fill();
+      opacity: 0.7;
+      &.fill {
+        display: none;
+      }
+      &.center {
+        display: none;
+      }
+    }
+    #editor-canvas {
+      
+      &.crop {
+        position: absolute;
+        cursor: grab;
+        box-shadow: 0 0 0 2px $white;
+        image-rendering: pixelated;
+        overflow: hidden;
+        border-radius: $small-radius;
+      }
+      &.fill {
+        @include fill();
+      }
+      &.center {
+        @include fill();
+      }
+      &.dropper {
+        cursor: url("data:image/x-icon;base64,AAACAAEAICAQAAAAAADoAgAAFgAAACgAAAAgAAAAQAAAAAEABAAAAAAAAAIAAAAAAAAAAAAAEAAAAAAAAAAAAAAAh4eHAL+/vwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIQAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAhAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////////////////////////////////////////////////////////////////////////////////D////g///+AP///gD///8B////A////sP///0D///6M///9H///+j////R////o////0f///9P////H////w=="),
+          auto;
+      }
+    }
+    .resize {
+      @include v-stack(unset, unset);
+      position: absolute;
+      box-sizing: border-box;
+      gs-button {
+        cursor: move;
+      }
+    }
+  }
+  .image-info {
+    > div {
+      opacity: 0.7;
+    }
+    @include padding($x-large-pad 0);
+    border-bottom: $light-border;
+  }
+  #full-image-canvas {
+    position: fixed;
+    opacity: 0;
+    z-index: -2;
+    zoom: 0.1;
+  }
+
+  .background-colors {
+    @include h-stack(flex-start, center);
+    gap: $small-pad;
+    border-bottom: $light-border;
+    @include padding($x-large-pad 0);
+    
+    .label {
+      width: 100%;
+    }
+    .color {
+      height: 20px;
+      width: 40px;
+      border: 1px solid $grey-300;
+      border-radius: $medium-radius;
+      cursor: pointer;
+      &.black {
+        background: $black;
+      }
+      &.white {
+        background: $white;
+      }
+      
+    }
+  }
+}
+
+gs-button{
+  &.transparent-pattern{
+    background-image: repeating-linear-gradient(
+    45deg,
+    $grey-600 25%,
+    transparent 25%,
+    transparent 75%,
+    $grey-600 75%,
+    $grey-600
+  ),
+  repeating-linear-gradient(
+    45deg,
+    $grey-600 25%,
+    $grey-500 25%,
+    $grey-500 75%,
+    $grey-600 75%,
+    $grey-600
+  );
+  background-position: 0 0, 10px 10px;
+  background-size: 20px 20px;
+  border: 2px solid transparent;
+  color: white;
+  }
+
+  &.fill-black{
+    background: black;
+    color: $white;
+    border: 2px solid black;
+  }
+
+  &.fill-white{
+    background: white;
+    color: $black;
+    border: 2px solid white;
+  }
+
+}
+
+
+.light{
+  gs-image-editor{
+    #image-container{
+      border: 1px solid $grey-200;
+    }
+  }
+}
+
+.dark{
+  gs-image-editor{
+    #image-container{
+      border: 1px solid $grey-800;
+    }
+  }
+}

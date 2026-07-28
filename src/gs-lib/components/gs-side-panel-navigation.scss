@@ -1,0 +1,15 @@
+@import '../styles/golfstatus.scss';
+
+gs-side-panel-navigation{
+  @include h-stack(center, center);
+  @include padding($large-pad);
+  width: 100%;
+  font-size: 12px;
+  font-weight: $bold-font-weight;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  .header-title{
+    width: 100%;
+    text-align: center;
+  }
+}

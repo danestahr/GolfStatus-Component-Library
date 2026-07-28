@@ -1,0 +1,18 @@
+@import '../styles/golfstatus.scss';
+
+gs-page-navigation{
+  @include h-stack(center, center);
+  .paging-info{
+    white-space: nowrap;
+    @include h-stack(flex-start, center);
+  }
+  gs-button{
+    white-space: nowrap;
+  }
+  .paging{
+    @include h-stack(center, center);
+    font-size: $x-small-font;
+    gap: $small-pad;
+    opacity: .7;
+  }
+}
