@@ -199,10 +199,9 @@ export const TOURNAMENTS = [
     courseName: 'Heritage Golf Club',
     rounds: {},
     // Prototyping ground for the expanded Round Setup summary banner, which is
-    // taking over surfacing roster completion — the orange "Teams Assigned
-    // Across All Rounds" banner and each round card's own "X/Y Teams Assigned"
-    // count would just be duplicating it here.
-    hideRosterOverview: true,
+    // taking over surfacing roster completion — each round card's own "X/Y
+    // Teams Assigned" count would just be duplicating it here.
+    hideRosterCount: true,
     hideSettingsButton: true,
   },
   // Prototyping the multi-round/multi-wave pain point: a 36-hole facility running

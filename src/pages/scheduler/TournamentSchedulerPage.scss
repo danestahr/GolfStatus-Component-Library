@@ -301,58 +301,6 @@
   }
 }
 
-// Rolls every round's own roster + assigned count up into one summary, so a
-// large multi-round/multi-wave event doesn't require opening each round to
-// manually check that nothing was missed.
-.sched-roster-overview {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $large-pad;
-  padding: $large-pad $x-large-pad;
-  background: $orange-50;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-  &--complete {
-    background: $green-50;
-  }
-}
-
-.sched-roster-overview-stat {
-  display: flex;
-  align-items: baseline;
-  gap: $medium-pad;
-}
-
-.sched-roster-overview-count {
-  font-size: $medium-display-font;
-  font-weight: $bold-font-weight;
-  color: $grey-800;
-  line-height: 1;
-}
-
-.sched-roster-overview-label {
-  font-size: $small-font;
-  font-weight: $bold-font-weight;
-  color: $grey-800;
-  opacity: 0.7;
-}
-
-.sched-roster-overview-badge {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: $small-pad;
-  font-size: $small-font;
-  font-weight: $bold-font-weight;
-  color: $orange-800;
-
-  .sched-roster-overview--complete & {
-    color: $green-700;
-  }
-}
-
 .sched-round-card {
   display: flex;
   align-items: center;

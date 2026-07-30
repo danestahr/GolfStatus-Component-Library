@@ -1130,19 +1130,6 @@ export default function TournamentSchedulerPage() {
     [ROUNDS, tournament]
   )
 
-  // Rolls every round's roster + assigned count up into one number, so a large
-  // multi-round/multi-wave event can see at a glance whether every team across
-  // every round has been placed — instead of opening each round individually and
-  // manually cross-checking that nothing was missed.
-  const totalRosterAcrossRounds = useMemo(
-    () => ROUNDS.reduce((sum, r) => sum + roundRosterCounts[r], 0),
-    [ROUNDS, roundRosterCounts]
-  )
-  const totalAssignedAcrossRounds = useMemo(
-    () => ROUNDS.reduce((sum, r) => sum + roundAssignedCounts[r], 0),
-    [ROUNDS, roundAssignedCounts]
-  )
-
   // ── Interaction handlers ───────────────────────────────────────────────────
 
   function handleTeamClick(teamName) {
@@ -1431,23 +1418,6 @@ export default function TournamentSchedulerPage() {
                 onChange={e => setRoundListSearch(e.target.value)}
               />
             </div>
-            {hasMultipleRounds && !tournament.hideRosterOverview && (
-              <div className={`sched-roster-overview${totalAssignedAcrossRounds === totalRosterAcrossRounds ? ' sched-roster-overview--complete' : ''}`}>
-                <div className="sched-roster-overview-stat">
-                  <div className="sched-roster-overview-count">{totalAssignedAcrossRounds}/{totalRosterAcrossRounds}</div>
-                  <div className="sched-roster-overview-label">Teams Assigned Across All Rounds</div>
-                </div>
-                {totalAssignedAcrossRounds === totalRosterAcrossRounds ? (
-                  <span className="sched-roster-overview-badge">
-                    <FontAwesomeIcon icon={faCircleCheck} /> All Teams Accounted For
-                  </span>
-                ) : (
-                  <span className="sched-roster-overview-badge">
-                    {totalRosterAcrossRounds - totalAssignedAcrossRounds} Teams Not Yet Assigned
-                  </span>
-                )}
-              </div>
-            )}
           </div>
           <div className={`sched-round-list-body${filteredRounds.length === 0 ? ' sched-round-list-body--empty' : ''}`}>
             {filteredRounds.length === 0 ? (
@@ -1486,7 +1456,7 @@ export default function TournamentSchedulerPage() {
                       hasAssignments={Object.keys(assignmentsByRound[r] || {}).length > 0}
                       assignedCount={roundAssignedCounts[r]}
                       rosterCount={roundRosterCounts[r]}
-                      hideRosterCount={tournament.hideRosterOverview}
+                      hideRosterCount={tournament.hideRosterCount}
                       onOpenHoleAssignments={() => openRound(r)}
                     />
                   ))}
@@ -1503,7 +1473,7 @@ export default function TournamentSchedulerPage() {
                   hasAssignments={Object.keys(assignmentsByRound[r] || {}).length > 0}
                   assignedCount={roundAssignedCounts[r]}
                   rosterCount={roundRosterCounts[r]}
-                  hideRosterCount={tournament.hideRosterOverview}
+                  hideRosterCount={tournament.hideRosterCount}
                   onOpenHoleAssignments={() => openRound(r)}
                 />
               ))
