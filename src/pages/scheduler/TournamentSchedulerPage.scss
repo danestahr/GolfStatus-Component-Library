@@ -127,11 +127,94 @@
 // ── Round tab switcher ────────────────────────────────────────────────────────
 
 .sched-round-tabs {
-  // Hidden for now — round switching isn't exposed in this view.
+  // Hidden for now — round switching isn't exposed in this view, except when
+  // scoped to a wave (see --wave below, used by .sched-wave-nav).
   display: none;
   flex-shrink: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   background: $white;
+
+  &--wave {
+    display: flex;
+    // Lets the cyan tint from .sched-wave-rounds show through, instead of
+    // the plain white the flat (non-wave) tab bar uses.
+    background: transparent;
+    border-bottom: none;
+  }
+}
+
+// Wave nav: sits above the wave-scoped round tabs so both waves are visible
+// (and one tap away) the moment Hole Assignments is opened, while the row
+// beneath it lets you move between that wave's own rounds without leaving
+// the panel. The two rows are deliberately styled as different tiers (grey
+// "pick a wave" step, then cyan-tinted "pick a round within it" step) so the
+// two-step hierarchy reads at a glance instead of looking like two parallel
+// tab bars.
+.sched-wave-nav {
+  flex-shrink: 0;
+  background: $white;
+}
+
+.sched-wave-tabs-label {
+  padding: $medium-pad $x-large-pad 0;
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: $grey-50;
+}
+
+.sched-wave-tabs {
+  display: flex;
+  gap: $small-pad;
+  padding: $small-pad $x-large-pad $medium-pad;
+  background: $grey-50;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sched-wave-rounds {
+  background: $cyan-50;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sched-wave-rounds-label {
+  padding: $medium-pad $x-large-pad 0;
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $cyan-700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+
+  strong {
+    color: inherit;
+  }
+}
+
+.sched-wave-tab {
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  padding: $small-pad $medium-large-pad;
+  background: $white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-500;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+  &:hover {
+    color: $grey-800;
+  }
+
+  &--active {
+    color: $white;
+    background: $cyan-700;
+    border-color: $cyan-700;
+  }
 }
 
 .sched-round-tab {
@@ -180,11 +263,34 @@
   background: $white;
 }
 
+// Sticky wrapper around the search bar + roster overview — pinned to the top
+// of the scroll area (above the round list) so both stay visible once the
+// Round Format summary above them has scrolled out of view. A shared sticky
+// parent instead of stickying each piece separately, since it needs a
+// background to paint over round cards scrolling underneath it either way.
+.sched-round-list-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex-shrink: 0;
+  background: $white;
+  // On the whole sticky block, not just the search bar — so the shadow reads as
+  // one clean edge under everything pinned (search + roster overview) instead of
+  // getting cut off partway down, hidden under the roster overview's opaque bg.
+  box-shadow: $second-layer-shadow;
+
+  // Once waves group the round list below, each wave's own sticky header (see
+  // .sched-round-group) already carries this same shadow immediately beneath
+  // it — keeping both would double it up.
+  &--no-shadow {
+    box-shadow: none;
+  }
+}
+
 .sched-round-search {
   flex-shrink: 0;
   padding: $large-pad;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: $second-layer-shadow;
 
   gs-input {
     width: 400px;
@@ -195,12 +301,93 @@
   }
 }
 
+// Rolls every round's own roster + assigned count up into one summary, so a
+// large multi-round/multi-wave event doesn't require opening each round to
+// manually check that nothing was missed.
+.sched-roster-overview {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+  padding: $large-pad $x-large-pad;
+  background: $orange-50;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  &--complete {
+    background: $green-50;
+  }
+}
+
+.sched-roster-overview-stat {
+  display: flex;
+  align-items: baseline;
+  gap: $medium-pad;
+}
+
+.sched-roster-overview-count {
+  font-size: $medium-display-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1;
+}
+
+.sched-roster-overview-label {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.sched-roster-overview-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $orange-800;
+
+  .sched-roster-overview--complete & {
+    color: $green-700;
+  }
+}
+
 .sched-round-card {
   display: flex;
   align-items: center;
   gap: $x-large-pad;
   padding: $x-large-pad;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+// ── Wave-grouped round list (mirrors the tiered Sponsors list pattern) ─────────
+// One section per wave (in creation order), rounds not yet linked to any wave
+// fall into a trailing "Not Assigned to Waves" section — only rendered once
+// waves exist.
+
+.sched-round-group {
+  & + & {
+    margin-top: $large-pad;
+  }
+
+  // Sticks right beneath the round list's own sticky search/roster-overview
+  // bar (see --round-group-header-offset, set in TournamentSchedulerPage.jsx)
+  // rather than at top:0, which would hide it behind that bar instead.
+  gs-action-bar.form-header {
+    position: sticky;
+    top: var(--round-group-header-offset, 0px);
+    z-index: 2;
+    padding: $large-pad $x-large-pad;
+    font-size: $medium-font;
+    background: $white;
+    box-shadow: $second-layer-shadow;
+  }
+}
+
+.sched-round-group-count {
+  font-weight: $regular-font-weight;
+  opacity: 0.7;
 }
 
 .sched-round-card-actions {
@@ -286,7 +473,7 @@
 
 }
 
-// ── Teams "displaying all" notice + filter link ────────────────────────────────
+// ── Teams "displaying all" notice + filter link (legacyFilter tournaments only) ──
 
 .sched-teams-notice {
   flex-shrink: 0;
@@ -322,7 +509,7 @@
   }
 }
 
-// ── Filter panel form ───────────────────────────────────────────────────────────
+// ── Filter panel form (legacyFilter tournaments only) ───────────────────────────
 
 .sched-filter-panel-body {
   display: flex;
@@ -387,6 +574,8 @@
   }
 }
 
+// ── Round card info block (shared by the round list and the filter panel) ──────
+
 .sched-filter-round-details {
   flex: 1;
   min-width: 0;
@@ -426,6 +615,40 @@
   &--ready {
     background: $grey-800;
     color: $white;
+  }
+}
+
+// Wave badge on a RoundListCard — flags that a round is a dependent of a wave
+// (created/linked from inside the Waves panel) rather than a standalone round.
+.sched-wave-badge {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $cyan-800;
+  background: $cyan-50;
+  border-radius: $huge-radius;
+  padding: $medium-pad $medium-large-pad;
+}
+
+// Per-round roster badge on a RoundListCard — how many of that round's own
+// registered teams have been placed, so an incomplete round is obvious without
+// opening it.
+.sched-round-roster {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-500;
+
+  &--complete {
+    color: $green-700;
   }
 }
 
@@ -472,6 +695,82 @@
     background: $grey-200;
     border-radius: $huge-radius;
   }
+}
+
+// Stacks the Round Format summary, then the sticky search/roster-overview, then
+// the round list/empty-state within the scroll area (scoped here, not on the
+// shared .sched-col-scroll, so the Holes/Teams columns elsewhere keep their own
+// plain-block scroll behavior).
+.sched-round-list-page .sched-col-scroll {
+  display: flex;
+  flex-direction: column;
+}
+
+// Wraps the round list/empty-state beneath the Round Format summary (if any) —
+// kept separate from the scroll container so that summary always stays anchored
+// to the top of the scroll area instead of being centered along with the empty
+// state.
+.sched-round-list-body {
+  flex: 1;
+  min-height: 0;
+
+  &--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+// Backs the Round Format summary with the page's own white and stacks it above
+// the sticky search bar (z-index higher than .sched-round-list-sticky's) — the
+// search bar's box-shadow blurs upward past its own top edge, and without this
+// the tile would paint underneath that blur instead of covering it.
+.sched-format-summary-wrap {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 4;
+  background: $white;
+}
+
+// Landing-view summary of the saved Round Setup choice
+.sched-format-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  margin: 0 $x-large-pad;
+  border-radius: $medium-radius;
+  background: $cyan-50;
+}
+
+.sched-format-summary-icon {
+  flex-shrink: 0;
+  font-size: $medium-font;
+  color: $cyan-800;
+  line-height: $regular-line-height;
+}
+
+.sched-format-summary-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.sched-format-summary-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-format-summary-desc {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
 }
 
 .sched-empty-msg {
@@ -928,6 +1227,147 @@
   font-size: 20px;
   color: $grey-800;
   animation: sched-spin 0.9s linear infinite;
+}
+
+// ── Round Setup format picker (Rounds / Waves / Hybrid) ─────────────────────────
+
+.sched-format-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  width: 100%;
+}
+
+.sched-format-option {
+  display: flex;
+  align-items: flex-start;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  cursor: pointer;
+  border: 4px solid $grey-100;
+  border-radius: $medium-radius;
+  background: $white;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: $grey-100;
+    border-color: $grey-100;
+  }
+
+  &--selected {
+    background: $cyan-800;
+    border-color: $cyan-800;
+
+    .sched-format-option-icon,
+    .sched-format-option-title {
+      color: $white;
+    }
+
+    .sched-format-option-desc {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .sched-format-option-desc-list {
+      border-left-color: rgba(255, 255, 255, 0.3);
+    }
+
+    &:hover {
+      background: $cyan-800;
+      border-color: $cyan-800;
+    }
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+
+    &:hover {
+      background: $white;
+      border-color: $grey-100;
+    }
+  }
+}
+
+.sched-format-option-icon {
+  flex-shrink: 0;
+  font-size: $medium-font;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-format-option-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+}
+
+.sched-format-option-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+// The two description lines (how the round is played, then how that shapes
+// player availability) grouped under a left rule, set off from the title
+// above by the larger gap on .sched-format-option-text.
+.sched-format-option-desc-list {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+  padding-left: $large-pad;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sched-format-option-desc {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
+}
+
+// Confirmation step shown in place of the format picker when Save would remove
+// existing waves — mirrors the orange "not yet assigned" treatment used by the
+// roster overview banner elsewhere on this page.
+.sched-format-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $orange-50;
+  width: 100%;
+}
+
+.sched-format-warning-icon {
+  flex-shrink: 0;
+  font-size: $medium-font;
+  color: $orange-800;
+  line-height: $regular-line-height;
+}
+
+.sched-format-warning-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.sched-format-warning-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-format-warning-desc {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
 }
 
 // ── Phone layout ────────────────────────────────────────────────────────────────

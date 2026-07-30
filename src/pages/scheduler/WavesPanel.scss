@@ -1,0 +1,220 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.wp-body {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $small-layout-pad $x-large-pad;
+  width: 100%;
+}
+
+// ── Wave card ─────────────────────────────────────────────────────────────────
+
+// Tile + grabber side by side — the grabber lives outside the tile itself
+// (see .wp-wave-grabber below) rather than grouped in with its rename/delete
+// actions, so dragover/drop are wired to this shared wrapper: hovering
+// either the tile or the grabber next to it counts as targeting this wave.
+.wp-wave-row {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.wp-wave-card {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $grey-50;
+  border: 2px solid transparent;
+  transition: opacity 0.15s, border-color 0.15s;
+
+  // Only when paired with a grabber in a .wp-wave-row — the standalone "Add
+  // Wave" input card below isn't row-wrapped and should keep sizing itself
+  // off .wp-body's column layout instead.
+  .wp-wave-row & {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &--new {
+    background: $cyan-50;
+  }
+
+  // The tile being picked up, per the browser's native drag-and-drop —
+  // faded so it reads as "lifted" while the drag image (a copy of this same
+  // tile, see handleDragStart) follows the cursor.
+  &--dragging {
+    opacity: 0.4;
+  }
+
+  // Whichever tile the drag is currently hovering over — dropping here
+  // inserts the dragged wave at this position.
+  &--drop-target {
+    border-color: $cyan-700;
+  }
+}
+
+.wp-wave-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+}
+
+.wp-wave-header-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.wp-wave-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.wp-wave-sub {
+  font-size: $x-small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.wp-wave-header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+// Drag handle — sits outside the tile itself (a sibling in .wp-wave-row, not
+// grouped in with the rename/delete actions inside it), so it reads as its
+// own "reorder this tile" control rather than one more tile action. Only
+// this element is draggable — the row just listens for dragover/drop — so
+// grabbing anywhere on the tile (the name, rename/delete) never accidentally
+// starts a drag.
+.wp-wave-grabber {
+  flex-shrink: 0;
+  align-self: center;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.wp-wave-rename {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+
+  gs-input {
+    flex: 1;
+  }
+}
+
+// ── Linked rounds ─────────────────────────────────────────────────────────────
+
+.wp-wave-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.wp-round-row {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+}
+
+.wp-round-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.wp-round-row-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.wp-round-row-sub {
+  font-size: $x-small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+// ── Footer actions / link picker ───────────────────────────────────────────────
+
+.wp-wave-footer {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+
+  gs-button {
+    flex: 1;
+  }
+}
+
+.wp-link-picker {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.wp-link-picker-option {
+  display: flex;
+  align-items: center;
+  padding: $large-pad;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: $medium-radius;
+  background: $white;
+  font-family: $font-family;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: $grey-100;
+    border-color: $grey-100;
+  }
+}
+
+.wp-link-picker-empty {
+  padding: $large-pad;
+  text-align: center;
+  font-size: $small-font;
+  color: $grey-500;
+  font-style: italic;
+}
+
+// ── Delete confirmation ────────────────────────────────────────────────────────
+
+.wp-wave-card--confirm {
+  background: $red-50;
+}
+
+.wp-confirm-text {
+  font-size: $small-font;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.wp-confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $medium-pad;
+}

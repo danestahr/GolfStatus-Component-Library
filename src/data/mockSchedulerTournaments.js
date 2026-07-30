@@ -75,6 +75,78 @@ for (let hole = 1; hole <= PUTT_PUTT_TEAM_COUNT / 3 / 2; hole++) {
   puttPuttRedAssignments[`${hole}-B`] = SORTED_TEAMS[(hole - 1) * 2 + 1].name
 }
 
+// Ridgeline Fall Classic mirrors Putt Putt For Puppies' setup — same 54-team
+// roster and three-round shape, with its first round likewise starting a third
+// assigned — as an alternate event for trying out variations on that concept.
+const RIDGELINE_TEAM_COUNT = 54
+const ridgelineRound1Assignments = {}
+for (let hole = 1; hole <= RIDGELINE_TEAM_COUNT / 3 / 2; hole++) {
+  ridgelineRound1Assignments[`${hole}-A`] = SORTED_TEAMS[(hole - 1) * 2].name
+  ridgelineRound1Assignments[`${hole}-B`] = SORTED_TEAMS[(hole - 1) * 2 + 1].name
+}
+
+// Twin Fairways Shootout: a 36-hole facility running its North and South courses
+// as two independent 18-hole rounds at the same time. Each round only fields half
+// the event's teams — the North and South rosters are disjoint (non-overlapping
+// SORTED_TEAMS slices, via each round's own teamCount + rosterOffset) — modeling
+// the "large event, only some of the field plays this round" pain point instead of
+// pooling every team in the tournament into every round's Unassigned list.
+const TWIN_FAIRWAYS_NORTH_COUNT = 32
+const TWIN_FAIRWAYS_SOUTH_COUNT = 28
+
+// ── Facilities (Create Round form's Facility/Round Course pickers) ─────────────
+// Course names intentionally echo the ones already used across TOURNAMENTS above,
+// so a facility search in the Add Round form feels continuous with the rest of
+// the mock data rather than introducing an unrelated naming scheme.
+export const FACILITIES = [
+  {
+    id: 'heritage-golf-club',
+    name: 'Heritage Golf Club',
+    location: 'Austin, TX, USA',
+    courses: [
+      { id: 'heritage-championship', name: 'Championship Course', status: 'Active', holes: 18 },
+      { id: 'heritage-executive', name: 'Executive Course', status: 'Active', holes: 9 },
+    ],
+  },
+  {
+    id: 'cedar-ridge-golf-club',
+    name: 'Cedar Ridge Golf Club',
+    location: 'Denver, CO, USA',
+    courses: [
+      { id: 'cedar-ridge-course', name: 'Cedar Ridge Course', status: 'Active', holes: 18 },
+    ],
+  },
+  {
+    id: 'ridgeline-golf-club',
+    name: 'Ridgeline Golf Club',
+    location: 'Boise, ID, USA',
+    courses: [
+      { id: 'ridgeline-red', name: 'Red Course', status: 'Active', holes: 18 },
+      { id: 'ridgeline-blue', name: 'Blue Course', status: 'Active', holes: 18 },
+      { id: 'ridgeline-backwoods', name: 'Backwoods Course', status: 'Active', holes: 18 },
+    ],
+  },
+  {
+    id: 'twin-fairways-golf-complex',
+    name: 'Twin Fairways Golf Complex',
+    location: 'Scottsdale, AZ, USA',
+    courses: [
+      { id: 'twin-fairways-north', name: 'North Course', status: 'Active', holes: 18 },
+      { id: 'twin-fairways-south', name: 'South Course', status: 'Active', holes: 18 },
+    ],
+  },
+  {
+    id: 'adventure-golf-course',
+    name: 'Adventure Golf Course',
+    location: 'Nashville, TN, USA',
+    courses: [
+      { id: 'adventure-red', name: 'Red Course', status: 'Active', holes: 18 },
+      { id: 'adventure-blue', name: 'Blue Course', status: 'Active', holes: 18 },
+      { id: 'adventure-backwoods', name: 'Backwoods Course', status: 'Draft', holes: 18 },
+    ],
+  },
+]
+
 // ── Tournaments ─────────────────────────────────────────────────────────────────
 // Each tournament owns its own round metadata. Rounds are keyed by round number;
 // the Filter panel (for hiding teams already assigned in another round) only
@@ -87,6 +159,9 @@ export const TOURNAMENTS = [
     courseName: 'Adventure Golf Course',
     teamCount: PUTT_PUTT_TEAM_COUNT,
     initialAssignments: { 1: puttPuttRedAssignments },
+    // Keeps the original per-round Unassigned Filter panel instead of the newer
+    // Rounds & Scorecards Settings toggle.
+    legacyFilter: true,
     rounds: {
       1: { name: 'Round RED', course: 'Red Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Mon Jun 15, 2026', startType: 'Shotgun Start', facilityName: 'Adventure Golf Course', holes: 18, status: 'Ready' },
       2: { name: 'Round BLU', course: 'Blue Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Mon Jun 15, 2026', startType: 'Tee Time Start', facilityName: 'Adventure Golf Course', holes: 18, status: 'Ready' },
@@ -97,8 +172,59 @@ export const TOURNAMENTS = [
     id: 'cedar-ridge-member-guest',
     name: 'Cedar Ridge Member-Guest',
     courseName: 'Cedar Ridge',
+    // Keeps the original per-round Unassigned Filter panel instead of the newer
+    // Rounds & Scorecards Settings toggle.
+    legacyFilter: true,
     rounds: {
       1: { format: 'Two-Person Scramble', dateTime: '9:00 AM on Sat Jul 18, 2026', startType: 'Shotgun Start', facilityName: 'Cedar Ridge Golf Club', holes: 18, status: 'Ready' },
+    },
+  },
+  {
+    id: 'ridgeline-fall-classic',
+    name: '2026 Ridgeline Fall Classic',
+    courseName: 'Ridgeline Golf Club',
+    teamCount: RIDGELINE_TEAM_COUNT,
+    initialAssignments: { 1: ridgelineRound1Assignments },
+    rounds: {
+      1: { name: 'Round RED', course: 'Red Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Fri Sep 11, 2026', startType: 'Shotgun Start', facilityName: 'Ridgeline Golf Club', holes: 18, status: 'Ready' },
+      2: { name: 'Round BLU', course: 'Blue Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Fri Sep 11, 2026', startType: 'Tee Time Start', facilityName: 'Ridgeline Golf Club', holes: 18, status: 'Ready' },
+      3: { name: 'Round BWD', course: 'Backwoods Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Sat Sep 12, 2026', startType: 'Shotgun Start', facilityName: 'Ridgeline Golf Club', holes: 18, status: 'Draft' },
+    },
+  },
+  // A deeper build-out than the others: starts with zero rounds so setup can be
+  // prototyped from scratch (adding rounds, courses, etc.) rather than seeded.
+  {
+    id: 'heritage-classic-invitational',
+    name: '2026 Heritage Classic Invitational',
+    courseName: 'Heritage Golf Club',
+    rounds: {},
+    // Prototyping ground for the expanded Round Setup summary banner, which is
+    // taking over surfacing roster completion — the orange "Teams Assigned
+    // Across All Rounds" banner and each round card's own "X/Y Teams Assigned"
+    // count would just be duplicating it here.
+    hideRosterOverview: true,
+    hideSettingsButton: true,
+  },
+  // Prototyping the multi-round/multi-wave pain point: a 36-hole facility running
+  // two simultaneous 18-hole rounds, each with its own (disjoint) team roster
+  // rather than the whole event's field.
+  {
+    id: 'twin-fairways-shootout',
+    name: '2026 Twin Fairways Shootout',
+    courseName: 'Twin Fairways Golf Complex',
+    rounds: {
+      1: {
+        name: 'North Round', course: 'North Course', format: 'Four-Person Scramble',
+        dateTime: '8:00 AM on Sat Oct 3, 2026', startType: 'Shotgun Start',
+        facilityName: 'Twin Fairways Golf Complex', holes: 18, status: 'Ready',
+        teamCount: TWIN_FAIRWAYS_NORTH_COUNT, rosterOffset: 0,
+      },
+      2: {
+        name: 'South Round', course: 'South Course', format: 'Four-Person Scramble',
+        dateTime: '8:00 AM on Sat Oct 3, 2026', startType: 'Shotgun Start',
+        facilityName: 'Twin Fairways Golf Complex', holes: 18, status: 'Ready',
+        teamCount: TWIN_FAIRWAYS_SOUTH_COUNT, rosterOffset: TWIN_FAIRWAYS_NORTH_COUNT,
+      },
     },
   },
 ]

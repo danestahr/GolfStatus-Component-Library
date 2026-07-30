@@ -1,0 +1,116 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// ── Round Label: input + hint/character-count row ──────────────────────────────
+
+.crf-round-label {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  width: 100%;
+}
+
+.crf-round-label-hint {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $large-pad;
+  font-size: $x-small-font;
+  color: $grey-800;
+  opacity: 0.7;
+  line-height: $regular-line-height;
+
+  span:last-child {
+    flex-shrink: 0;
+  }
+}
+
+// ── Facility / Round Course pickers ─────────────────────────────────────────────
+
+.crf-picker {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  width: 100%;
+}
+
+.crf-picker-results {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.crf-picker-result {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: $medium-radius;
+  background: $white;
+  font-family: $font-family;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: $grey-100;
+    border-color: $grey-100;
+  }
+}
+
+.crf-picked-card {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad;
+  border-radius: $medium-radius;
+  background: rgba(220, 220, 220, 0.2);
+}
+
+.crf-picked-thumb {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: $medium-radius;
+  background: $grey-200;
+}
+
+.crf-picked-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.crf-picked-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.crf-picked-sub {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  line-height: $regular-line-height;
+}
+
+.crf-course-empty {
+  padding: $xx-large-pad $x-large-pad;
+  text-align: center;
+  font-size: $small-font;
+  color: rgba(0, 0, 0, 0.7);
+  background: $grey-100;
+  border-radius: $medium-radius;
+}
+
+// ── Round Date & Time ────────────────────────────────────────────────────────
+
+// Kills the native calendar-picker expander button — the leftIcon calendar
+// glyph already covers that affordance, so the browser's own control just
+// duplicated it.
+gs-input.datetime-local input::-webkit-calendar-picker-indicator {
+  display: none;
+}

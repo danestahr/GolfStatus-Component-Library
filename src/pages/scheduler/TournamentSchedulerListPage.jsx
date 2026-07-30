@@ -22,14 +22,14 @@ export default function TournamentSchedulerListPage() {
             >
               <div className="sched-tourney-card-main">
                 <div className="sched-tourney-card-name">{tournament.name}</div>
-                <div className="sched-tourney-card-sub">{firstRound.facilityName}</div>
-                <div className="sched-tourney-card-sub">{firstRound.dateTime}</div>
+                <div className="sched-tourney-card-sub">{firstRound ? firstRound.facilityName : tournament.courseName}</div>
+                <div className="sched-tourney-card-sub">{firstRound ? firstRound.dateTime : 'No rounds scheduled yet'}</div>
               </div>
               <div className="sched-tourney-card-side">
                 <div className="sched-tourney-card-rounds">
                   {roundNumbers.length} {roundNumbers.length === 1 ? 'Round' : 'Rounds'}
                 </div>
-                <div className="sched-tourney-card-holes">{firstRound.holes} Holes</div>
+                {firstRound && <div className="sched-tourney-card-holes">{firstRound.holes} Holes</div>}
               </div>
             </div>
           )
