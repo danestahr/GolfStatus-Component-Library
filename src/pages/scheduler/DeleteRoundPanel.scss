@@ -1,0 +1,49 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// .sched-filter-round-details/-group/-name/-sub, .sched-round-status and
+// .sched-wave-badge (used inside .drp-round-card below) come from
+// TournamentSchedulerPage.scss, always loaded wherever this panel is used.
+
+.drp-header {
+  display: flex;
+  align-items: center;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  border-bottom: $light-border;
+}
+
+.drp-header-icon {
+  flex-shrink: 0;
+  font-size: $x-large-font;
+  color: $red-600;
+}
+
+.drp-header-title {
+  margin: 0;
+  font-size: $large-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.drp-body {
+  display: flex;
+  flex-direction: column;
+  gap: $xx-large-pad;
+  padding: $x-large-pad;
+}
+
+.drp-desc {
+  font-size: $small-font;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.drp-round-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border: 1px solid $red-600;
+  border-radius: $medium-radius;
+}

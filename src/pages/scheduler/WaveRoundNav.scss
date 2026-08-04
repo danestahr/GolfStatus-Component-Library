@@ -1,0 +1,91 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Animates the whole nav open/closed via grid-template-rows (0fr → 1fr)
+// rather than the parent mounting/unmounting it outright — a height that's
+// implicit in the content (label + however many tabs wrap to) can't be
+// transitioned with a hardcoded max-height, and this needs no JS
+// measurement to get there. .wrn-collapse-inner supplies the overflow:hidden
+// + min-height:0 a grid row needs to actually clip during the animation.
+.wrn-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wrn-collapse--open {
+  grid-template-rows: 1fr;
+}
+
+.wrn-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wrn-row {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.wrn-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.wrn-label {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.wrn-tabs {
+  display: flex;
+  align-items: center;
+  gap: $medium-large-pad;
+  overflow-x: auto;
+  // overflow-x: auto clips on all four sides, not just left/right, which
+  // would cut into a GSButton's own hover/focus ring (box-shadow spreads 4px
+  // beyond its bounds) — top/bottom always, and left/right on whichever tab
+  // sits flush against the scrollport's edge. Padding the scrollport by that
+  // same 4px on every side gives the ring room everywhere, and the matching
+  // negative margin cancels the layout shift that padding would otherwise add.
+  padding: $small-pad;
+  margin: (-$small-pad);
+  // Replays on every step change, since the whole row remounts under a new
+  // `key` (see WaveRoundNav.jsx) whenever it swaps between the wave list and
+  // a wave's rounds — a small motion cue that something was drilled into/out
+  // of, rather than the row's contents just silently swapping in place.
+  animation: wrn-tabs-in 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes wrn-tabs-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// Each wave/round choice is a real (primary-sized) GSButton now — active vs.
+// inactive reads through its own black/light-grey fill, not a hand-rolled
+// border, so this wrapper only needs to keep the tab from shrinking in the
+// scrolling row.
+.wrn-tab-wrap {
+  flex-shrink: 0;
+}

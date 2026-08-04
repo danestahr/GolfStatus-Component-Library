@@ -1,0 +1,36 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// .wp-round-row-text/-name/-sub (used via RoundSummary above) come from
+// WavesPanel.scss, already loaded wherever this panel is used.
+
+.wrp-body {
+  padding: $small-layout-pad $x-large-pad;
+  width: 100%;
+
+  .selected-item {
+    padding: $large-pad;
+    background: $grey-50;
+  }
+
+  .unselected-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $medium-large-pad;
+    padding: $large-pad;
+    background: $white;
+    border: 1px solid $grey-200;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: $grey-100;
+    }
+  }
+}
+
+.wrp-round-linked-elsewhere {
+  margin-top: $small-pad;
+  font-size: $x-small-font;
+  color: $cyan-700;
+}
