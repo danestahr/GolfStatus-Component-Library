@@ -85,15 +85,6 @@ for (let hole = 1; hole <= RIDGELINE_TEAM_COUNT / 3 / 2; hole++) {
   ridgelineRound1Assignments[`${hole}-B`] = SORTED_TEAMS[(hole - 1) * 2 + 1].name
 }
 
-// Twin Fairways Shootout: a 36-hole facility running its North and South courses
-// as two independent 18-hole rounds at the same time. Each round only fields half
-// the event's teams — the North and South rosters are disjoint (non-overlapping
-// SORTED_TEAMS slices, via each round's own teamCount + rosterOffset) — modeling
-// the "large event, only some of the field plays this round" pain point instead of
-// pooling every team in the tournament into every round's Unassigned list.
-const TWIN_FAIRWAYS_NORTH_COUNT = 32
-const TWIN_FAIRWAYS_SOUTH_COUNT = 28
-
 // ── Facilities (Create Round form's Facility/Round Course pickers) ─────────────
 // Course names intentionally echo the ones already used across TOURNAMENTS above,
 // so a facility search in the Add Round form feels continuous with the rest of
@@ -204,26 +195,41 @@ export const TOURNAMENTS = [
     hideRosterCount: true,
     hideSettingsButton: true,
   },
-  // Prototyping the multi-round/multi-wave pain point: a 36-hole facility running
-  // two simultaneous 18-hole rounds, each with its own (disjoint) team roster
-  // rather than the whole event's field.
+  // Defaults to Waves already set up (2 waves, 2 rounds each) as a ready-made
+  // example for the wave-scoped Hole Assignments nav — WaveRoundNav.jsx — to
+  // exercise the >=2-waves-with-rounds case without building it by hand.
   {
-    id: 'twin-fairways-shootout',
-    name: '2026 Twin Fairways Shootout',
-    courseName: 'Twin Fairways Golf Complex',
+    id: 'heritage-classic-invitational-copy',
+    name: '2026 Heritage Classic Invitational (Copy)',
+    courseName: 'Heritage Golf Club',
     rounds: {
-      1: {
-        name: 'North Round', course: 'North Course', format: 'Four-Person Scramble',
-        dateTime: '8:00 AM on Sat Oct 3, 2026', startType: 'Shotgun Start',
-        facilityName: 'Twin Fairways Golf Complex', holes: 18, status: 'Ready',
-        teamCount: TWIN_FAIRWAYS_NORTH_COUNT, rosterOffset: 0,
-      },
-      2: {
-        name: 'South Round', course: 'South Course', format: 'Four-Person Scramble',
-        dateTime: '8:00 AM on Sat Oct 3, 2026', startType: 'Shotgun Start',
-        facilityName: 'Twin Fairways Golf Complex', holes: 18, status: 'Ready',
-        teamCount: TWIN_FAIRWAYS_SOUTH_COUNT, rosterOffset: TWIN_FAIRWAYS_NORTH_COUNT,
-      },
+      1: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Ready' },
+      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '11:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Draft' },
+      3: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Ready' },
+      4: { course: 'Championship Course', format: 'Individual Stroke Play', dateTime: '4:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Draft' },
     },
+    savedRoundFormat: 'waves',
+    waves: [
+      { id: 1, name: 'Morning', roundIds: [1, 2] },
+      { id: 2, name: 'Afternoon', roundIds: [3, 4] },
+    ],
+    // Prototyping ground for the expanded Round Setup summary banner, which is
+    // taking over surfacing roster completion — each round card's own "X/Y
+    // Teams Assigned" count would just be duplicating it here.
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Same shape/behavior as heritage-classic-invitational-copy just above (Waves
+  // format, hides roster count/settings) but starts completely empty — no
+  // savedRoundFormat, no rounds, no waves — so it has to be built from scratch
+  // through the Round Setup flow (Single vs Multiple Rounds, then
+  // Sequence/Wave/Hybrid Wave) instead of landing pre-seeded.
+  {
+    id: 'heritage-classic-invitational-wave-setup',
+    name: '2026 Heritage Classic Invitational (Wave Setup)',
+    courseName: 'Heritage Golf Club',
+    rounds: {},
+    hideRosterCount: true,
+    hideSettingsButton: true,
   },
 ]

@@ -1,145 +1,113 @@
-import { useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useRef, useState } from 'react'
 import {
   faPlus,
   faPen,
-  faTrash,
-  faCircleXmark,
-  faCheck,
-  faLink,
   faGripLines,
 } from '@fortawesome/free-solid-svg-icons'
-import GSinput from '../../gs-lib/components/gs-input'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSEmptyList from '../../gs-lib/components/gs-empty-list'
 import AppSidePanel from '../../components/AppSidePanel'
 import './WavesPanel.scss'
 
-// A round linked into a wave — same name/course summary used across the
-// scheduler's other round rows, just with an unlink control instead of actions.
-function WaveRoundRow({ name, course, onUnlink }) {
+// A wave's linked round, shown read-only on this list — removing one is
+// WaveRoundsPanel's job (opened via the pen icon below), so there's no
+// unlink control here, just the same name/course summary used elsewhere.
+function WaveRoundRow({ name, course }) {
   return (
     <div className="wp-round-row">
       <div className="wp-round-row-text">
         <div className="wp-round-row-name">{name}</div>
         <div className="wp-round-row-sub">{course}</div>
       </div>
-      <GSButton type="transparent icon" size="secondary" isFocusable buttonIcon={faCircleXmark} onClick={onUnlink} />
     </div>
   )
 }
 
-// Inline picker under a wave's "Link Existing Round" action — only rounds not
-// already linked to some other wave are offered, since a round belongs to at
-// most one wave at a time.
-function LinkRoundPicker({ options, onPick, onCancel }) {
+// The catch-all tile for rounds not yet linked to any wave — mirrors a
+// WaveCard's header/round-list layout but is otherwise read-only: no view/
+// reorder/add actions, since there's no wave here to manage, just rounds to
+// surface until they're linked from inside a real wave. Only rendered by
+// the parent when there's at least one such round — nothing to say once
+// every round in the tournament is already spoken for.
+function UnassignedRoundsCard({ rounds }) {
   return (
-    <div className="wp-link-picker">
-      {options.length === 0 ? (
-        <div className="wp-link-picker-empty">Every round is already linked to a wave.</div>
-      ) : (
-        options.map(o => (
-          <button key={o.round} type="button" className="wp-link-picker-option" onClick={() => onPick(o.round)}>
-            <div className="wp-round-row-text">
-              <div className="wp-round-row-name">{o.name}</div>
-              <div className="wp-round-row-sub">{o.course}</div>
-            </div>
-          </button>
-        ))
-      )}
-      <GSButton type="grey" title="Cancel" isFocusable onClick={onCancel} />
+    <div className="wp-wave-row">
+      <div className="wp-wave-card wp-wave-card--unassigned">
+        <div className="wp-wave-header">
+          <div className="wp-wave-header-text">
+            <div className="wp-wave-name">Not Assigned to Waves</div>
+            <div className="wp-wave-sub">{rounds.length} Round{rounds.length === 1 ? '' : 's'}</div>
+          </div>
+        </div>
+        <div className="wp-wave-rounds">
+          {rounds.map(r => (
+            <WaveRoundRow key={r.round} name={r.name} course={r.course} />
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
 
 function WaveCard({
-  wave, linkedRounds, availableToLink,
-  isEditingName, editingName, onStartRename, onChangeEditingName, onCommitRename, onCancelRename,
-  isConfirmingDelete, onStartDelete, onConfirmDelete, onCancelDelete,
-  isLinking, onStartLink, onCancelLink, onLinkRound,
-  onCreateRound, onUnlinkRound,
-  showGrabber, isDragging, isDropTarget, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
+  wave, roundCount, linkedRounds,
+  onViewWave, onAddRound,
+  showGrabber, isDragging, isReordering, offsetY,
+  onGrabberPointerDown, onGrabberPointerMove, onGrabberPointerUp,
+  rowRef,
 }) {
-  if (isConfirmingDelete) {
-    return (
-      <div className="wp-wave-card wp-wave-card--confirm">
-        <div className="wp-confirm-text">
-          Delete <strong>{wave.name}</strong>? Its rounds won't be deleted, just unlinked from this wave.
-        </div>
-        <div className="wp-confirm-actions">
-          <GSButton type="grey" title="Cancel" isFocusable onClick={onCancelDelete} />
-          <GSButton type="red" title="Delete Wave" isFocusable onClick={onConfirmDelete} />
-        </div>
-      </div>
-    )
-  }
-
   let cardClass = 'wp-wave-card'
   if (isDragging) cardClass += ' wp-wave-card--dragging'
-  if (isDropTarget) cardClass += ' wp-wave-card--drop-target'
+
+  // Every card — including the one being dragged — collapses to the same
+  // small, header-only height for as long as reordering is active. That's
+  // what guarantees nothing can ever overlap or hide anything: there's no
+  // size mismatch between the dragged tile and whatever it passes over, so
+  // there's nothing for either to hide behind the other.
+  const isCollapsed = isReordering
+  const rowStyle = offsetY !== 0 ? { transform: `translateY(${offsetY}px)` } : undefined
 
   return (
-    <div className="wp-wave-row" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+    <div className="wp-wave-row" ref={rowRef} style={rowStyle}>
       <div className={cardClass}>
         <div className="wp-wave-header">
-          {isEditingName ? (
-            <div className="wp-wave-rename">
-              <GSinput
-                textValue={editingName}
-                onChange={e => onChangeEditingName(e.target.value)}
-                onSubmit={onCommitRename}
-                placeholder="Wave name"
-              />
-              <GSButton type="black icon" size="secondary" isFocusable buttonIcon={faCheck} onClick={onCommitRename} />
-              <GSButton type="transparent icon" size="secondary" isFocusable buttonIcon={faCircleXmark} onClick={onCancelRename} />
-            </div>
-          ) : (
-            <>
-              <div className="wp-wave-header-text">
-                <div className="wp-wave-name">{wave.name}</div>
-                <div className="wp-wave-sub">{linkedRounds.length} Round{linkedRounds.length === 1 ? '' : 's'}</div>
-              </div>
-              <div className="wp-wave-header-actions">
-                <GSButton type="light-grey icon" size="secondary" isFocusable buttonIcon={faPen} onClick={onStartRename} />
-                <GSButton type="light-grey icon" size="secondary" isFocusable buttonIcon={faTrash} onClick={onStartDelete} />
-              </div>
-            </>
-          )}
+          <div className="wp-wave-header-text">
+            <div className="wp-wave-name">{wave.name}</div>
+            <div className="wp-wave-sub">{roundCount} Round{roundCount === 1 ? '' : 's'}</div>
+          </div>
+          <div className="wp-wave-header-actions">
+            {/* Add Round stays out of the header while reordering, same as
+                the rounds list below — one less thing competing for
+                attention while you're just trying to see the waves and aim
+                a drop. */}
+            {!isReordering && (
+              <GSButton type="black icon" size="primary" isFocusable buttonIcon={faPlus} onClick={onAddRound} />
+            )}
+            <GSButton type="light-grey icon" size="primary" isFocusable buttonIcon={faPen} onClick={onViewWave} />
+          </div>
         </div>
 
-        {linkedRounds.length > 0 && (
-          <div className="wp-wave-rounds">
-            {linkedRounds.map(r => (
-              <WaveRoundRow key={r.round} name={r.name} course={r.course} onUnlink={() => onUnlinkRound(r.round)} />
-            ))}
-          </div>
-        )}
-
-        {isLinking ? (
-          <LinkRoundPicker options={availableToLink} onPick={onLinkRound} onCancel={onCancelLink} />
-        ) : (
-          <div className="wp-wave-footer">
-            <GSButton type="light-grey" buttonIcon={faPlus} title="Create Round" isFocusable onClick={onCreateRound} />
-            {availableToLink.length > 0 && (
-              <GSButton
-                type="light-grey"
-                buttonIcon={faLink}
-                title="Link Existing Round"
-                isFocusable
-                onClick={onStartLink}
-              />
+        <div className={`wp-wave-collapsible${isCollapsed ? ' wp-wave-collapsible--collapsed' : ''}`}>
+          <div className="wp-wave-collapsible-inner">
+            {linkedRounds.length > 0 && (
+              <div className="wp-wave-rounds">
+                {linkedRounds.map(r => (
+                  <WaveRoundRow key={r.round} name={r.name} course={r.course} />
+                ))}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       {showGrabber && (
         <div
           className="wp-wave-grabber"
-          draggable
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
+          onPointerDown={onGrabberPointerDown}
+          onPointerMove={onGrabberPointerMove}
+          onPointerUp={onGrabberPointerUp}
+          onPointerCancel={onGrabberPointerUp}
         >
           <GSButton type="light-grey icon" size="secondary" buttonIcon={faGripLines} onClick={e => e.stopPropagation()} />
         </div>
@@ -148,78 +116,163 @@ function WaveCard({
   )
 }
 
-// Waves side panel: create/rename/delete waves, and within each wave either
-// create a brand-new round (hands off to CreateRoundPanel) or link one of the
-// tournament's existing, not-yet-linked rounds.
+// Waves side panel: a plain list of the tournament's waves — each one's own
+// name/rounds/rename/delete now lives in WaveRoundsPanel, opened via a wave
+// card's "View Wave" pen icon (see TournamentSchedulerPage) — that's also
+// where a round already linked elsewhere gets linked into this wave instead,
+// so this panel doesn't need its own separate "Link Round" shortcut. This
+// panel only handles the list itself: adding and reordering waves. A wave
+// card's "Add Round" bypasses WaveRoundsPanel entirely and creates a round
+// straight into the wave.
 export default function WavesPanel({
   isOpen, onClose,
-  waves, rounds, roundName, roundCourse, linkedRoundNumbers,
-  onAddWave, onRenameWave, onDeleteWave, onReorderWave,
-  onCreateRoundForWave, onLinkRound, onUnlinkRound,
+  waves, roundName, roundCourse,
+  onStartAddWave, onReorderWave, onViewWave, onAddRound,
+  unassignedRounds = [],
 }) {
-  const [addingWave, setAddingWave] = useState(false)
-  const [newWaveName, setNewWaveName] = useState('')
-  const [editingWaveId, setEditingWaveId] = useState(null)
-  const [editingName, setEditingName] = useState('')
-  const [confirmDeleteWaveId, setConfirmDeleteWaveId] = useState(null)
-  const [linkingWaveId, setLinkingWaveId] = useState(null)
-  // Drag-to-reorder: draggingWaveId is the tile currently being dragged (via
-  // its grabber handle), dragOverWaveId is whichever tile the cursor is
-  // currently over, so that tile alone can highlight as the drop target.
+  // Drag-to-reorder, driven by pointer events on the grabber rather than
+  // native HTML5 drag-and-drop — that API only recognizes a drag after the
+  // cursor has moved a browser-defined threshold, never fires from touch at
+  // all, and (per its own quirks) freezes its ghost preview on a stale
+  // snapshot taken before any state update can react to it. Pointer events
+  // give full control from the very first press: draggingWaveId flips the
+  // instant you press the grabber (no movement needed), works identically
+  // for mouse and touch.
+  //
+  // The reorder itself is a straightforward adjacent swap rather than a
+  // "shift a whole range to make room for an insert" preview — the dragged
+  // card and whichever neighbor it's currently overlapping trade places the
+  // moment the pointer crosses the midpoint between them, live, not just on
+  // release. That happens by literally calling onReorderWave (already an
+  // adjacent-swap under the hood — see TournamentSchedulerPage) once per
+  // threshold crossed, rather than once at the end with a possibly-distant
+  // target. Simpler to reason about, and with only ever one live swap
+  // happening between two same-sized (collapsed) rows, there's no room left
+  // for the kind of overlap a range-shift could produce.
   const [draggingWaveId, setDraggingWaveId] = useState(null)
-  const [dragOverWaveId, setDragOverWaveId] = useState(null)
+  const [dragOffsetY, setDragOffsetY] = useState(0)
+  // Transient per-wave nudge for whichever card just got swapped out of the
+  // dragged card's way — set to the distance it just moved (in the opposite
+  // direction) the instant the swap happens, then cleared a frame later so
+  // the existing transform transition animates it back to 0, i.e. a manual
+  // "it used to be here, now it's sliding to there" (FLIP) for just that one
+  // card, rather than a jump-cut to its new spot.
+  const [flashOffsets, setFlashOffsets] = useState({})
+  const isReordering = draggingWaveId != null
 
-  function handleDragStart(e, waveId) {
+  const rowRefs = useRef(new Map())
+  const dragStartYRef = useRef(0)
+  const wpBodyRef = useRef(null)
+
+  function setRowRef(waveId, el) {
+    if (el) rowRefs.current.set(waveId, el)
+    else rowRefs.current.delete(waveId)
+  }
+
+  // One row's height + the gap after it — every card's movement is some
+  // whole multiple of this. Measured fresh on every move rather than cached:
+  // right as a drag starts, nothing has collapsed yet (the state update that
+  // triggers the collapse hasn't been rendered), so an early measurement
+  // would grab a stale, still-expanded height. Settles to the right value
+  // within the first couple of moves as the collapse transition finishes.
+  function measureRowStep(excludeId) {
+    const gap = wpBodyRef.current ? parseFloat(getComputedStyle(wpBodyRef.current).rowGap) || 0 : 0
+    for (const [id, el] of rowRefs.current) {
+      if (id === excludeId) continue
+      return el.getBoundingClientRect().height + gap
+    }
+    return 0
+  }
+
+  function handleGrabberPointerDown(e, waveId) {
+    // Ignore a second touch point or a non-primary mouse button already
+    // mid-gesture — only one drag at a time.
+    if (e.button != null && e.button !== 0) return
+    e.preventDefault()
+    dragStartYRef.current = e.clientY
     setDraggingWaveId(waveId)
-    e.dataTransfer.effectAllowed = 'move'
-    // Use the whole card (not just the small grabber button beside it) as
-    // the drag image, so it looks like you're picking up the tile itself —
-    // the grabber is now a sibling of the card, not a descendant, so it's
-    // found via the shared row parent rather than closest().
-    const card = e.currentTarget.parentElement?.querySelector('.wp-wave-card')
-    if (card) e.dataTransfer.setDragImage(card, card.offsetWidth / 2, 24)
+    setDragOffsetY(0)
+    // Keeps this same element receiving move/up events for the rest of the
+    // gesture even once the pointer strays outside its small hit area.
+    e.currentTarget.setPointerCapture?.(e.pointerId)
   }
 
-  function handleDragEnd() {
+  function handleGrabberPointerMove(e) {
+    if (draggingWaveId == null) return
+    const step = measureRowStep(draggingWaveId)
+    let offset = e.clientY - dragStartYRef.current
+    if (step > 0) {
+      // A local stand-in for the real order — onReorderWave's own state
+      // update (setWaves in the parent) won't be reflected in the `waves`
+      // prop until the next render, but a single fast move can cross more
+      // than one threshold at once, so each loop iteration needs to know
+      // the order *as of the swap just before it*, not the one still on
+      // the prop.
+      const order = waves.map(w => w.id)
+      let idx = order.indexOf(draggingWaveId)
+      const flashes = {}
+      while (idx < order.length - 1 && offset > step / 2) {
+        const otherId = order[idx + 1]
+        onReorderWave(draggingWaveId, otherId)
+        flashes[otherId] = step
+        order[idx] = otherId
+        order[idx + 1] = draggingWaveId
+        idx += 1
+        offset -= step
+      }
+      while (idx > 0 && offset < -step / 2) {
+        const otherId = order[idx - 1]
+        onReorderWave(draggingWaveId, otherId)
+        flashes[otherId] = -step
+        order[idx] = otherId
+        order[idx - 1] = draggingWaveId
+        idx -= 1
+        offset += step
+      }
+      if (Object.keys(flashes).length > 0) {
+        setFlashOffsets(prev => ({ ...prev, ...flashes }))
+        // Double rAF: the first "from" value (the flash offset just set
+        // above) needs to actually paint before the second frame clears it
+        // to 0 — collapsing this to a single rAF sometimes lands both
+        // writes in the same frame, and then there's nothing for the
+        // transition to animate from.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setFlashOffsets(prev => {
+              const next = { ...prev }
+              Object.keys(flashes).forEach(id => { next[id] = 0 })
+              return next
+            })
+          })
+        })
+      }
+      // Clamped to the list's own slot positions — the dragged card can
+      // move up by at most its own (possibly just-updated) index worth of
+      // rows, and down by at most however many rows remain below it, so it
+      // can never wander above the first slot or below the last one.
+      const min = -idx * step
+      const max = (order.length - 1 - idx) * step
+      offset = Math.min(Math.max(offset, min), max)
+    }
+    setDragOffsetY(offset)
+    // Rebases the reference point so the *next* move computes its raw
+    // offset relative to where this one left off, rather than the original
+    // press position. Without this, every swap this call already "used up"
+    // gets recomputed and re-applied again on the next move too — since
+    // e.clientY - dragStartYRef.current would still measure the full
+    // distance from the start, not just what's happened since the last
+    // swap, each subsequent move re-triggers the same threshold check
+    // against a distance that already included an earlier swap's worth of
+    // travel, repeatedly swapping (or, past the list's own bounds, getting
+    // visibly stuck) on every further pixel moved downward in particular,
+    // since dragging down is what this compounds against fastest.
+    dragStartYRef.current = e.clientY - offset
+  }
+
+  function handleGrabberPointerUp() {
     setDraggingWaveId(null)
-    setDragOverWaveId(null)
-  }
-
-  function handleDragOver(e, waveId) {
-    e.preventDefault()
-    if (waveId !== draggingWaveId) setDragOverWaveId(waveId)
-  }
-
-  function handleDragLeave(waveId) {
-    setDragOverWaveId(prev => (prev === waveId ? null : prev))
-  }
-
-  function handleDrop(e, waveId) {
-    e.preventDefault()
-    if (draggingWaveId && draggingWaveId !== waveId) onReorderWave(draggingWaveId, waveId)
-    setDraggingWaveId(null)
-    setDragOverWaveId(null)
-  }
-
-  function startAddWave() {
-    setNewWaveName('')
-    setAddingWave(true)
-  }
-
-  function commitAddWave() {
-    onAddWave(newWaveName)
-    setAddingWave(false)
-    setNewWaveName('')
-  }
-
-  function startRename(wave) {
-    setEditingWaveId(wave.id)
-    setEditingName(wave.name)
-  }
-
-  function commitRename() {
-    if (editingName.trim()) onRenameWave(editingWaveId, editingName.trim())
-    setEditingWaveId(null)
+    setDragOffsetY(0)
+    setFlashOffsets({})
   }
 
   return (
@@ -234,75 +287,45 @@ export default function WavesPanel({
       <GSActionBar
         type="form-header H3"
         header="Manage Waves"
-        pageActions={[{ buttonTitle: 'Add Wave', buttonIcon: faPlus, type: 'black', actionClick: startAddWave }]}
+        pageActions={[{ buttonTitle: 'Add Wave', buttonIcon: faPlus, type: 'black', actionClick: onStartAddWave }]}
       />
 
-      <div className="wp-body">
-        {addingWave && (
-          <div className="wp-wave-card wp-wave-card--new">
-            <GSinput
-              textValue={newWaveName}
-              onChange={e => setNewWaveName(e.target.value)}
-              onSubmit={commitAddWave}
-              placeholder="Wave name (e.g. Morning Wave)"
-            />
-            <div className="wp-confirm-actions">
-              <GSButton type="grey" title="Cancel" isFocusable onClick={() => setAddingWave(false)} />
-              <GSButton type="black" title="Add Wave" isFocusable onClick={commitAddWave} />
-            </div>
-          </div>
-        )}
-
-        {waves.length === 0 && !addingWave ? (
+      <div ref={wpBodyRef} className={`wp-body${isReordering ? ' wp-body--reordering' : ''}`}>
+        {waves.length === 0 && (
           <GSEmptyList
             title="No Waves Yet"
-            detail="Add a wave, then create or link rounds inside it."
-            actions={[{ title: 'Add Wave', type: 'black', isFocusable: true, onClick: startAddWave }]}
+            detail="Add a wave, then add rounds inside it."
+            actions={[{ title: 'Add Wave', type: 'black', isFocusable: true, onClick: onStartAddWave }]}
           />
-        ) : (
-          waves.map(wave => {
-            // Reordering only means anything once there's something to reorder
-            // relative to — a single wave has nowhere to go, so the grabber
-            // (and the drag machinery behind it) stays hidden until a second
-            // wave exists.
-            const showGrabber = waves.length >= 2
-            const linkedRounds = wave.roundIds.map(r => ({ round: r, name: roundName(r), course: roundCourse(r) }))
-            const availableToLink = rounds
-              .filter(r => !linkedRoundNumbers.has(r))
-              .map(r => ({ round: r, name: roundName(r), course: roundCourse(r) }))
-            return (
-              <WaveCard
-                key={wave.id}
-                wave={wave}
-                linkedRounds={linkedRounds}
-                availableToLink={availableToLink}
-                isEditingName={editingWaveId === wave.id}
-                editingName={editingName}
-                onStartRename={() => startRename(wave)}
-                onChangeEditingName={setEditingName}
-                onCommitRename={commitRename}
-                onCancelRename={() => setEditingWaveId(null)}
-                isConfirmingDelete={confirmDeleteWaveId === wave.id}
-                onStartDelete={() => setConfirmDeleteWaveId(wave.id)}
-                onConfirmDelete={() => { onDeleteWave(wave.id); setConfirmDeleteWaveId(null) }}
-                onCancelDelete={() => setConfirmDeleteWaveId(null)}
-                isLinking={linkingWaveId === wave.id}
-                onStartLink={() => setLinkingWaveId(wave.id)}
-                onCancelLink={() => setLinkingWaveId(null)}
-                onLinkRound={r => { onLinkRound(wave.id, r); setLinkingWaveId(null) }}
-                onCreateRound={() => onCreateRoundForWave(wave.id)}
-                onUnlinkRound={r => onUnlinkRound(wave.id, r)}
-                showGrabber={showGrabber}
-                isDragging={wave.id === draggingWaveId}
-                isDropTarget={wave.id === dragOverWaveId && wave.id !== draggingWaveId}
-                onDragStart={e => handleDragStart(e, wave.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={e => handleDragOver(e, wave.id)}
-                onDragLeave={() => handleDragLeave(wave.id)}
-                onDrop={e => handleDrop(e, wave.id)}
-              />
-            )
-          })
+        )}
+        {waves.map(wave => {
+          // Reordering only means anything once there's something to reorder
+          // relative to — a single wave has nowhere to go, so the grabber
+          // (and the drag machinery behind it) stays hidden until a second
+          // wave exists.
+          const showGrabber = waves.length >= 2
+          const linkedRounds = wave.roundIds.map(r => ({ round: r, name: roundName(r), course: roundCourse(r) }))
+          return (
+            <WaveCard
+              key={wave.id}
+              wave={wave}
+              roundCount={wave.roundIds.length}
+              linkedRounds={linkedRounds}
+              onViewWave={() => onViewWave(wave.id)}
+              onAddRound={() => onAddRound(wave.id)}
+              showGrabber={showGrabber}
+              isDragging={wave.id === draggingWaveId}
+              isReordering={isReordering}
+              offsetY={wave.id === draggingWaveId ? dragOffsetY : (flashOffsets[wave.id] ?? 0)}
+              onGrabberPointerDown={e => handleGrabberPointerDown(e, wave.id)}
+              onGrabberPointerMove={handleGrabberPointerMove}
+              onGrabberPointerUp={handleGrabberPointerUp}
+              rowRef={el => setRowRef(wave.id, el)}
+            />
+          )
+        })}
+        {unassignedRounds.length > 0 && (
+          <UnassignedRoundsCard rounds={unassignedRounds} />
         )}
       </div>
     </AppSidePanel>

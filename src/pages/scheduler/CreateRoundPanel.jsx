@@ -43,6 +43,27 @@ function formatRoundDateTime(value) {
   return `${time} on ${weekday} ${month} ${d.getDate()}, ${d.getFullYear()}`
 }
 
+// Reverse of formatRoundDateTime above — parses its "8:00 AM on Mon Jun 15,
+// 2026" display string back into a datetime-local input value, so editing an
+// existing round can pre-fill the field instead of leaving it blank.
+function parseRoundDateTimeForInput(display) {
+  const match = display?.match(/^(.+?) on (.+)$/)
+  if (!match) return ''
+  const [, time, dateStr] = match
+  const d = new Date(`${dateStr} ${time}`)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// Reverse of the Round Label field's "Round Label" convention (e.g. "Round
+// RED" → "RED") — only recognized when the name actually follows that
+// pattern, so an auto-numbered round's plain "Round 1" (never stored as a
+// custom name — see handleCreateRound) doesn't round-trip into one.
+function parseRoundLabel(name) {
+  return name?.match(/^Round\s+(.{1,3})$/i)?.[1] ?? ''
+}
+
 // Facility field: search-then-select. Mirrors the Available Teams pattern
 // elsewhere in this page — a plain search box until something's picked, then a
 // single selected-item card with a clear (X) to back out of the choice.
@@ -143,16 +164,37 @@ const emptyDraft = {
 }
 
 export default function CreateRoundPanel({
-  isOpen, onClose, onCreate, dimOverlay, noTransition,
+  isOpen, onClose, onCreate, editingMeta, dimOverlay, noTransition,
   waveOptions, selectedWaveOption, onSelectWave,
 }) {
   const [draft, setDraft] = useState(emptyDraft)
 
   // Fresh form every time this is opened, rather than carrying over whatever
-  // was left in it from a previous Add Round session.
+  // was left in it from a previous session — except when opened to edit an
+  // existing round (editingMeta set), where it instead pre-fills from that
+  // round's current values (best-effort reverse of the mappings in
+  // handleSave below, since ROUND_META stores formatted display strings
+  // rather than the form's own structured option/facility/course objects).
   useEffect(() => {
-    if (isOpen) setDraft(emptyDraft)
-  }, [isOpen])
+    if (!isOpen) return
+    if (editingMeta) {
+      const facility = FACILITIES.find(f => f.name === editingMeta.facilityName) ?? null
+      const course = facility?.courses.find(c => c.name === editingMeta.course) ?? null
+      setDraft({
+        roundFormat: ROUND_FORMAT_SELECT_OPTIONS.find(o => o.label === editingMeta.format) ?? null,
+        roundLabel: parseRoundLabel(editingMeta.name),
+        playersPerHole: PLAYERS_PER_HOLE_OPTIONS[0],
+        roundDateTime: parseRoundDateTimeForInput(editingMeta.dateTime),
+        startType: START_TYPE_OPTIONS.find(o => o.label === editingMeta.startType) ?? START_TYPE_OPTIONS[0],
+        facilityQuery: '',
+        facilityResults: [],
+        selectedFacility: facility,
+        selectedCourse: course,
+      })
+    } else {
+      setDraft(emptyDraft)
+    }
+  }, [isOpen, editingMeta])
 
   function set(patch) {
     setDraft(prev => ({ ...prev, ...patch }))
@@ -181,9 +223,13 @@ export default function CreateRoundPanel({
 
   // Prototype convenience: Save is always enabled, even with required fields
   // left blank — every value here falls back to a placeholder instead of
-  // failing so an incomplete draft still lands in the round list.
+  // failing so an incomplete draft still lands in the round list. Editing
+  // spreads editingMeta first so any field this form doesn't manage (e.g. a
+  // seeded round's teamCount/rosterOffset) survives the save untouched, and
+  // keeps the round's existing status instead of resetting it back to Draft.
   function handleSave() {
     onCreate({
+      ...editingMeta,
       format: draft.roundFormat?.label ?? 'Round Format Not Set',
       name: draft.roundLabel.trim() || undefined,
       dateTime: formatRoundDateTime(draft.roundDateTime) || 'Date & Time Not Set',
@@ -191,22 +237,24 @@ export default function CreateRoundPanel({
       facilityName: draft.selectedFacility?.name ?? 'Facility Not Set',
       course: draft.selectedCourse?.name ?? 'Course Not Set',
       holes: draft.selectedCourse?.holes ?? 18,
-      status: 'Draft',
+      status: editingMeta?.status ?? 'Draft',
     })
   }
+
+  const isEditing = !!editingMeta
 
   return (
     <AppSidePanel
       isOpen={isOpen}
       onClose={onClose}
-      title="Add Round"
+      title={isEditing ? 'Edit Round' : 'Add Round'}
       dimOverlay={dimOverlay}
       noTransition={noTransition}
       actions={[
         { name: 'Save', type: 'black', action: handleSave },
       ]}
     >
-      <GSActionBar type="form-header H3" header="Add Round" />
+      <GSActionBar type="form-header H3" header={isEditing ? 'Edit Round' : 'Add Round'} />
       <GSFormSection
         type="vertical xx-large-gap"
         fields={[

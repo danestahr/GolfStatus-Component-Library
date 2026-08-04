@@ -6,18 +6,33 @@
   gap: $large-pad;
   padding: $small-layout-pad $x-large-pad;
   width: 100%;
+
+  // Dragging a wave selects text on the page otherwise, since pointer-event
+  // dragging (see WavesPanel.jsx) has no native browser-level equivalent of
+  // drag-and-drop's automatic selection suppression.
+  &--reordering {
+    user-select: none;
+  }
 }
 
 // ── Wave card ─────────────────────────────────────────────────────────────────
 
 // Tile + grabber side by side — the grabber lives outside the tile itself
-// (see .wp-wave-grabber below) rather than grouped in with its rename/delete
-// actions, so dragover/drop are wired to this shared wrapper: hovering
-// either the tile or the grabber next to it counts as targeting this wave.
+// (see .wp-wave-grabber below) rather than grouped in with its own actions,
+// so it reads as its own "reorder this tile" control rather than one more
+// tile action. The translateY (see offsetY in WavesPanel.jsx) is applied
+// HERE, to the row, rather than to the card alone — so the grabber travels
+// with its tile instead of being left behind, stranded on top of whatever
+// swapped into its old slot. Every row, including the one being dragged,
+// moves the same way (a plain translateY within the list, clamped to the
+// list's own slot positions), so one transition rule covers all of them and
+// nothing can ever wander outside the list.
 .wp-wave-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: $medium-pad;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .wp-wave-card {
@@ -28,32 +43,72 @@
   border-radius: $medium-radius;
   background: $grey-50;
   border: 2px solid transparent;
-  transition: opacity 0.15s, border-color 0.15s;
+  transition: opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 
-  // Only when paired with a grabber in a .wp-wave-row — the standalone "Add
-  // Wave" input card below isn't row-wrapped and should keep sizing itself
-  // off .wp-body's column layout instead.
   .wp-wave-row & {
     flex: 1;
     min-width: 0;
   }
 
-  &--new {
-    background: $cyan-50;
-  }
-
-  // The tile being picked up, per the browser's native drag-and-drop —
-  // faded so it reads as "lifted" while the drag image (a copy of this same
-  // tile, see handleDragStart) follows the cursor.
+  // The card actually being moved — a visibly different look (not just
+  // fainter), so which tile is "picked up" is unambiguous at a glance: a
+  // colored ring instead of the usual transparent border, a stronger
+  // elevation, and a slight scale-up.
   &--dragging {
-    opacity: 0.4;
+    position: relative;
+    z-index: 1;
+    border-color: $cyan-700;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba($cyan-700, 0.12);
+    transform: scale(1.02);
   }
 
-  // Whichever tile the drag is currently hovering over — dropping here
-  // inserts the dragged wave at this position.
-  &--drop-target {
-    border-color: $cyan-700;
+  // The read-only "Not Assigned to Waves" catch-all (see
+  // UnassignedRoundsCard) — dashed border marks it as informational rather
+  // than a real, manageable wave.
+  &--unassigned {
+    background: transparent;
+    border-style: dashed;
+    border-color: $grey-200;
   }
+}
+
+// Wraps the rounds list + actions row so they can animate shut instead of
+// disappearing outright while every card (including the one being dragged —
+// see isCollapsed in WavesPanel.jsx) collapses to a uniform header-only
+// height during a reorder. The grid-template-rows 1fr→0fr trick animates to
+// an unknown content height without any JS measuring; the inner element's
+// overflow:hidden is what actually clips it as the row shrinks.
+.wp-wave-collapsible {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &--collapsed {
+    grid-template-rows: 0fr;
+
+    .wp-wave-collapsible-inner {
+      opacity: 0;
+    }
+  }
+}
+
+.wp-wave-collapsible-inner {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  overflow: hidden;
+  min-height: 0;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  // overflow:hidden (needed so content is actually clipped away as this
+  // collapses, not just resized while poking out) would otherwise cut off
+  // the round tiles' own box-shadow right at this element's edge. Padding
+  // pushes the clip boundary out far enough to give the shadow room, and
+  // the matching negative margin cancels it back out so nothing shifts —
+  // net zero for both the grid's own height tracking (used by the collapse
+  // animation) and alignment with the header above.
+  padding: $small-pad;
+  margin: -$small-pad;
 }
 
 .wp-wave-header {
@@ -92,48 +147,50 @@
 }
 
 // Drag handle — sits outside the tile itself (a sibling in .wp-wave-row, not
-// grouped in with the rename/delete actions inside it), so it reads as its
-// own "reorder this tile" control rather than one more tile action. Only
-// this element is draggable — the row just listens for dragover/drop — so
-// grabbing anywhere on the tile (the name, rename/delete) never accidentally
-// starts a drag.
+// grouped in with the tile's own actions), so it reads as its own "reorder
+// this tile" control rather than one more tile action. Only this element
+// listens for the pointer events that drive reordering (see WavesPanel.jsx)
+// — so grabbing anywhere on the tile itself never accidentally starts a drag.
+// touch-action: none stops touch scrolling from hijacking the gesture the
+// moment a finger presses down here.
 .wp-wave-grabber {
   flex-shrink: 0;
   align-self: center;
   cursor: grab;
+  touch-action: none;
 
   &:active {
     cursor: grabbing;
   }
 }
 
-.wp-wave-rename {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: $medium-pad;
-
-  gs-input {
-    flex: 1;
-  }
-}
-
 // ── Linked rounds ─────────────────────────────────────────────────────────────
+// Row layout with wrapping — a wave's rounds read as a set of chips flowing
+// left to right (wrapping to a new line once they run out of room) rather
+// than a single stacked list, so a wave with several rounds doesn't just
+// keep growing taller.
 
 .wp-wave-rounds {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: $medium-pad;
 }
 
 .wp-round-row {
   display: flex;
   align-items: center;
+  flex: 0 1 auto;
+  min-width: 160px;
   gap: $large-pad;
   padding: $large-pad;
   border-radius: $medium-radius;
   background: $white;
+  box-shadow: $base-layer-shadow;
 }
+
+// ── Round summary ─────────────────────────────────────────────────────────────
+// Also used by WaveRoundsPanel's quick filter rows (see that file).
 
 .wp-round-row-text {
   flex: 1;
@@ -154,67 +211,4 @@
   font-size: $x-small-font;
   color: $grey-800;
   opacity: 0.7;
-}
-
-// ── Footer actions / link picker ───────────────────────────────────────────────
-
-.wp-wave-footer {
-  display: flex;
-  align-items: center;
-  gap: $medium-pad;
-
-  gs-button {
-    flex: 1;
-  }
-}
-
-.wp-link-picker {
-  display: flex;
-  flex-direction: column;
-  gap: $medium-pad;
-}
-
-.wp-link-picker-option {
-  display: flex;
-  align-items: center;
-  padding: $large-pad;
-  cursor: pointer;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: $medium-radius;
-  background: $white;
-  font-family: $font-family;
-  text-align: left;
-  transition: background 0.15s ease, border-color 0.15s ease;
-
-  &:hover {
-    background: $grey-100;
-    border-color: $grey-100;
-  }
-}
-
-.wp-link-picker-empty {
-  padding: $large-pad;
-  text-align: center;
-  font-size: $small-font;
-  color: $grey-500;
-  font-style: italic;
-}
-
-// ── Delete confirmation ────────────────────────────────────────────────────────
-
-.wp-wave-card--confirm {
-  background: $red-50;
-}
-
-.wp-confirm-text {
-  font-size: $small-font;
-  color: $grey-800;
-  line-height: $regular-line-height;
-}
-
-.wp-confirm-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: $medium-pad;
 }

@@ -1,0 +1,17 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.awp-body {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+  padding: $small-layout-pad $x-large-pad;
+  width: 100%;
+}
+
+.awp-label {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+  text-transform: uppercase;
+}
