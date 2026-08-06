@@ -146,6 +146,9 @@ export const FACILITIES = [
 export const TOURNAMENTS = [
   {
     id: 'putt-putt-for-puppies',
+    // Hidden from the list while round-setup riffing happens on the
+    // playground events below — flip off (or delete) to bring it back.
+    hidden: true,
     name: '2026 Putt Putt For Puppies',
     courseName: 'Adventure Golf Course',
     teamCount: PUTT_PUTT_TEAM_COUNT,
@@ -161,6 +164,7 @@ export const TOURNAMENTS = [
   },
   {
     id: 'cedar-ridge-member-guest',
+    hidden: true,
     name: 'Cedar Ridge Member-Guest',
     courseName: 'Cedar Ridge',
     // Keeps the original per-round Unassigned Filter panel instead of the newer
@@ -172,6 +176,7 @@ export const TOURNAMENTS = [
   },
   {
     id: 'ridgeline-fall-classic',
+    hidden: true,
     name: '2026 Ridgeline Fall Classic',
     courseName: 'Ridgeline Golf Club',
     teamCount: RIDGELINE_TEAM_COUNT,
@@ -186,6 +191,7 @@ export const TOURNAMENTS = [
   // prototyped from scratch (adding rounds, courses, etc.) rather than seeded.
   {
     id: 'heritage-classic-invitational',
+    hidden: true,
     name: '2026 Heritage Classic Invitational',
     courseName: 'Heritage Golf Club',
     rounds: {},
@@ -200,6 +206,7 @@ export const TOURNAMENTS = [
   // exercise the >=2-waves-with-rounds case without building it by hand.
   {
     id: 'heritage-classic-invitational-copy',
+    hidden: true,
     name: '2026 Heritage Classic Invitational (Copy)',
     courseName: 'Heritage Golf Club',
     rounds: {

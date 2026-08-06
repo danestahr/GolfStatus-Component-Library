@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useLayoutEffect } from 'react'
+import { useState, useMemo, useRef, useLayoutEffect, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -24,8 +24,11 @@ import {
   faWater,
   faShuffle,
   faTriangleExclamation,
-  faArrowLeft,
+  faArrowRight,
   fa1,
+  faGripLines,
+  faLink,
+  faLinkSlash,
 } from '@fortawesome/free-solid-svg-icons'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
@@ -42,6 +45,7 @@ import WaveRoundsPanel from './WaveRoundsPanel'
 import SwapRoundWavePanel from './SwapRoundWavePanel'
 import DeleteWavePanel from './DeleteWavePanel'
 import WaveRoundNav from './WaveRoundNav'
+import LinkedRoundLabelPanel from './LinkedRoundLabelPanel'
 import { HOLE_DATA, TEAM_DATA, SORTED_TEAMS, TOURNAMENTS } from '../../data/mockSchedulerTournaments'
 import './TournamentSchedulerPage.scss'
 
@@ -56,7 +60,10 @@ function getSlotIds(holeNumber, groupCount) {
   return Array.from({ length: groupCount }, (_, i) => `${holeNumber}-${groupLetter(i)}`)
 }
 
-// Round Setup: the four ways a tournament's rounds can relate to each other.
+// Round Setup: the four ways a tournament's rounds can relate to each other —
+// 'hybrid' isn't its own picker tile any more (see WAVE_SCOPE_OPTIONS below),
+// but its entry stays here since a tournament already saved with it still
+// needs a title/icon/description for the landing view's summary banner.
 // Each format's description is split into two lines: the first covers how
 // the round(s) are played, the second covers how that shapes player
 // availability (single round vs. all rounds vs. one round vs. multiple).
@@ -91,17 +98,43 @@ const ROUND_FORMAT_OPTIONS = [
   },
 ]
 
-// Round Setup is a two-step pick rather than one flat 4-tile screen: first
-// Single vs Multiple Rounds (below), and only when Multiple Rounds is chosen
-// does the second step offer which of the three multi-round formats — reusing
-// ROUND_FORMAT_OPTIONS' own 'rounds'/'waves'/'hybrid' entries so their
-// copy/values stay a single source of truth.
+// Round Setup is a three-step pick rather than one flat screen: first Single
+// vs Multiple Rounds (below), then — once Multiple Rounds is chosen — which
+// of the two multi-round formats (reusing ROUND_FORMAT_OPTIONS' own
+// 'rounds'/'waves' entries so their copy/values stay a single source of
+// truth), and finally — only once Wave is chosen — the assignment-scope
+// question below (WAVE_SCOPE_OPTIONS). There's no top-level Hybrid Wave tile
+// any more: what used to be a separate format is now that third step's other
+// answer, since the two only ever differed in assignment scope, not in how
+// rounds/waves themselves get set up.
 const ROUND_TYPE_OPTIONS = [
   { value: 'single', iconText: '1', title: 'Single Round', description: 'Tournament is one round.' },
   { value: 'multiple', iconText: '2+', title: 'Multiple Rounds', description: 'Tournament is more than one round.' },
 ]
 
-const MULTI_ROUND_FORMAT_OPTIONS = ROUND_FORMAT_OPTIONS.filter(o => o.value !== 'single')
+const MULTI_ROUND_FORMAT_OPTIONS = ROUND_FORMAT_OPTIONS.filter(o => o.value === 'rounds' || o.value === 'waves')
+
+// Wave format's own follow-up question, offered only once Wave is picked
+// above — the two answers are what used to be two separate top-level formats
+// (plain Wave vs Hybrid Wave), collapsed into one Wave format's own
+// sub-choice since that's all they ever differed on. Reuses the existing
+// 'waves'/'hybrid' savedRoundFormat values so every downstream
+// formatManagesWaves/waveFormatExclusive/hybridWaveScoped check keeps working
+// unchanged — only the picker UI that leads to them has changed.
+const WAVE_SCOPE_OPTIONS = [
+  {
+    value: 'waves',
+    icon: faWater,
+    title: 'One Round',
+    description: 'Players and teams are assigned to one round for the whole tournament.',
+  },
+  {
+    value: 'hybrid',
+    icon: faShuffle,
+    title: 'One Round Per Wave',
+    description: 'Players and teams are assigned to one round in each wave.',
+  },
+]
 
 // Waves and Hybrid both organize rounds into waves (see WavesPanel) — the
 // only real difference between them is assignment scope (see
@@ -142,7 +175,12 @@ function RoundFormatSummary({ option, onEdit }) {
   )
 }
 
-function RoundFormatOption({ icon, iconText, title, playDescription, availabilityDescription, isSelected, isDisabled, disabledReason, onClick }) {
+// advancesToNextStep flags the tiles that move on to another question
+// (Multiple Rounds, Wave) rather than already being a complete answer
+// (Single Round, Sequence, either Assign Players & Teams tile) — those get a
+// right arrow so it's clear tapping them isn't final; every other tile shows
+// no end icon at all.
+function RoundFormatOption({ icon, iconText, title, playDescription, availabilityDescription, isSelected, isDisabled, disabledReason, advancesToNextStep, onClick }) {
   return (
     <div
       className={`sched-format-option${isSelected ? ' sched-format-option--selected' : ''}${isDisabled ? ' sched-format-option--disabled' : ''}`}
@@ -164,6 +202,11 @@ function RoundFormatOption({ icon, iconText, title, playDescription, availabilit
           </>
         )}
       </div>
+      {!isDisabled && advancesToNextStep && (
+        <div className="sched-format-option-end-icon">
+          <FontAwesomeIcon icon={faArrowRight} />
+        </div>
+      )}
     </div>
   )
 }
@@ -348,7 +391,7 @@ function FilterRoundCard({ name, roundMeta, courseName, activeRoundName, isActiv
 // "Edit Round" gives way to "Start Round" — the setup step is done, so editing the
 // round's own info no longer applies here and starting it becomes the live action.
 // Shares the info-block markup/classes with FilterRoundCard above.
-function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, assignedCount, rosterCount, hideRosterCount, onOpenHoleAssignments, onEditRound }) {
+function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, assignedCount, rosterCount, hideRosterCount, onOpenHoleAssignments, onEditRound, onCloneRound }) {
   const meta = roundMeta
   const isFullyAssigned = rosterCount > 0 && assignedCount === rosterCount
   return (
@@ -388,8 +431,164 @@ function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, 
         {hasAssignments && (
           <GSButton type="green" isFocusable title="Start Round" onClick={() => {}} />
         )}
-        <GSButton type="light-grey icon" size="primary" isFocusable buttonIcon={faClone} onClick={() => {}} />
+        <GSButton type="light-grey icon" size="primary" isFocusable buttonIcon={faClone} title="Copy Round" onClick={onCloneRound} />
       </div>
+    </div>
+  )
+}
+
+// One linked section's rounds (a Round Number group, or a wave's own
+// rounds), drag-to-reorder via a grabber — same pointer-driven adjacent-swap
+// approach as WavesPanel's own wave list, scaled down to this list's flat
+// rows (no header-collapse needed; a round card is already just the one
+// row, nothing nested to shrink out of the way while dragging). Reordering
+// only ever changes the array `rounds` is rendered in — it never touches
+// each round's own (internal, never-shown) Round Letter; onReorder feeds
+// roundOrderOverrides, which is the actual source of truth for display
+// order from here on.
+function RoundGroupList({ rounds, renderRound, onReorder }) {
+  const [draggingRound, setDraggingRound] = useState(null)
+  const [dragOffsetY, setDragOffsetY] = useState(0)
+  const [draftOrder, setDraftOrder] = useState(null)
+  const [flashOffsets, setFlashOffsets] = useState({})
+  const isReordering = draggingRound != null
+
+  const rowRefs = useRef(new Map())
+  const dragStartYRef = useRef(0)
+  const listRef = useRef(null)
+
+  const displayRounds = draftOrder ?? rounds
+
+  function setRowRef(round, el) {
+    if (el) rowRefs.current.set(round, el)
+    else rowRefs.current.delete(round)
+  }
+
+  function measureRowStep(excludeRound) {
+    const gap = listRef.current ? parseFloat(getComputedStyle(listRef.current).rowGap) || 0 : 0
+    for (const [round, el] of rowRefs.current) {
+      if (round === excludeRound) continue
+      return el.getBoundingClientRect().height + gap
+    }
+    return 0
+  }
+
+  function handleGrabberPointerDown(e, round) {
+    if (e.button != null && e.button !== 0) return
+    e.preventDefault()
+    dragStartYRef.current = e.clientY
+    setDraggingRound(round)
+    setDragOffsetY(0)
+    setDraftOrder(rounds)
+  }
+
+  function handleGrabberPointerMove(e) {
+    if (draggingRound == null) return
+    const step = measureRowStep(draggingRound)
+    let offset = e.clientY - dragStartYRef.current
+    if (step > 0) {
+      const order = [...(draftOrder ?? rounds)]
+      let idx = order.indexOf(draggingRound)
+      const flashes = {}
+      let didSwap = false
+      while (idx < order.length - 1 && offset > step / 2) {
+        const other = order[idx + 1]
+        order[idx] = other
+        order[idx + 1] = draggingRound
+        flashes[other] = step
+        idx += 1
+        offset -= step
+        didSwap = true
+      }
+      while (idx > 0 && offset < -step / 2) {
+        const other = order[idx - 1]
+        order[idx] = other
+        order[idx - 1] = draggingRound
+        flashes[other] = -step
+        idx -= 1
+        offset += step
+        didSwap = true
+      }
+      if (didSwap) {
+        setDraftOrder(order)
+        setFlashOffsets(prev => ({ ...prev, ...flashes }))
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setFlashOffsets(prev => {
+              const next = { ...prev }
+              Object.keys(flashes).forEach(id => { next[id] = 0 })
+              return next
+            })
+          })
+        })
+      }
+      const min = -idx * step
+      const max = (order.length - 1 - idx) * step
+      offset = Math.min(Math.max(offset, min), max)
+    }
+    setDragOffsetY(offset)
+    dragStartYRef.current = e.clientY - offset
+  }
+
+  function handleGrabberPointerUp() {
+    if (draftOrder && draftOrder.some((round, i) => round !== rounds[i])) {
+      onReorder(draftOrder)
+    }
+    setDraggingRound(null)
+    setDragOffsetY(0)
+    setFlashOffsets({})
+    setDraftOrder(null)
+  }
+
+  const pointerMoveRef = useRef(() => {})
+  const pointerUpRef = useRef(() => {})
+  pointerMoveRef.current = handleGrabberPointerMove
+  pointerUpRef.current = handleGrabberPointerUp
+
+  useEffect(() => {
+    if (draggingRound == null) return
+    const onMove = e => pointerMoveRef.current(e)
+    const onUp = e => pointerUpRef.current(e)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+  }, [draggingRound])
+
+  // Same as WavesPanel's wave grabber: reordering only means anything once
+  // there's a second row to reorder against, so a lone round in its group
+  // gets no grabber to drag.
+  const showGrabber = rounds.length >= 2
+
+  return (
+    <div ref={listRef} className={`sched-round-group-list${isReordering ? ' sched-round-group-list--reordering' : ''}`}>
+      {displayRounds.map(r => {
+        const isDragging = r === draggingRound
+        const rowStyle = {
+          transform: (isDragging ? dragOffsetY : (flashOffsets[r] ?? 0)) !== 0
+            ? `translateY(${isDragging ? dragOffsetY : flashOffsets[r]}px)`
+            : undefined,
+          zIndex: isDragging ? 2 : undefined,
+        }
+        return (
+          <div key={r} ref={el => setRowRef(r, el)} className="sched-round-row" style={rowStyle}>
+            <div className={`sched-round-row-inner${isDragging ? ' sched-round-row-inner--dragging' : ''}`}>
+              <div className="sched-round-row-card">
+                {renderRound(r)}
+              </div>
+              {showGrabber && (
+                <div className="sched-round-row-grabber" onPointerDown={e => handleGrabberPointerDown(e, r)}>
+                  <GSButton size="secondary" buttonIcon={faGripLines} onClick={e => e.stopPropagation()} />
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -459,8 +658,44 @@ export default function TournamentSchedulerPage() {
     return SORTED_TEAMS.slice(0, tournament.teamCount ?? SORTED_TEAMS.length)
   }
 
+  // Round Number is the user-facing linking key (see CreateRoundPanel's own
+  // Round Number field) — separate from a round's internal ROUND_META key,
+  // which stays a unique per-round id regardless of how many rounds share the
+  // same displayed number. Falls back to the round's own key for any round
+  // that never set one (every pre-existing seeded round), so numbering reads
+  // exactly as it always has until a tournament actually starts linking
+  // rounds together.
+  function roundNumberOf(r) {
+    return ROUND_META[r]?.roundNumber ?? r
+  }
+
+  // Every round sharing r's Round Number, r included — length > 1 is what
+  // "linked" means: two rounds that happen at the same time, grouped in the
+  // round list the same way waves used to group rounds into one section.
+  function roundGroupMates(r) {
+    const num = roundNumberOf(r)
+    return ROUNDS.filter(other => roundNumberOf(other) === num)
+  }
+
+  // roundGroupMates minus r itself — a Round Number is essentially a wave:
+  // rounds sharing one are exclusive to each other the same way wave-mates
+  // are (see waveMateRounds/hybridWaveScoped below), regardless of
+  // savedRoundFormat, since round-linking is how a format-less tournament
+  // gets this same "one of these, not both" behavior. Empty for an unlinked
+  // round — nothing to be exclusive with.
+  function roundNumberMates(r) {
+    return roundGroupMates(r).filter(other => other !== r)
+  }
+
   function roundName(r) {
-    return ROUND_META[r]?.name ?? `Round ${r}`
+    if (ROUND_META[r]?.name) return ROUND_META[r].name
+    // Linked rounds sharing a number no longer get an A/B/C suffix to tell
+    // them apart — that distinction now lives only in each round's own
+    // internal roundLetter (see CreateRoundPanel), never on screen. Two
+    // linked rounds neither of which has a custom Round Label can end up
+    // both reading as e.g. "Round 1" — the Round Label is what people are
+    // expected to rely on to tell them apart at a glance.
+    return `Round ${roundNumberOf(r)}`
   }
   function roundCourse(r) {
     return ROUND_META[r]?.course ?? COURSE_NAME
@@ -500,25 +735,35 @@ export default function TournamentSchedulerPage() {
   const [roundSetupPanelOpen, setRoundSetupPanelOpen] = useState(false)
   const [roundFormat, setRoundFormat] = useState(null)
   const [savedRoundFormat, setSavedRoundFormat] = useState(() => tournament.savedRoundFormat ?? null)
+  // Round Number linking (as opposed to Wave assignment) only applies to a
+  // tournament that never went through Round Setup at all — one that
+  // already has a format (Waves included) still gets its round numbers
+  // assigned plainly/in sequence.
+  const roundLinkingEnabled = !savedRoundFormat
   const [formatChangeWarningOpen, setFormatChangeWarningOpen] = useState(false)
-  // Round Setup's own two-step navigation: 'type' is the Single/Multiple
-  // Rounds picker, 'format' is the Sequence/Wave/Hybrid Wave picker offered
-  // only once Multiple Rounds is chosen. Reopening the panel on a tournament
-  // already saved as one of those three formats drops straight into 'format'
-  // (with Back still available) rather than re-asking Single vs Multiple.
+  // Round Setup's own three-step navigation: 'type' is the Single/Multiple
+  // Rounds picker, 'format' is the Sequence/Wave picker offered only once
+  // Multiple Rounds is chosen, and 'wave-scope' is the One Round/One Round
+  // Per Wave picker offered only once Wave is chosen there. Each step's own
+  // back arrow (see backToRoundTypeStep/backToFormatStep below) steps back
+  // one at a time rather than closing the panel outright. Editing an existing
+  // format always re-walks the steps rather than dropping straight into
+  // 'wave-scope' — the one exception is 'type' itself, skipped straight to
+  // 'format' when the tournament already has 2+ rounds, since Single Round is
+  // disabled (and so unreachable) in that case anyway.
   const [roundSetupStep, setRoundSetupStep] = useState('type')
 
   function openRoundSetup() {
     setRoundFormat(savedRoundFormat)
     setFormatChangeWarningOpen(false)
-    setRoundSetupStep(savedRoundFormat && savedRoundFormat !== 'single' ? 'format' : 'type')
+    setRoundSetupStep(hasMultipleRounds ? 'format' : 'type')
     setRoundSetupPanelOpen(true)
   }
 
   // Single commits immediately (same as picking any format tile always has) —
   // Multiple Rounds has no format of its own, so it just advances to the next
   // question instead. Clears a stale 'single' draft when backing into Multiple
-  // Rounds so neither of the three format tiles reads as pre-selected.
+  // Rounds so neither of the format tiles reads as pre-selected.
   function pickRoundType(type) {
     if (type === 'single') {
       pickRoundFormat('single')
@@ -532,30 +777,65 @@ export default function TournamentSchedulerPage() {
     setRoundSetupStep('type')
   }
 
+  function backToFormatStep() {
+    setRoundSetupStep('format')
+  }
+
+  // Sequence commits (or drafts) same as any other tile always has — but Wave
+  // isn't a complete answer on its own any more, so picking it just advances
+  // to the assignment-scope question instead. Carries over an already-chosen
+  // scope (waves or hybrid) if there is one — e.g. re-walking the steps to
+  // edit a tournament already saved as Hybrid Wave lands back on Wave here —
+  // so its answer shows pre-selected on the next screen instead of forcing a
+  // reselect of something already chosen.
+  function pickMultiRoundFormat(format) {
+    if (format === 'waves') {
+      setRoundFormat(prev => (formatManagesWaves(prev) ? prev : null))
+      setRoundSetupStep('wave-scope')
+      return
+    }
+    pickRoundFormat(format)
+  }
+
   // Nothing to lose yet (no rounds, no waves) once this is false — a format
-  // change is free to happen the instant a tile is tapped instead of needing
-  // an explicit Save. Once real setup exists, Save (with its warning step) is
-  // still required to actually change it.
+  // change is free to commit the instant a tile is tapped. Once real setup
+  // exists, tapping a tile still commits immediately unless it's actually
+  // changing the format, in which case the warning step below intercepts it
+  // first — there's no separate Save; every terminal tile IS the save.
   function hasExistingRoundSetup() {
     return hasRounds || waves.length > 0
   }
 
   function pickRoundFormat(format) {
     setRoundFormat(format)
-    if (!hasExistingRoundSetup()) commitRoundFormat(format)
-  }
-
-  function saveRoundFormat() {
-    const isChangingFormat = !!savedRoundFormat && roundFormat !== savedRoundFormat
+    const isChangingFormat = !!savedRoundFormat && format !== savedRoundFormat
     if (hasExistingRoundSetup() && isChangingFormat) {
       setFormatChangeWarningOpen(true)
       return
     }
-    commitRoundFormat()
+    commitRoundFormat(format)
   }
 
   function cancelFormatChangeWarning() {
     setFormatChangeWarningOpen(false)
+  }
+
+  // Drives the side panel's own top-left chevron (see AppSidePanel's onBack)
+  // instead of a per-step arrow inside each GSActionBar — steps back one
+  // screen at a time through Round Setup's flow, only actually closing the
+  // panel once there's nowhere left to step back to. Mirrors openRoundSetup's
+  // own entry logic: 'format' is a true first step (nothing to back into)
+  // whenever 'type' was skipped for having 2+ rounds already.
+  function handleRoundSetupBack() {
+    if (formatChangeWarningOpen) {
+      cancelFormatChangeWarning()
+    } else if (roundSetupStep === 'wave-scope') {
+      backToFormatStep()
+    } else if (roundSetupStep === 'format' && !hasMultipleRounds) {
+      backToRoundTypeStep()
+    } else {
+      setRoundSetupPanelOpen(false)
+    }
   }
 
   function commitRoundFormat(format = roundFormat) {
@@ -609,11 +889,21 @@ export default function TournamentSchedulerPage() {
   // never touches wave assignment (that's WaveRoundsPanel's job), so the
   // Wave quick-select stays hidden whenever this is set.
   const [editingRoundNumber, setEditingRoundNumber] = useState(null)
+  // Set when the panel was opened via the Linked/Unlinked choice below,
+  // rather than directly — same reasoning as createRoundOpenedFromWave,
+  // just for the other panel that can precede this one.
+  const [createRoundOpenedFromLinkChoice, setCreateRoundOpenedFromLinkChoice] = useState(false)
+  // Seeds the form's Round Number field with a specific already-existing
+  // number (see linkToRoundNumber below) instead of the next unused one —
+  // null means "leave it at the usual default."
+  const [createRoundInitialNumber, setCreateRoundInitialNumber] = useState(null)
 
-  function openCreateRoundPanel(targetWaveId = null) {
+  function openCreateRoundPanel(targetWaveId = null, initialNumber = null, openedFromLinkChoice = false) {
     setEditingRoundNumber(null)
     setCreateRoundTargetWaveId(targetWaveId)
     setCreateRoundOpenedFromWave(!!targetWaveId)
+    setCreateRoundInitialNumber(initialNumber)
+    setCreateRoundOpenedFromLinkChoice(openedFromLinkChoice)
     setCreateRoundPanelOpen(true)
   }
 
@@ -629,6 +919,95 @@ export default function TournamentSchedulerPage() {
     setCreateRoundTargetWaveId(null)
     setCreateRoundOpenedFromWave(false)
     setEditingRoundNumber(null)
+    setCreateRoundInitialNumber(null)
+    setCreateRoundOpenedFromLinkChoice(false)
+  }
+
+  // Round Number linking's own guided picker, shown before CreateRoundPanel
+  // itself whenever there's at least one existing round to possibly link to
+  // (see handleAddRoundClick) — tapping a tile picks the new round's Round
+  // Number rather than typing one in and hoping it matches an existing round.
+  // 'choice' offers Linked/Unlinked; 'target' (skipped entirely when exactly
+  // one Round Number already exists — see chooseLinkedRound) lets a Linked
+  // choice pick which existing Round Number to share. Also reused by Copy
+  // Round (see handleCloneRoundClick) — cloningRound is what tells the two
+  // flows apart once a choice comes back: set, it's a round to duplicate
+  // once the new Round Number is settled; null, it's a brand-new round
+  // headed into CreateRoundPanel same as ever.
+  const [addRoundChoicePanelOpen, setAddRoundChoicePanelOpen] = useState(false)
+  const [addRoundChoiceStep, setAddRoundChoiceStep] = useState('choice')
+  const [cloningRound, setCloningRound] = useState(null)
+
+  function handleAddRoundClick() {
+    if (roundNumberGroups.length > 0) {
+      setCloningRound(null)
+      setAddRoundChoiceStep('choice')
+      setAddRoundChoicePanelOpen(true)
+    } else {
+      openCreateRoundPanel()
+    }
+  }
+
+  // Copy Round: same Linked/Unlinked ask as Add Round — a duplicate needs
+  // its own Round Number decided same as any other new round would, rather
+  // than silently inheriting the original's (which would either double up
+  // an existing link or leave the two indistinguishable with no chance to
+  // reconsider). Only for tournaments that use Round Number linking at all;
+  // every other format clones straight away since there's nothing to ask.
+  function handleCloneRoundClick(round) {
+    if (roundLinkingEnabled) {
+      setCloningRound(round)
+      setAddRoundChoiceStep('choice')
+      setAddRoundChoicePanelOpen(true)
+    } else {
+      cloneRound(round, null)
+    }
+  }
+
+  function closeAddRoundChoicePanel() {
+    setAddRoundChoicePanelOpen(false)
+    setAddRoundChoiceStep('choice')
+    setCloningRound(null)
+  }
+
+  function chooseUnlinkedRound() {
+    const source = cloningRound
+    closeAddRoundChoicePanel()
+    if (source != null) cloneRound(source, null)
+    else openCreateRoundPanel(null, null, true)
+  }
+
+  function chooseLinkedRound() {
+    if (roundNumberGroups.length === 1) {
+      linkToRoundNumber(roundNumberGroups[0].number)
+    } else {
+      setAddRoundChoiceStep('target')
+    }
+  }
+
+  function linkToRoundNumber(number) {
+    const source = cloningRound
+    closeAddRoundChoicePanel()
+    if (source != null) cloneRound(source, number)
+    else openCreateRoundPanel(null, number, true)
+  }
+
+  // The actual duplication, once a Round Number has been settled on (or, for
+  // a non-linking format, immediately) — copies every other field from the
+  // source round's own ROUND_META as-is, dropped in as a fresh round via the
+  // same creation path Add Round itself ends in, so it gets its own
+  // assignments/group counts/exclusions rather than sharing the source's.
+  function cloneRound(sourceRound, targetNumber) {
+    const source = ROUND_META[sourceRound]
+    if (!source) return
+    handleCreateRound({
+      ...source,
+      status: 'Draft',
+      ...(roundLinkingEnabled ? {
+        roundNumber: targetNumber ?? (roundNumberGroups.length ? Math.max(...roundNumberGroups.map(g => g.number)) + 1 : 1),
+        roundLetter: 'A',
+      } : {}),
+    })
   }
 
   function handleCreateRound(roundMeta) {
@@ -651,6 +1030,11 @@ export default function TournamentSchedulerPage() {
       setWaves(prev => prev.map(w => (
         w.id === createRoundTargetWaveId ? { ...w, roundIds: [...w.roundIds, nextRound] } : w
       )))
+      // Land back on the waves overview rather than this specific wave's own
+      // detail panel underneath — a no-op if WaveRoundsPanel wasn't actually
+      // open (e.g. a wave card's own top-level Add Round button already
+      // sits directly on top of the overview with no detail panel involved).
+      closeWaveRoundsPanel()
     }
     setActiveRound(nextRound)
     setCreateRoundTargetWaveId(null)
@@ -737,18 +1121,18 @@ export default function TournamentSchedulerPage() {
 
   // Wave order drives both the Waves panel's card order and the landing
   // view's wave-grouped round sections (see groupedRoundSections below), so
-  // reordering here reorders both at once. Drag-to-reorder from WavesPanel:
-  // draggedId is picked up out of the list and dropped in at whichever
-  // wave's position it was released on.
-  function reorderWave(draggedId, targetId) {
+  // reordering here reorders both at once. WavesPanel's own drag handles the
+  // live, swap-by-swap preview entirely with local state — this only gets
+  // called once, on release, with the final order — because this component
+  // has enough of its own derived state (roundAvailableCounts,
+  // groupedRoundSections, the whole hole-assignment grid, etc.) that
+  // recomputing it on every single swap mid-drag, rather than once at the
+  // end, was slow enough to make the drag itself visibly stutter/hang.
+  function setWaveOrder(orderedIds) {
     setWaves(prev => {
-      const dragIndex = prev.findIndex(w => w.id === draggedId)
-      const targetIndex = prev.findIndex(w => w.id === targetId)
-      if (dragIndex === -1 || targetIndex === -1) return prev
-      const next = [...prev]
-      const [dragged] = next.splice(dragIndex, 1)
-      next.splice(targetIndex, 0, dragged)
-      return next
+      const byId = new Map(prev.map(w => [w.id, w]))
+      const next = orderedIds.map(id => byId.get(id)).filter(Boolean)
+      return next.length === prev.length ? next : prev
     })
   }
 
@@ -1092,11 +1476,30 @@ export default function TournamentSchedulerPage() {
   const [teamSearch, setTeamSearch]       = useState('')
   const [roundListSearch, setRoundListSearch] = useState('')
 
-  // Rounds shown on the tournament landing view, filtered by round number/name.
+  // Manual drag order for a linked section's rounds (see RoundGroupList),
+  // keyed by the section's own key — independent of each round's Round
+  // Letter, which is never shown or user-editable, just auto-assigned at
+  // creation (see CreateRoundPanel) to give same-number rounds a stable
+  // default order before anyone's dragged them. This override is what
+  // actually decides display order from then on.
+  const [roundOrderOverrides, setRoundOrderOverrides] = useState({})
+
+  // Rounds shown on the tournament landing view, filtered by round
+  // number/name and ordered by each round's own Round Number (not its
+  // ROUND_META key, which is just an internal id that a custom-numbered or
+  // edited round can easily disagree with), then by each round's internal,
+  // auto-assigned Round Letter (A-Z) as a default tiebreak for rounds that
+  // share a number — overridden the moment someone drags one, see
+  // roundOrderOverrides above.
   const filteredRounds = useMemo(() => {
     const q = roundListSearch.trim().toLowerCase()
-    if (!q) return ROUNDS
-    return ROUNDS.filter(r => roundName(r).toLowerCase().includes(q) || String(r).includes(q))
+    const rounds = q
+      ? ROUNDS.filter(r => roundName(r).toLowerCase().includes(q) || String(r).includes(q))
+      : ROUNDS
+    return [...rounds].sort((a, b) => (
+      roundNumberOf(a) - roundNumberOf(b)
+      || (ROUND_META[a]?.roundLetter ?? 'A').localeCompare(ROUND_META[b]?.roundLetter ?? 'A')
+    ))
   }, [ROUNDS, roundListSearch])
 
   // Segmented-list grouping (mirrors the tiered Sponsors list pattern): once
@@ -1111,6 +1514,7 @@ export default function TournamentSchedulerPage() {
     const sections = waves
       .map(w => ({
         key: `wave-${w.id}`,
+        kind: 'wave',
         title: w.name,
         rounds: filteredRounds.filter(r => w.roundIds.includes(r)),
       }))
@@ -1118,10 +1522,103 @@ export default function TournamentSchedulerPage() {
     sections.forEach(section => section.rounds.forEach(r => groupedRoundNumbers.add(r)))
     const ungroupedRounds = filteredRounds.filter(r => !groupedRoundNumbers.has(r))
     if (ungroupedRounds.length > 0) {
-      sections.push({ key: 'ungrouped', title: 'Not Assigned to Waves', rounds: ungroupedRounds })
+      sections.push({ key: 'ungrouped', kind: 'wave', title: 'Not Assigned to Waves', rounds: ungroupedRounds })
     }
     return sections
   }, [waves, filteredRounds])
+
+  // Linked Round Label: a purely cosmetic override for a Round Number
+  // group's own sticky-header/tile-picker title, once it's actually linked
+  // (2+ rounds) — see that header's own edit pencil below, and the target
+  // step of the Linked/Unlinked choice further down. Stored separately from
+  // ROUND_META since it names the *group*, not any one round, and never
+  // touches the Round Number itself, CreateRoundPanel's own Round Number
+  // field, or any individual round's own name (see roundName) — those all
+  // still read as "Round 1" regardless of what this is set to.
+  const [linkedRoundLabels, setLinkedRoundLabels] = useState({})
+  const [linkedRoundLabelPanelOpen, setLinkedRoundLabelPanelOpen] = useState(false)
+  const [editingLinkedRoundNumber, setEditingLinkedRoundNumber] = useState(null)
+
+  function linkedGroupLabel(number, fallback) {
+    return linkedRoundLabels[number]?.trim() || fallback
+  }
+
+  function openLinkedRoundLabelPanel(number) {
+    setEditingLinkedRoundNumber(number)
+    setLinkedRoundLabelPanelOpen(true)
+  }
+
+  function closeLinkedRoundLabelPanel() {
+    setLinkedRoundLabelPanelOpen(false)
+    setEditingLinkedRoundNumber(null)
+  }
+
+  function saveLinkedRoundLabel(label) {
+    setLinkedRoundLabels(prev => ({ ...prev, [editingLinkedRoundNumber]: label }))
+    closeLinkedRoundLabelPanel()
+  }
+
+  // Fallback grouping for tournaments that never went through Round Setup at
+  // all (no waves, no savedRoundFormat) — rounds instead get linked directly
+  // by sharing a Round Number (see CreateRoundPanel's own Round Number
+  // field), so the list groups those the same way it groups waves. Only
+  // kicks in once an actual link exists (2+ rounds sharing a number) —
+  // otherwise every round has a number all its own, which is exactly the
+  // plain flat list already handled by groupedRoundSections being null.
+  const roundNumberGroupedSections = useMemo(() => {
+    if (waves.length > 0) return null
+    const byNumber = new Map()
+    filteredRounds.forEach(r => {
+      const num = roundNumberOf(r)
+      if (!byNumber.has(num)) byNumber.set(num, [])
+      byNumber.get(num).push(r)
+    })
+    const hasAnyLink = [...byNumber.values()].some(group => group.length > 1)
+    if (!hasAnyLink) return null
+    return [...byNumber.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([num, rounds]) => ({
+        key: `round-number-${num}`,
+        kind: 'roundNumber',
+        number: num,
+        title: linkedGroupLabel(num, `Round ${num}`),
+        rounds,
+      }))
+  }, [waves, filteredRounds, linkedRoundLabels])
+
+  // Layers any manual drag order on top of a section's default (Round
+  // Number then Letter) order — a stored override only ever reorders rounds
+  // already in the section; a round added or unlinked since the drag just
+  // falls in at the end rather than getting dropped.
+  const displayedRoundSections = useMemo(() => {
+    const sections = groupedRoundSections ?? roundNumberGroupedSections
+    if (!sections) return sections
+    return sections.map(section => {
+      const order = roundOrderOverrides[section.key]
+      if (!order) return section
+      const orderedSet = new Set(order)
+      const ordered = order.filter(r => section.rounds.includes(r))
+      const rest = section.rounds.filter(r => !orderedSet.has(r))
+      return { ...section, rounds: [...ordered, ...rest] }
+    })
+  }, [groupedRoundSections, roundNumberGroupedSections, roundOrderOverrides])
+
+  // Every distinct Round Number already in use, oldest first, each with the
+  // letters already claimed within it — feeds CreateRoundPanel's own Round
+  // Number field (its "Link to Round X" options) and the next-available-
+  // letter default for a round newly linked into one of these groups.
+  const roundNumberGroups = useMemo(() => {
+    const map = new Map()
+    ROUNDS.forEach(r => {
+      const num = roundNumberOf(r)
+      const letter = ROUND_META[r]?.roundLetter ?? 'A'
+      if (!map.has(num)) map.set(num, [])
+      map.get(num).push({ round: r, letter })
+    })
+    return [...map.entries()]
+      .map(([number, entries]) => ({ number, entries }))
+      .sort((a, b) => a.number - b.number)
+  }, [ROUNDS, ROUND_META])
 
   // Momentary confirmation highlight: a slot that was just assigned/swapped into holds
   // cyan-800 then fades to cyan-700; a team just returned to the pool (swapped out or
@@ -1254,11 +1751,14 @@ export default function TournamentSchedulerPage() {
   }
 
   // Whether any teams are currently being hidden from the active round's pool —
-  // via the legacy per-round Filter panel, or the newer global Settings toggle.
-  const hidingAnyTeams = !roundIsWaveExempt(activeRound) && (
-    (useLegacyFilter ? excludedRounds.size > 0 : (hideTeamsAssignedElsewhere || waveFormatExclusive))
-    || (hybridWaveScoped && waveMateRounds(activeRound).length > 0)
-  )
+  // via the legacy per-round Filter panel, the newer global Settings toggle, or
+  // (independent of format) this round being linked to others by Round Number.
+  const hidingAnyTeams = (
+    !roundIsWaveExempt(activeRound) && (
+      (useLegacyFilter ? excludedRounds.size > 0 : (hideTeamsAssignedElsewhere || waveFormatExclusive))
+      || (hybridWaveScoped && waveMateRounds(activeRound).length > 0)
+    )
+  ) || roundNumberMates(activeRound).length > 0
 
   // How many teams would be available for each round, given that round's own
   // assignments plus whichever other rounds are currently hidden from it (legacy:
@@ -1283,10 +1783,15 @@ export default function TournamentSchedulerPage() {
           Object.values(assignmentsByRound[wr] || {}).forEach(name => hiddenTeams.add(name))
         })
       }
+      // Independent of format/branch above — a round linked to others by
+      // Round Number is exclusive to them the same way wave-mates are.
+      roundNumberMates(r).forEach(mate => {
+        Object.values(assignmentsByRound[mate] || {}).forEach(name => hiddenTeams.add(name))
+      })
       result[r] = teamsForRound(r).length - hiddenTeams.size
     })
     return result
-  }, [assignmentsByRound, useLegacyFilter, excludedRoundsByRound, hideTeamsAssignedElsewhere, waveFormatExclusive, hybridWaveScoped, savedRoundFormat, roundWaveIdByNumber, tournament, ROUNDS, waves])
+  }, [assignmentsByRound, useLegacyFilter, excludedRoundsByRound, hideTeamsAssignedElsewhere, waveFormatExclusive, hybridWaveScoped, savedRoundFormat, roundWaveIdByNumber, tournament, ROUNDS, ROUND_META, waves])
 
   // Teams that are already assigned in this round (not in the available pool)
   const assignedTeamNames = useMemo(() => new Set(Object.values(assignments)), [assignments])
@@ -1312,8 +1817,13 @@ export default function TournamentSchedulerPage() {
         Object.values(assignmentsByRound[r] || {}).forEach(name => names.add(name))
       })
     }
+    // Independent of format/branch above — a round linked to others by Round
+    // Number is exclusive to them the same way wave-mates are.
+    roundNumberMates(activeRound).forEach(r => {
+      Object.values(assignmentsByRound[r] || {}).forEach(name => names.add(name))
+    })
     return names
-  }, [useLegacyFilter, excludedRounds, hideTeamsAssignedElsewhere, waveFormatExclusive, hybridWaveScoped, savedRoundFormat, roundWaveIdByNumber, assignmentsByRound, activeRound, ROUNDS, waves])
+  }, [useLegacyFilter, excludedRounds, hideTeamsAssignedElsewhere, waveFormatExclusive, hybridWaveScoped, savedRoundFormat, roundWaveIdByNumber, assignmentsByRound, activeRound, ROUNDS, ROUND_META, waves])
 
   const availableTeams = useMemo(
     () => TOURNAMENT_TEAMS.filter(t => !assignedTeamNames.has(t.name) && !filterExcludedTeamNames.has(t.name)),
@@ -1593,6 +2103,29 @@ export default function TournamentSchedulerPage() {
   const showWaveNav = wavesWithRounds.length >= 2 && activeWaveId !== undefined
   const activeWaveName = wavesWithRounds.find(w => w.id === activeWaveId)?.name
 
+  // Same nav, reused for a format-less tournament's Round Number groups — a
+  // Round Number is essentially a wave (see roundNumberMates), so linked
+  // rounds get the same drill-down picker real waves do, shaped into the
+  // same {id, name, roundIds} groups WaveRoundNav already expects. Only
+  // kicks in with 2+ distinct Round Numbers, same reasoning as showWaveNav —
+  // a tournament with everything under one number has nothing to switch
+  // between at this level, so it falls back to the plain round tabs, which
+  // already show that one group's members.
+  const roundNumberNavGroups = useMemo(() => {
+    const map = new Map()
+    ROUNDS.forEach(r => {
+      const num = roundNumberOf(r)
+      if (!map.has(num)) map.set(num, [])
+      map.get(num).push(r)
+    })
+    return [...map.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([num, roundIds]) => ({ id: num, name: `Round ${num}`, roundIds }))
+  }, [ROUNDS, ROUND_META])
+  const activeRoundNumberGroupId = activeRound !== undefined ? roundNumberOf(activeRound) : undefined
+  const showRoundNumberNav = roundLinkingEnabled && roundNumberNavGroups.length >= 2
+  const activeRoundNumberGroupName = roundNumberNavGroups.find(g => g.id === activeRoundNumberGroupId)?.name
+
   // WaveRoundNav (the wave/round picker) is collapsed to a compact "Wave
   // Name | Change Round" line by default and only expands on demand — it
   // re-collapses itself the moment a round is actually picked, rather than
@@ -1618,13 +2151,13 @@ export default function TournamentSchedulerPage() {
         type="x-large-pad H3"
         header="Rounds & Scorecards"
         pageActions={[
-          // Gated on the format being set, not on a round actually existing
-          // yet — e.g. picking Waves opens straight into Manage Waves, but
-          // closing that before adding anything shouldn't stall the page
-          // back on a bare "Round Setup" button when the format (and so the
-          // right next actions) is already known.
+          // No format ever gets chosen up front any more — Add Round is the
+          // primary action from the very first round, same as any other
+          // plain-rounds tournament. Round Setup only still exists for
+          // tournaments that already went through it (see RoundFormatSummary
+          // below).
           ...(!savedRoundFormat
-            ? [{ buttonTitle: 'Round Setup', type: 'black', actionClick: openRoundSetup }]
+            ? [{ buttonTitle: 'Add Round', buttonIcon: faPlus, type: 'black', actionClick: handleAddRoundClick }]
             // A Single Round tournament's one round already exists once
             // hasRounds is true — there's nothing left to add, so the
             // primary action drops out entirely rather than offering an Add
@@ -1644,12 +2177,10 @@ export default function TournamentSchedulerPage() {
                     { buttonTitle: 'Manage Waves', buttonIcon: faWater, type: 'light-grey', actionClick: () => setWavesPanelOpen(true) },
                   ]
                 : [{ buttonTitle: 'Add Round', buttonIcon: faPlus, type: 'black', actionClick: () => openCreateRoundPanel() }]),
-          ...(savedRoundFormat && savedRoundFormat !== 'single' ? [
+          ...(savedRoundFormat !== 'single' ? [
             { buttonTitle: 'Team Check In', buttonIcon: faListCheck, type: 'light-grey', actionClick: () => {} },
           ] : []),
-          ...(savedRoundFormat ? [
-            { buttonTitle: 'Documents', buttonIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
-          ] : []),
+          { buttonTitle: 'Documents', buttonIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
           ...(!useLegacyFilter && savedRoundFormat && !tournament.hideSettingsButton ? [{ buttonIcon: faGear, type: 'light-grey', actionClick: openSettingsPanel }] : []),
         ]}
       />
@@ -1667,10 +2198,11 @@ export default function TournamentSchedulerPage() {
               />
             </div>
           )}
-          {/* Once waves group the list below, each group's own sticky header
-              carries the shadow — keeping it here too would double it up. */}
+          {/* Once waves (or linked Round Numbers) group the list below, each
+              group's own sticky header carries the shadow — keeping it here
+              too would double it up. */}
           <div
-            className={`sched-round-list-sticky${groupedRoundSections ? ' sched-round-list-sticky--no-shadow' : ''}`}
+            className={`sched-round-list-sticky${displayedRoundSections ? ' sched-round-list-sticky--no-shadow' : ''}`}
             ref={roundListStickyRef}
           >
             <div className="sched-round-search">
@@ -1690,22 +2222,23 @@ export default function TournamentSchedulerPage() {
                 title={hasRounds ? `No results for "${roundListSearch}"` : 'Add & Manage Rounds'}
                 detail={hasRounds ? undefined : 'Add new rounds and manage all round details in one spot.'}
                 actions={hasRounds ? undefined : (
-                  // Gated on the format being set, not just on "not Waves" —
-                  // once Single/Multi Round is chosen, Add Round (not Round
-                  // Setup again) is how that first round actually gets
-                  // created, same reasoning as the page action bar above.
+                  // No format ever gets chosen up front any more — a brand
+                  // new tournament goes straight to Add Round, the same as
+                  // any other plain-rounds tournament. Round Setup only still
+                  // exists for tournaments that already went through it (see
+                  // RoundFormatSummary's edit pencil above).
                   !savedRoundFormat
-                    ? [{ title: 'Round Setup', type: 'black', isFocusable: true, onClick: openRoundSetup }]
+                    ? [{ title: 'Add Round', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: handleAddRoundClick }]
                     : formatManagesWaves(savedRoundFormat)
                       ? [
-                          { title: 'Add Round', type: 'black', isFocusable: true, onClick: () => openCreateRoundPanel() },
+                          { title: 'Add Round', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: () => openCreateRoundPanel() },
                           { title: 'Manage Waves', type: 'light-grey', isFocusable: true, onClick: () => setWavesPanelOpen(true) },
                         ]
-                      : [{ title: 'Add Round', type: 'black', isFocusable: true, onClick: () => openCreateRoundPanel() }]
+                      : [{ title: 'Add Round', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: () => openCreateRoundPanel() }]
                 )}
               />
-            ) : groupedRoundSections ? (
-              groupedRoundSections.map(section => (
+            ) : displayedRoundSections ? (
+              displayedRoundSections.map(section => (
                 <div className="sched-round-group" key={section.key}>
                   <GSActionBar
                     type="form-header"
@@ -1714,24 +2247,35 @@ export default function TournamentSchedulerPage() {
                         {section.title} <span className="sched-round-group-count">({section.rounds.length})</span>
                       </>
                     }
-                    pageActions={[
+                    // Round-Number groups have nothing to "manage" the way a
+                    // wave does (no membership panel; dragging a round's own
+                    // grabber, see RoundGroupList, is what reorders one) —
+                    // except its own cosmetic label, once it's actually
+                    // linked (a solo Round Number has no "group" to name).
+                    pageActions={section.kind === 'wave' ? [
                       { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => setWavesPanelOpen(true) },
-                    ]}
+                    ] : section.kind === 'roundNumber' && section.rounds.length > 1 ? [
+                      { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => openLinkedRoundLabelPanel(section.number) },
+                    ] : []}
                   />
-                  {section.rounds.map(r => (
-                    <RoundListCard
-                      key={r}
-                      name={roundName(r)}
-                      roundMeta={ROUND_META[r]}
-                      courseName={roundCourse(r)}
-                      hasAssignments={Object.keys(assignmentsByRound[r] || {}).length > 0}
-                      assignedCount={roundAssignedCounts[r]}
-                      rosterCount={roundRosterCounts[r]}
-                      hideRosterCount={tournament.hideRosterCount}
-                      onOpenHoleAssignments={() => openRound(r)}
-                      onEditRound={() => openEditRoundPanel(r)}
-                    />
-                  ))}
+                  <RoundGroupList
+                    rounds={section.rounds}
+                    onReorder={newOrder => setRoundOrderOverrides(prev => ({ ...prev, [section.key]: newOrder }))}
+                    renderRound={r => (
+                      <RoundListCard
+                        name={roundName(r)}
+                        roundMeta={ROUND_META[r]}
+                        courseName={roundCourse(r)}
+                        hasAssignments={Object.keys(assignmentsByRound[r] || {}).length > 0}
+                        assignedCount={roundAssignedCounts[r]}
+                        rosterCount={roundRosterCounts[r]}
+                        hideRosterCount={tournament.hideRosterCount}
+                        onOpenHoleAssignments={() => openRound(r)}
+                        onEditRound={() => openEditRoundPanel(r)}
+                        onCloneRound={() => handleCloneRoundClick(r)}
+                      />
+                    )}
+                  />
                 </div>
               ))
             ) : (
@@ -1748,6 +2292,7 @@ export default function TournamentSchedulerPage() {
                   hideRosterCount={tournament.hideRosterCount}
                   onOpenHoleAssignments={() => openRound(r)}
                   onEditRound={() => openEditRoundPanel(r)}
+                  onCloneRound={() => handleCloneRoundClick(r)}
                 />
               ))
             )}
@@ -1772,9 +2317,11 @@ export default function TournamentSchedulerPage() {
               header={
                 <>
                   {activeRound !== undefined ? `${roundName(activeRound)} Hole Assignments` : 'Hole Assignments'}
-                  {showWaveNav && (
+                  {(showWaveNav || showRoundNumberNav) && (
                     <div className="sched-wave-switch">
-                      <span className="sched-wave-switch-name">{activeWaveName} Wave</span>
+                      <span className="sched-wave-switch-name">
+                        {showWaveNav ? `${activeWaveName} Wave` : activeRoundNumberGroupName}
+                      </span>
                       <span className="sched-wave-switch-sep">|</span>
                       <button
                         type="button"
@@ -1803,14 +2350,15 @@ export default function TournamentSchedulerPage() {
             />
           </div>
 
-          {showWaveNav && (
+          {(showWaveNav || showRoundNumberNav) && (
             <WaveRoundNav
               isOpen={waveNavOpen}
-              waves={wavesWithRounds}
-              activeWaveId={activeWaveId}
+              waves={showWaveNav ? wavesWithRounds : roundNumberNavGroups}
+              activeWaveId={showWaveNav ? activeWaveId : activeRoundNumberGroupId}
               activeRound={activeRound}
               roundName={roundName}
               onSelectRound={round => { selectRound(round); setWaveNavOpen(false) }}
+              groupLabel={showWaveNav ? 'Waves' : 'Rounds'}
             />
           )}
 
@@ -1833,15 +2381,17 @@ export default function TournamentSchedulerPage() {
                     textValue={holeSearch}
                     onChange={e => setHoleSearch(e.target.value)}
                   />
-                  {/* Only for the plain (non-wave) case — WaveRoundNav above
-                      owns round switching once rounds are wave-managed.
-                      Scrolls (and hides on scroll) as part of this same
-                      header rather than sitting fixed above it — with a
-                      round format that can run many rounds deep, a plain
-                      evenly-stretched tab row would get unreadably cramped,
-                      so this scrolls horizontally instead and only takes
-                      header space while the header itself is showing. */}
-                  {!showWaveNav && (
+                  {/* Only once neither WaveRoundNav case applies — it owns
+                      round switching once rounds are wave-managed, or once a
+                      format-less tournament has 2+ distinct Round Number
+                      groups to switch between. Scrolls (and hides on scroll)
+                      as part of this same header rather than sitting fixed
+                      above it — with a round format that can run many rounds
+                      deep, a plain evenly-stretched tab row would get
+                      unreadably cramped, so this scrolls horizontally
+                      instead and only takes header space while the header
+                      itself is showing. */}
+                  {!showWaveNav && !showRoundNumberNav && (
                     <div className="sched-round-tabs">
                       {ROUNDS.map(r => (
                         <button
@@ -2046,8 +2596,13 @@ export default function TournamentSchedulerPage() {
       <AppSidePanel
         isOpen={roundSetupPanelOpen}
         onClose={() => setRoundSetupPanelOpen(false)}
+        onBack={handleRoundSetupBack}
         title="Round Setup"
         actions={
+          // Every tile commits on tap (see pickRoundFormat) — the only time
+          // this panel needs its own action buttons is the format-change
+          // warning above, intercepting a tile tap that would actually
+          // change an existing format instead of committing it outright.
           formatChangeWarningOpen
             ? [
                 { name: 'Go Back', type: 'grey', action: cancelFormatChangeWarning },
@@ -2057,11 +2612,7 @@ export default function TournamentSchedulerPage() {
                   action: () => commitRoundFormat(),
                 },
               ]
-            // No rounds (or waves) exist yet — tapping a tile below commits
-            // immediately, so there's nothing left for a Save button to do.
-            : hasExistingRoundSetup()
-              ? [{ name: 'Save', type: 'black', isDisabled: !roundFormat, action: saveRoundFormat }]
-              : []
+            : []
         }
       >
         {formatChangeWarningOpen ? (
@@ -2105,9 +2656,10 @@ export default function TournamentSchedulerPage() {
                     // 2+ already created, picking it would require deleting rounds
                     // down to one first, so it's disabled rather than offered.
                     const isDisabled = option.value === 'single' && hasMultipleRounds
-                    // Multiple Rounds reads as selected for any of the three
-                    // formats behind it, so backing out of the format step still
-                    // shows where the draft currently stands.
+                    // Multiple Rounds reads as selected for any format behind
+                    // it — Sequence, or either of Wave's own assignment-scope
+                    // answers — so backing out of the later steps still shows
+                    // where the draft currently stands.
                     const isSelected = option.value === 'single'
                       ? roundFormat === 'single'
                       : !!roundFormat && roundFormat !== 'single'
@@ -2120,6 +2672,7 @@ export default function TournamentSchedulerPage() {
                         isSelected={isSelected}
                         isDisabled={isDisabled}
                         disabledReason="Delete rounds down to one to select this format."
+                        advancesToNextStep={option.value === 'multiple'}
                         onClick={() => pickRoundType(option.value)}
                       />
                     )
@@ -2128,13 +2681,9 @@ export default function TournamentSchedulerPage() {
               }
             />
           </>
-        ) : (
+        ) : roundSetupStep === 'format' ? (
           <>
-            <GSActionBar
-              type="form-header H3"
-              header="Choose a Round Format"
-              pageActions={[{ buttonIcon: faArrowLeft, type: 'light-grey icon', actionClick: backToRoundTypeStep }]}
-            />
+            <GSActionBar type="form-header H3" header="Choose a Round Format" />
             <GSFormSection
               extras={
                 <div className="sched-format-option-list">
@@ -2144,6 +2693,31 @@ export default function TournamentSchedulerPage() {
                       icon={option.icon}
                       title={option.title}
                       playDescription={option.availabilityDescription}
+                      // Wave reads as selected for either of the two
+                      // assignment-scope answers behind it, so backing out of
+                      // that step still shows where the draft currently
+                      // stands (same convention as Multiple Rounds above).
+                      isSelected={option.value === 'waves' ? formatManagesWaves(roundFormat) : roundFormat === option.value}
+                      advancesToNextStep={option.value === 'waves'}
+                      onClick={() => pickMultiRoundFormat(option.value)}
+                    />
+                  ))}
+                </div>
+              }
+            />
+          </>
+        ) : (
+          <>
+            <GSActionBar type="form-header H3" header="Assign Players & Teams" />
+            <GSFormSection
+              extras={
+                <div className="sched-format-option-list">
+                  {WAVE_SCOPE_OPTIONS.map(option => (
+                    <RoundFormatOption
+                      key={option.value}
+                      icon={option.icon}
+                      title={option.title}
+                      playDescription={option.description}
                       isSelected={roundFormat === option.value}
                       onClick={() => pickRoundFormat(option.value)}
                     />
@@ -2162,7 +2736,7 @@ export default function TournamentSchedulerPage() {
         roundName={roundName}
         roundCourse={roundCourse}
         onStartAddWave={openAddWaveForm}
-        onReorderWave={reorderWave}
+        onSetWaveOrder={setWaveOrder}
         onViewWave={openWaveRoundsPanel}
         onAddRound={openCreateRoundPanel}
         unassignedRounds={waveRoundsAvailableRounds}
@@ -2215,18 +2789,87 @@ export default function TournamentSchedulerPage() {
         noTransition
       />
 
+      <LinkedRoundLabelPanel
+        isOpen={linkedRoundLabelPanelOpen}
+        onClose={closeLinkedRoundLabelPanel}
+        onSave={saveLinkedRoundLabel}
+        roundNumber={editingLinkedRoundNumber}
+        initialLabel={editingLinkedRoundNumber != null ? linkedRoundLabels[editingLinkedRoundNumber] : ''}
+      />
+
+      {/* Round Number linking's own Linked/Unlinked picker (see
+          handleAddRoundClick) — precedes CreateRoundPanel itself, so it's
+          declared just above it in this same stacking-order convention. */}
+      <AppSidePanel
+        isOpen={addRoundChoicePanelOpen}
+        onClose={closeAddRoundChoicePanel}
+        onBack={addRoundChoiceStep === 'target' ? () => setAddRoundChoiceStep('choice') : undefined}
+        title="Add Round"
+      >
+        {addRoundChoiceStep === 'choice' ? (
+          <>
+            <GSActionBar type="form-header H3" header="Link This Round?" />
+            <GSFormSection
+              extras={
+                <div className="sched-format-option-list">
+                  <RoundFormatOption
+                    icon={faLink}
+                    title="Linked Round"
+                    playDescription="Shares a Round Number with an existing round."
+                    advancesToNextStep={roundNumberGroups.length > 1}
+                    onClick={chooseLinkedRound}
+                  />
+                  <RoundFormatOption
+                    icon={faLinkSlash}
+                    title="Unlinked Round"
+                    playDescription="Gets its own, new Round Number."
+                    onClick={chooseUnlinkedRound}
+                  />
+                </div>
+              }
+            />
+          </>
+        ) : (
+          <>
+            <GSActionBar type="form-header H3" header="Link to Which Round?" />
+            <GSFormSection
+              extras={
+                <div className="sched-format-option-list">
+                  {roundNumberGroups.map(group => (
+                    <RoundFormatOption
+                      key={group.number}
+                      iconText={String(group.number)}
+                      title={linkedGroupLabel(group.number, roundName(group.entries[0].round))}
+                      playDescription={roundCourse(group.entries[0].round)}
+                      onClick={() => linkToRoundNumber(group.number)}
+                    />
+                  ))}
+                </div>
+              }
+            />
+          </>
+        )}
+      </AppSidePanel>
+
       <CreateRoundPanel
         isOpen={createRoundPanelOpen}
         onClose={closeCreateRoundPanel}
         onCreate={handleCreateRound}
         editingMeta={editingRoundNumber != null ? ROUND_META[editingRoundNumber] : null}
-        dimOverlay={!createRoundOpenedFromWave}
-        noTransition={createRoundOpenedFromWave}
+        editingRoundKey={editingRoundNumber}
+        dimOverlay={!createRoundOpenedFromWave && !createRoundOpenedFromLinkChoice}
+        noTransition={createRoundOpenedFromWave || createRoundOpenedFromLinkChoice}
+        initialRoundNumber={createRoundInitialNumber}
         waveOptions={editingRoundNumber != null ? [] : waveQuickSelectOptions}
         selectedWaveOption={selectedWaveQuickOption}
         onSelectWave={option => setCreateRoundTargetWaveId(
           option.value === NO_WAVE_OPTION_VALUE ? null : option.value
         )}
+        // Always available (creating or editing, first round or not)
+        // whenever roundLinkingEnabled — editing the Round Number field is
+        // how a round's link gets changed later, so it can't be create-only.
+        roundLinkingEnabled={roundLinkingEnabled}
+        roundNumberGroups={roundNumberGroups}
       />
     </div>
   )

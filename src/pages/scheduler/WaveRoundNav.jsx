@@ -13,12 +13,18 @@ import './WaveRoundNav.scss'
 // to collapsed is the parent's own "Change Round"/"Close" toggle, not
 // anything this component exposes itself.
 //
+// Also reused as-is for a format-less tournament's Round Number groups — a
+// Round Number is essentially a wave, so the parent just hands this the same
+// {id, name, roundIds} shape built from those groups instead of real waves,
+// with groupLabel swapped from the default "Waves" to "Rounds" so the
+// breadcrumb still reads correctly.
+//
 // Stays mounted for as long as the parent's wave/round format calls for it
 // at all (see `isOpen`) rather than being inserted/removed from the DOM each
 // time it's toggled — that's what lets .wrn-collapse animate it open/closed
 // instead of popping the columns below it up and down.
 export default function WaveRoundNav({
-  waves, activeWaveId, activeRound, roundName, onSelectRound, isOpen,
+  waves, activeWaveId, activeRound, roundName, onSelectRound, isOpen, groupLabel = 'Waves',
 }) {
   const [selectedWaveId, setSelectedWaveId] = useState(activeWaveId)
 
@@ -58,7 +64,7 @@ export default function WaveRoundNav({
         <div className="wrn-row">
           <div className="wrn-content">
             <div className="wrn-label">
-              {selectedWave ? `Waves / ${selectedWave.name}` : 'Waves'}
+              {selectedWave ? `${groupLabel} / ${selectedWave.name}` : groupLabel}
             </div>
             <div className="wrn-tabs" key={tabsKey}>
               {selectedWave && (

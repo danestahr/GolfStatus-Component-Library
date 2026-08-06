@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   faPlus,
   faPen,
@@ -54,7 +54,7 @@ function WaveCard({
   wave, roundCount, linkedRounds,
   onViewWave, onAddRound,
   showGrabber, isDragging, isReordering, offsetY,
-  onGrabberPointerDown, onGrabberPointerMove, onGrabberPointerUp,
+  onGrabberPointerDown,
   rowRef,
 }) {
   let cardClass = 'wp-wave-card'
@@ -66,7 +66,17 @@ function WaveCard({
   // size mismatch between the dragged tile and whatever it passes over, so
   // there's nothing for either to hide behind the other.
   const isCollapsed = isReordering
-  const rowStyle = offsetY !== 0 ? { transform: `translateY(${offsetY}px)` } : undefined
+  // translateY (on any row, not just the dragged one — see the flash-offset
+  // rows above) creates a new stacking context for that row, which strands
+  // the dragging card's own z-index inside a context scoped to its row alone
+  // — sibling rows would then just stack in DOM order, letting whichever row
+  // comes later in the list paint over the dragged one. Setting z-index on
+  // the row itself (not just the card) keeps the dragged row on top relative
+  // to every sibling, regardless of DOM order or which rows are mid-flash.
+  const rowStyle = {
+    transform: offsetY !== 0 ? `translateY(${offsetY}px)` : undefined,
+    zIndex: isDragging ? 2 : undefined,
+  }
 
   return (
     <div className="wp-wave-row" ref={rowRef} style={rowStyle}>
@@ -77,14 +87,16 @@ function WaveCard({
             <div className="wp-wave-sub">{roundCount} Round{roundCount === 1 ? '' : 's'}</div>
           </div>
           <div className="wp-wave-header-actions">
-            {/* Add Round stays out of the header while reordering, same as
-                the rounds list below — one less thing competing for
-                attention while you're just trying to see the waves and aim
-                a drop. */}
+            {/* Add Round and View Wave both stay out of the header while
+                reordering, same as the rounds list below — one less thing
+                competing for attention while you're just trying to see the
+                waves and aim a drop. */}
             {!isReordering && (
-              <GSButton type="black icon" size="primary" isFocusable buttonIcon={faPlus} onClick={onAddRound} />
+              <>
+                <GSButton type="black" size="primary" isFocusable buttonIcon={faPlus} title="Add Round" onClick={onAddRound} />
+                <GSButton type="light-grey icon" size="primary" isFocusable buttonIcon={faPen} onClick={onViewWave} />
+              </>
             )}
-            <GSButton type="light-grey icon" size="primary" isFocusable buttonIcon={faPen} onClick={onViewWave} />
           </div>
         </div>
 
@@ -105,11 +117,8 @@ function WaveCard({
         <div
           className="wp-wave-grabber"
           onPointerDown={onGrabberPointerDown}
-          onPointerMove={onGrabberPointerMove}
-          onPointerUp={onGrabberPointerUp}
-          onPointerCancel={onGrabberPointerUp}
         >
-          <GSButton type="light-grey icon" size="secondary" buttonIcon={faGripLines} onClick={e => e.stopPropagation()} />
+          <GSButton size="secondary" buttonIcon={faGripLines} onClick={e => e.stopPropagation()} />
         </div>
       )}
     </div>
@@ -127,7 +136,7 @@ function WaveCard({
 export default function WavesPanel({
   isOpen, onClose,
   waves, roundName, roundCourse,
-  onStartAddWave, onReorderWave, onViewWave, onAddRound,
+  onStartAddWave, onSetWaveOrder, onViewWave, onAddRound,
   unassignedRounds = [],
 }) {
   // Drag-to-reorder, driven by pointer events on the grabber rather than
@@ -139,18 +148,24 @@ export default function WavesPanel({
   // instant you press the grabber (no movement needed), works identically
   // for mouse and touch.
   //
-  // The reorder itself is a straightforward adjacent swap rather than a
-  // "shift a whole range to make room for an insert" preview — the dragged
-  // card and whichever neighbor it's currently overlapping trade places the
-  // moment the pointer crosses the midpoint between them, live, not just on
-  // release. That happens by literally calling onReorderWave (already an
-  // adjacent-swap under the hood — see TournamentSchedulerPage) once per
-  // threshold crossed, rather than once at the end with a possibly-distant
-  // target. Simpler to reason about, and with only ever one live swap
-  // happening between two same-sized (collapsed) rows, there's no room left
-  // for the kind of overlap a range-shift could produce.
+  // The reorder itself is a straightforward adjacent swap — the dragged card
+  // and whichever neighbor it's currently overlapping trade places the
+  // moment the pointer crosses the midpoint between them — but that swap
+  // only ever touches `draftOrder`, local state private to this component,
+  // for as long as the drag is in progress. It used to call all the way up
+  // to TournamentSchedulerPage's setWaves on every single threshold crossed,
+  // which seemed fine with two waves but fell over with more: that
+  // component's got enough of its own derived state (roundAvailableCounts,
+  // groupedRoundSections, the whole hole-assignment grid) that recomputing
+  // all of it on every swap mid-drag, rather than once at the end, was slow
+  // enough to make the drag itself visibly stutter or hang. onSetWaveOrder
+  // now only gets called once, on release, with the final order.
   const [draggingWaveId, setDraggingWaveId] = useState(null)
   const [dragOffsetY, setDragOffsetY] = useState(0)
+  // The live-during-a-drag order, as an array of wave ids — null whenever
+  // nothing is being dragged, in which case rendering just falls back to the
+  // real `waves` prop order directly.
+  const [draftOrder, setDraftOrder] = useState(null)
   // Transient per-wave nudge for whichever card just got swapped out of the
   // dragged card's way — set to the distance it just moved (in the opposite
   // direction) the instant the swap happens, then cleared a frame later so
@@ -163,6 +178,12 @@ export default function WavesPanel({
   const rowRefs = useRef(new Map())
   const dragStartYRef = useRef(0)
   const wpBodyRef = useRef(null)
+
+  // The order actually rendered below — the live draft while dragging,
+  // otherwise just the real prop.
+  const displayWaves = draftOrder
+    ? draftOrder.map(id => waves.find(w => w.id === id)).filter(Boolean)
+    : waves
 
   function setRowRef(waveId, el) {
     if (el) rowRefs.current.set(waveId, el)
@@ -192,9 +213,17 @@ export default function WavesPanel({
     dragStartYRef.current = e.clientY
     setDraggingWaveId(waveId)
     setDragOffsetY(0)
-    // Keeps this same element receiving move/up events for the rest of the
-    // gesture even once the pointer strays outside its small hit area.
-    e.currentTarget.setPointerCapture?.(e.pointerId)
+    setDraftOrder(waves.map(w => w.id))
+    // move/up are picked up by the window listener below (see the effect) —
+    // deliberately NOT setPointerCapture on this element. Capture ties to
+    // this specific DOM node, but the moment a swap happens this exact node
+    // gets relocated to a new position in the list (React moving it to
+    // match the new order) — and that relocation can silently drop the
+    // capture, after which every event for the rest of the gesture
+    // (crucially pointerup) goes wherever the cursor happens to physically
+    // be instead of back here, leaving the drag stuck open forever with no
+    // way to release it. A window listener has no such dependency on any
+    // one element's position or continued identity.
   }
 
   function handleGrabberPointerMove(e) {
@@ -202,34 +231,34 @@ export default function WavesPanel({
     const step = measureRowStep(draggingWaveId)
     let offset = e.clientY - dragStartYRef.current
     if (step > 0) {
-      // A local stand-in for the real order — onReorderWave's own state
-      // update (setWaves in the parent) won't be reflected in the `waves`
-      // prop until the next render, but a single fast move can cross more
-      // than one threshold at once, so each loop iteration needs to know
-      // the order *as of the swap just before it*, not the one still on
-      // the prop.
-      const order = waves.map(w => w.id)
+      // Mutated locally through the loop below, then written back once —
+      // needs to reflect each swap immediately so a single fast move that
+      // crosses more than one threshold keeps checking against the order
+      // *as of the swap just before it*, not the one still in state.
+      const order = [...(draftOrder ?? waves.map(w => w.id))]
       let idx = order.indexOf(draggingWaveId)
       const flashes = {}
+      let didSwap = false
       while (idx < order.length - 1 && offset > step / 2) {
         const otherId = order[idx + 1]
-        onReorderWave(draggingWaveId, otherId)
-        flashes[otherId] = step
         order[idx] = otherId
         order[idx + 1] = draggingWaveId
+        flashes[otherId] = step
         idx += 1
         offset -= step
+        didSwap = true
       }
       while (idx > 0 && offset < -step / 2) {
         const otherId = order[idx - 1]
-        onReorderWave(draggingWaveId, otherId)
-        flashes[otherId] = -step
         order[idx] = otherId
         order[idx - 1] = draggingWaveId
+        flashes[otherId] = -step
         idx -= 1
         offset += step
+        didSwap = true
       }
-      if (Object.keys(flashes).length > 0) {
+      if (didSwap) {
+        setDraftOrder(order)
         setFlashOffsets(prev => ({ ...prev, ...flashes }))
         // Double rAF: the first "from" value (the flash offset just set
         // above) needs to actually paint before the second frame clears it
@@ -270,10 +299,43 @@ export default function WavesPanel({
   }
 
   function handleGrabberPointerUp() {
+    // Skips the parent commit entirely for a plain click/release with no
+    // actual swap — no reason to trigger that page's heavier re-render for
+    // an order that hasn't changed.
+    if (draftOrder && draftOrder.some((id, i) => id !== waves[i]?.id)) {
+      onSetWaveOrder(draftOrder)
+    }
     setDraggingWaveId(null)
     setDragOffsetY(0)
     setFlashOffsets({})
+    setDraftOrder(null)
   }
+
+  // Refs, not direct listener args, because the effect below only
+  // re-subscribes when draggingWaveId itself flips — not on every render —
+  // so the listener closure would otherwise be stuck on whatever draftOrder/
+  // waves looked like at the exact moment the drag started, never seeing a
+  // single subsequent swap. Writing the latest function into the ref on
+  // every render (not inside the effect) keeps that closure current without
+  // tearing down and rebuilding the actual window subscription each time.
+  const pointerMoveRef = useRef(() => {})
+  const pointerUpRef = useRef(() => {})
+  pointerMoveRef.current = handleGrabberPointerMove
+  pointerUpRef.current = handleGrabberPointerUp
+
+  useEffect(() => {
+    if (draggingWaveId == null) return
+    const onMove = e => pointerMoveRef.current(e)
+    const onUp = e => pointerUpRef.current(e)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+  }, [draggingWaveId])
 
   return (
     <AppSidePanel
@@ -298,7 +360,7 @@ export default function WavesPanel({
             actions={[{ title: 'Add Wave', type: 'black', isFocusable: true, onClick: onStartAddWave }]}
           />
         )}
-        {waves.map(wave => {
+        {displayWaves.map(wave => {
           // Reordering only means anything once there's something to reorder
           // relative to — a single wave has nowhere to go, so the grabber
           // (and the drag machinery behind it) stays hidden until a second
@@ -318,8 +380,6 @@ export default function WavesPanel({
               isReordering={isReordering}
               offsetY={wave.id === draggingWaveId ? dragOffsetY : (flashOffsets[wave.id] ?? 0)}
               onGrabberPointerDown={e => handleGrabberPointerDown(e, wave.id)}
-              onGrabberPointerMove={handleGrabberPointerMove}
-              onGrabberPointerUp={handleGrabberPointerUp}
               rowRef={el => setRowRef(wave.id, el)}
             />
           )

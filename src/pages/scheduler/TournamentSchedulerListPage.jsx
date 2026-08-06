@@ -11,7 +11,7 @@ export default function TournamentSchedulerListPage() {
       <GSActionBar type="x-large-pad H3" header="Hole Assignments" />
 
       <div className="sched-tourney-list">
-        {TOURNAMENTS.map(tournament => {
+        {TOURNAMENTS.filter(tournament => !tournament.hidden).map(tournament => {
           const roundNumbers = Object.keys(tournament.rounds).map(Number).sort((a, b) => a - b)
           const firstRound = tournament.rounds[roundNumbers[0]]
           return (

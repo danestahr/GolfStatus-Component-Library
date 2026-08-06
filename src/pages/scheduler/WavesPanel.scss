@@ -134,7 +134,7 @@
 }
 
 .wp-wave-sub {
-  font-size: $x-small-font;
+  font-size: $small-font;
   color: $grey-800;
   opacity: 0.7;
 }
@@ -181,7 +181,7 @@
   display: flex;
   align-items: center;
   flex: 0 1 auto;
-  min-width: 160px;
+  min-width: 224px;
   gap: $large-pad;
   padding: $large-pad;
   border-radius: $medium-radius;
@@ -208,7 +208,7 @@
 }
 
 .wp-round-row-sub {
-  font-size: $x-small-font;
+  font-size: $small-font;
   color: $grey-800;
   opacity: 0.7;
 }

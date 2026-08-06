@@ -11,6 +11,10 @@
   // Header action bar (tournament name + Add Round/Team Check In/Documents)
   > gs-action-bar {
     background: $white;
+
+    &.x-large-pad {
+      padding: $large-pad;
+    }
   }
 }
 
@@ -276,6 +280,13 @@
   // it — keeping both would double it up.
   &--no-shadow {
     box-shadow: none;
+
+    // The search bar's own border-bottom would otherwise sit directly above
+    // that same group header shadow, reading as a stray double border right
+    // under the search box.
+    .sched-round-search {
+      border-bottom: none;
+    }
   }
 }
 
@@ -298,7 +309,6 @@
   align-items: center;
   gap: $x-large-pad;
   padding: $x-large-pad;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 // ── Wave-grouped round list (mirrors the tiered Sponsors list pattern) ─────────
@@ -318,10 +328,78 @@
     position: sticky;
     top: var(--round-group-header-offset, 0px);
     z-index: 2;
-    padding: $large-pad $x-large-pad;
+    padding: $x-large-pad;
     font-size: $medium-font;
     background: $white;
     box-shadow: $second-layer-shadow;
+  }
+}
+
+// A linked section's rounds (see RoundGroupList) — drag-to-reorder via a
+// grabber that's just another flex child inside the row, alongside the round
+// card itself, so the two read as one list item rather than a card with a
+// button floating beside it. The row's own border-bottom is what separates
+// one round from the next, full width of the list rather than stopping short
+// at the card's own edge.
+.sched-round-group-list {
+  display: flex;
+  flex-direction: column;
+
+  // Dragging selects page text otherwise — pointer-event dragging (see
+  // RoundGroupList in TournamentSchedulerPage.jsx) has no native drag-and-
+  // drop equivalent of automatic selection suppression.
+  &--reordering {
+    user-select: none;
+  }
+}
+
+.sched-round-row {
+  position: relative;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// The card and grabber together — this, not just the card, is what lifts
+// (shadow/scale) while dragging, so the grabber moves as one piece with the
+// row instead of looking left behind under the pointer.
+.sched-round-row-inner {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  padding: 0 $x-large-pad;
+  border-radius: $medium-radius;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, background 0.15s ease;
+
+  &--dragging {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba($cyan-700, 0.12);
+    transform: scale(1.01);
+    background: $white;
+  }
+
+  .sched-round-row-card {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sched-round-card {
+    padding: $x-large-pad 0;
+  }
+}
+
+.sched-round-row-grabber {
+  flex-shrink: 0;
+  align-self: center;
+  cursor: grab;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
   }
 }
 
@@ -656,9 +734,10 @@
 
   &--empty {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     text-align: center;
+    padding: 120px $x-large-pad;
   }
 }
 
@@ -1178,6 +1257,7 @@
   width: 100%;
 }
 
+
 .sched-format-option {
   display: flex;
   align-items: flex-start;
@@ -1199,7 +1279,8 @@
     border-color: $cyan-800;
 
     .sched-format-option-icon,
-    .sched-format-option-title {
+    .sched-format-option-title,
+    .sched-format-option-end-icon {
       color: $white;
     }
 
@@ -1229,6 +1310,17 @@
   font-size: $large-font;
   color: $grey-800;
   line-height: $regular-line-height;
+}
+
+// Right-aligned arrow-right (continues to another Round Setup step) or
+// checkmark (this tile's answer is already complete) — centered against the
+// tile's full height rather than top-aligned like the left icon, since it's
+// signaling the tile as a whole rather than sitting next to its title row.
+.sched-format-option-end-icon {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: $medium-font;
+  color: $grey-800;
 }
 
 // The Single/Multiple Rounds step's "1" / "2+" glyphs are plain text rather

@@ -10,6 +10,10 @@ import './AppSidePanel.scss'
  * Props:
  *   isOpen        boolean
  *   onClose       () => void
+ *   onBack        () => void (optional) — overrides what the panel's own top-left
+ *                 chevron does; defaults to onClose. Use when the panel is a
+ *                 multi-step flow so the chevron steps back one screen at a
+ *                 time instead of always closing the whole panel outright.
  *   title         string
  *   rightIcon     FA icon (optional)
  *   onRightAction () => void (optional)
@@ -24,6 +28,7 @@ import './AppSidePanel.scss'
 export default function AppSidePanel({
   isOpen,
   onClose,
+  onBack,
   title,
   rightIcon,
   onRightAction,
@@ -50,7 +55,7 @@ export default function AppSidePanel({
           <GSSidePanelNavigation
             title={title}
             leftIcon={faChevronLeft}
-            leftButtonClick={onClose}
+            leftButtonClick={onBack ?? onClose}
             rightIcon={rightIcon}
             rightButtonClick={onRightAction}
           />
