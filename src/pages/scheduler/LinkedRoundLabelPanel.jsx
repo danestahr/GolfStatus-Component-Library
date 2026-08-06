@@ -4,13 +4,13 @@ import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import AppSidePanel from '../../components/AppSidePanel'
 import './LinkedRoundLabelPanel.scss'
 
-// Purely cosmetic override for a linked Round Number group's own sticky-
-// header/tile-picker title (see linkedGroupLabel in TournamentSchedulerPage)
-// — the Round Number itself, and everything that actually keys off it
-// (CreateRoundPanel's own Round Number field, each round's individual name),
-// stays exactly as it is; this only ever changes what the group's header
-// reads as. Opened from that header's own edit pencil, so it's always
-// editing an existing group rather than ever creating one from scratch.
+// Purely cosmetic override for a Round Number's own sticky-header/tile-
+// picker title (see linkedGroupLabel in TournamentSchedulerPage) — every
+// Round Number gets one of these, whether or not anything else actually
+// shares it. The Round Number itself, and everything that actually keys off
+// it (CreateRoundPanel's own Round Number field, each round's individual
+// name), stays exactly as it is; this only ever changes what its header
+// reads as.
 export default function LinkedRoundLabelPanel({ isOpen, onClose, onSave, roundNumber, initialLabel }) {
   const [label, setLabel] = useState('')
 
@@ -43,8 +43,8 @@ export default function LinkedRoundLabelPanel({ isOpen, onClose, onSave, roundNu
           placeholder={`Round ${roundNumber}`}
         />
         <div className="lrlp-hint">
-          Shown in place of "Round {roundNumber}" wherever this group of linked rounds is listed. Leave blank to
-          show the Round Number instead.
+          Shown in place of "Round {roundNumber}" wherever this Round Number is listed. Leave blank to show the
+          Round Number instead.
         </div>
       </div>
     </AppSidePanel>

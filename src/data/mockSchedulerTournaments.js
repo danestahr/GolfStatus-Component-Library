@@ -157,9 +157,9 @@ export const TOURNAMENTS = [
     // Rounds & Scorecards Settings toggle.
     legacyFilter: true,
     rounds: {
-      1: { name: 'Round RED', course: 'Red Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Mon Jun 15, 2026', startType: 'Shotgun Start', facilityName: 'Adventure Golf Course', holes: 18, status: 'Ready' },
-      2: { name: 'Round BLU', course: 'Blue Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Mon Jun 15, 2026', startType: 'Tee Time Start', facilityName: 'Adventure Golf Course', holes: 18, status: 'Ready' },
-      3: { name: 'Round BWD', course: 'Backwoods Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Tue Jun 16, 2026', startType: 'Shotgun Start', facilityName: 'Adventure Golf Course', holes: 18, status: 'Draft' },
+      1: { name: 'Round RED', course: 'Red Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Mon Jun 15, 2026', startType: 'Shotgun Start', facilityName: 'Adventure Golf Course', holes: 18 },
+      2: { name: 'Round BLU', course: 'Blue Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Mon Jun 15, 2026', startType: 'Tee Time Start', facilityName: 'Adventure Golf Course', holes: 18 },
+      3: { name: 'Round BWD', course: 'Backwoods Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Tue Jun 16, 2026', startType: 'Shotgun Start', facilityName: 'Adventure Golf Course', holes: 18 },
     },
   },
   {
@@ -171,7 +171,7 @@ export const TOURNAMENTS = [
     // Rounds & Scorecards Settings toggle.
     legacyFilter: true,
     rounds: {
-      1: { format: 'Two-Person Scramble', dateTime: '9:00 AM on Sat Jul 18, 2026', startType: 'Shotgun Start', facilityName: 'Cedar Ridge Golf Club', holes: 18, status: 'Ready' },
+      1: { format: 'Two-Person Scramble', dateTime: '9:00 AM on Sat Jul 18, 2026', startType: 'Shotgun Start', facilityName: 'Cedar Ridge Golf Club', holes: 18 },
     },
   },
   {
@@ -182,22 +182,74 @@ export const TOURNAMENTS = [
     teamCount: RIDGELINE_TEAM_COUNT,
     initialAssignments: { 1: ridgelineRound1Assignments },
     rounds: {
-      1: { name: 'Round RED', course: 'Red Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Fri Sep 11, 2026', startType: 'Shotgun Start', facilityName: 'Ridgeline Golf Club', holes: 18, status: 'Ready' },
-      2: { name: 'Round BLU', course: 'Blue Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Fri Sep 11, 2026', startType: 'Tee Time Start', facilityName: 'Ridgeline Golf Club', holes: 18, status: 'Ready' },
-      3: { name: 'Round BWD', course: 'Backwoods Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Sat Sep 12, 2026', startType: 'Shotgun Start', facilityName: 'Ridgeline Golf Club', holes: 18, status: 'Draft' },
+      1: { name: 'Round RED', course: 'Red Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Fri Sep 11, 2026', startType: 'Shotgun Start', facilityName: 'Ridgeline Golf Club', holes: 18 },
+      2: { name: 'Round BLU', course: 'Blue Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Fri Sep 11, 2026', startType: 'Tee Time Start', facilityName: 'Ridgeline Golf Club', holes: 18 },
+      3: { name: 'Round BWD', course: 'Backwoods Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Sat Sep 12, 2026', startType: 'Shotgun Start', facilityName: 'Ridgeline Golf Club', holes: 18 },
     },
   },
   // A deeper build-out than the others: starts with zero rounds so setup can be
   // prototyped from scratch (adding rounds, courses, etc.) rather than seeded.
   {
     id: 'heritage-classic-invitational',
-    hidden: true,
     name: '2026 Heritage Classic Invitational',
     courseName: 'Heritage Golf Club',
     rounds: {},
     // Prototyping ground for the expanded Round Setup summary banner, which is
     // taking over surfacing roster completion — each round card's own "X/Y
     // Teams Assigned" count would just be duplicating it here.
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Round Number linking's own ready-made example (no savedRoundFormat, so
+  // roundLinkingEnabled is true) — three rounds all sharing roundNumber: 1,
+  // to exercise a single 3-way linked group without building one by hand
+  // (drag-reordering the three, naming the group via its header's edit
+  // pencil, etc.).
+  {
+    id: 'heritage-classic-invitational-3-linked',
+    name: '2026 Heritage Classic Invitational (3 Rounds Linked)',
+    courseName: 'Heritage Golf Club',
+    rounds: {
+      1: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'A' },
+      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'B' },
+      3: { course: 'Executive Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 9, roundNumber: 1, roundLetter: 'C' },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Round Number linking's other ready-made example — two separate 2-way
+  // linked groups (Round Numbers 1 and 2, two rounds apiece) rather than one
+  // 3-way group, to exercise multiple linked groups side by side in the same
+  // tournament (the Linked/Unlinked target grid choosing between them, each
+  // group's own header/label, etc.).
+  {
+    id: 'heritage-classic-invitational-2x2-linked',
+    name: '2026 Heritage Classic Invitational (2x2 Linked)',
+    courseName: 'Heritage Golf Club',
+    rounds: {
+      1: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'A' },
+      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'B' },
+      3: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 2, roundLetter: 'A' },
+      4: { course: 'Executive Course', format: 'Individual Stroke Play', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 9, roundNumber: 2, roundLetter: 'B' },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Sequence's own ready-made example — no waves, no Round Number linking,
+  // just three plain rounds in a row — to exercise the Change Round nav's
+  // remaining fallback case (see showPlainRoundNav in
+  // TournamentSchedulerPage.jsx), the one shape that never had a Round
+  // Setup path left to build one by hand from scratch.
+  {
+    id: 'heritage-classic-invitational-sequence',
+    name: '2026 Heritage Classic Invitational (Sequence)',
+    courseName: 'Heritage Golf Club',
+    savedRoundFormat: 'rounds',
+    rounds: {
+      1: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18 },
+      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18 },
+      3: { course: 'Executive Course', format: 'Individual Stroke Play', dateTime: '8:00 AM on Sun Aug 16, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 9 },
+    },
     hideRosterCount: true,
     hideSettingsButton: true,
   },
@@ -210,10 +262,10 @@ export const TOURNAMENTS = [
     name: '2026 Heritage Classic Invitational (Copy)',
     courseName: 'Heritage Golf Club',
     rounds: {
-      1: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Ready' },
-      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '11:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Draft' },
-      3: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Ready' },
-      4: { course: 'Championship Course', format: 'Individual Stroke Play', dateTime: '4:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, status: 'Draft' },
+      1: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18 },
+      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '11:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18 },
+      3: { course: 'Championship Course', format: 'Two-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18 },
+      4: { course: 'Championship Course', format: 'Individual Stroke Play', dateTime: '4:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18 },
     },
     savedRoundFormat: 'waves',
     waves: [
@@ -233,6 +285,7 @@ export const TOURNAMENTS = [
   // Sequence/Wave/Hybrid Wave) instead of landing pre-seeded.
   {
     id: 'heritage-classic-invitational-wave-setup',
+    hidden: true,
     name: '2026 Heritage Classic Invitational (Wave Setup)',
     courseName: 'Heritage Golf Club',
     rounds: {},

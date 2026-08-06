@@ -13,6 +13,14 @@ import './WaveRoundNav.scss'
 // to collapsed is the parent's own "Change Round"/"Close" toggle, not
 // anything this component exposes itself.
 //
+// Collapses to a single step (see isOnlyGroup) whenever there's only one
+// wave to begin with — its round buttons show directly, with no back arrow
+// or leading breadcrumb name, since there's no second wave to ever pick
+// instead. The parent already only renders this at all once there's more
+// than one round somewhere to switch to (see showWaveNav/showRoundNumberNav/
+// showPlainRoundNav in TournamentSchedulerPage.jsx), so that single wave is
+// guaranteed to have 2+ rounds of its own worth showing.
+//
 // Also reused as-is for a format-less tournament's Round Number groups — a
 // Round Number is essentially a wave, so the parent just hands this the same
 // {id, name, roundIds} shape built from those groups instead of real waves,
@@ -43,6 +51,13 @@ export default function WaveRoundNav({
 
   const selectedWave = waves.find(w => w.id === selectedWaveId)
 
+  // With only one group to begin with, there's no real "pick a group" step
+  // for the effect above to have drilled out of — its round tabs are the
+  // whole nav, not a sub-step of it, so the back arrow (which would only
+  // ever land on a single-tile list) and the breadcrumb's leading group
+  // name both drop out.
+  const isOnlyGroup = waves.length === 1
+
   // Forces the tab row to remount (replaying its fade/slide-in animation,
   // see the keyframes in WaveRoundNav.scss) whenever the step actually
   // changes, rather than diffing in place — a wave's rounds and the wave
@@ -64,10 +79,12 @@ export default function WaveRoundNav({
         <div className="wrn-row">
           <div className="wrn-content">
             <div className="wrn-label">
-              {selectedWave ? `${groupLabel} / ${selectedWave.name}` : groupLabel}
+              {selectedWave
+                ? (isOnlyGroup ? selectedWave.name : `${groupLabel} / ${selectedWave.name}`)
+                : groupLabel}
             </div>
             <div className="wrn-tabs" key={tabsKey}>
-              {selectedWave && (
+              {selectedWave && !isOnlyGroup && (
                 <GSButton
                   type="light-grey icon"
                   isFocusable

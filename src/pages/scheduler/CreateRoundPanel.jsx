@@ -283,8 +283,10 @@ export default function CreateRoundPanel({
   // left blank — every value here falls back to a placeholder instead of
   // failing so an incomplete draft still lands in the round list. Editing
   // spreads editingMeta first so any field this form doesn't manage (e.g. a
-  // seeded round's teamCount/rosterOffset) survives the save untouched, and
-  // keeps the round's existing status instead of resetting it back to Draft.
+  // seeded round's teamCount/rosterOffset) survives the save untouched. No
+  // status field here — the round list computes Draft/Ready itself from
+  // whether the round actually has a hole assignment yet, not from anything
+  // set on the round.
   function handleSave() {
     onCreate({
       ...editingMeta,
@@ -295,7 +297,6 @@ export default function CreateRoundPanel({
       facilityName: draft.selectedFacility?.name ?? 'Facility Not Set',
       course: draft.selectedCourse?.name ?? 'Course Not Set',
       holes: draft.selectedCourse?.holes ?? 18,
-      status: editingMeta?.status ?? 'Draft',
       ...(roundLinkingEnabled ? {
         roundNumber: Number(draft.roundNumberText) || nextRoundNumber,
         roundLetter: draft.roundLetter || 'A',
