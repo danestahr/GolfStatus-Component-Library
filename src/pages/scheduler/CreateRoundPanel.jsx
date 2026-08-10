@@ -151,12 +151,6 @@ function RoundCourseField({ courses, selected, onSelect, onClear }) {
   )
 }
 
-// Pool a linked round's Round Letter is auto-assigned from — background
-// bookkeeping only (see roundLetter below), never shown as a field or
-// picked by anyone; it exists purely to give same-Round-Number rounds a
-// stable default order before a drag reorder (see RoundGroupList) picks one.
-const LETTER_OPTIONS_POOL = ['A', 'B', 'C', 'D', 'E', 'F']
-
 const emptyDraft = {
   roundFormat: null,
   roundLabel: '',
@@ -168,13 +162,12 @@ const emptyDraft = {
   selectedFacility: null,
   selectedCourse: null,
   roundNumberText: '',
-  roundLetter: 'A',
 }
 
 export default function CreateRoundPanel({
   isOpen, onClose, onCreate, editingMeta, editingRoundKey, dimOverlay, noTransition,
   waveOptions, selectedWaveOption, onSelectWave,
-  roundLinkingEnabled, roundNumberGroups = [], initialRoundNumber = null,
+  roundNumberGroups = [], initialRoundNumber = null, duplicateFromMeta = null,
 }) {
   const [draft, setDraft] = useState(emptyDraft)
 
@@ -189,10 +182,17 @@ export default function CreateRoundPanel({
   // existing round (editingMeta set), where it instead pre-fills from that
   // round's current values (best-effort reverse of the mappings in
   // handleSave below, since ROUND_META stores formatted display strings
-  // rather than the form's own structured option/facility/course objects).
-  // editingRoundKey backstops roundNumberText for a round that predates this
-  // field (e.g. seeded mock data) and so never set its own roundNumber —
-  // its ROUND_META key doubled as its round number before this existed.
+  // rather than the form's own structured option/facility/course objects),
+  // or opened to duplicate one (duplicateFromMeta set — see Copy Round in
+  // TournamentSchedulerPage), which pre-fills the same way but leaves the
+  // Round Number to initialRoundNumber (the just-chosen link target) rather
+  // than the source round's own. editingRoundKey backstops roundNumberText
+  // for a round that predates this field (e.g. seeded mock data) and so
+  // never set its own roundNumber — its ROUND_META key doubled as its round
+  // number before this existed. Round Letter is never part of this draft at
+  // all — it's never shown as a field here, and TournamentSchedulerPage
+  // decides it authoritatively on save (see handleCreateRound), since only
+  // it can see whether this round is joining an already-existing group.
   useEffect(() => {
     if (!isOpen) return
     if (editingMeta) {
@@ -209,53 +209,37 @@ export default function CreateRoundPanel({
         selectedFacility: facility,
         selectedCourse: course,
         roundNumberText: String(editingMeta.roundNumber ?? editingRoundKey ?? ''),
-        roundLetter: editingMeta.roundLetter ?? 'A',
+      })
+    } else if (duplicateFromMeta) {
+      const facility = FACILITIES.find(f => f.name === duplicateFromMeta.facilityName) ?? null
+      const course = facility?.courses.find(c => c.name === duplicateFromMeta.course) ?? null
+      setDraft({
+        roundFormat: ROUND_FORMAT_SELECT_OPTIONS.find(o => o.label === duplicateFromMeta.format) ?? null,
+        roundLabel: parseRoundLabel(duplicateFromMeta.name),
+        playersPerHole: PLAYERS_PER_HOLE_OPTIONS[0],
+        roundDateTime: parseRoundDateTimeForInput(duplicateFromMeta.dateTime),
+        startType: START_TYPE_OPTIONS.find(o => o.label === duplicateFromMeta.startType) ?? START_TYPE_OPTIONS[0],
+        facilityQuery: '',
+        facilityResults: [],
+        selectedFacility: facility,
+        selectedCourse: course,
+        roundNumberText: String(initialRoundNumber ?? nextRoundNumber),
       })
     } else {
       // initialRoundNumber (see the Linked/Unlinked choice in
       // TournamentSchedulerPage) seeds a specific already-existing number
-      // instead of the usual next-unused one — its own claimed letters shift
-      // accordingly, same as if the user had just typed that number in.
-      const numberText = String(initialRoundNumber ?? nextRoundNumber)
-      const available = availableLettersFor(Number(numberText))
-      setDraft({ ...emptyDraft, roundNumberText: numberText, roundLetter: available[0] ?? 'A' })
+      // instead of the usual next-unused one.
+      setDraft({ ...emptyDraft, roundNumberText: String(initialRoundNumber ?? nextRoundNumber) })
     }
     // nextRoundNumber/initialRoundNumber deliberately left out — they're only
     // meant to seed the very first render of a fresh draft, not fight the
     // user by recomputing out from under a Round Number they're already
     // typing over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editingMeta, editingRoundKey])
+  }, [isOpen, editingMeta, editingRoundKey, duplicateFromMeta])
 
   function set(patch) {
     setDraft(prev => ({ ...prev, ...patch }))
-  }
-
-  // Whichever letters are already claimed at a given Round Number, excluding
-  // the round being edited itself (so its own current letter always stays a
-  // valid option rather than looking already-taken). Background-only — see
-  // LETTER_OPTIONS_POOL — so this returns the raw available letters rather
-  // than {value, label} select options.
-  function availableLettersFor(number) {
-    const group = roundNumberGroups.find(g => g.number === number)
-    const usedByOthers = new Set(
-      (group?.entries ?? []).filter(e => e.round !== editingRoundKey).map(e => e.letter)
-    )
-    return LETTER_OPTIONS_POOL.filter(letter => !usedByOthers.has(letter))
-  }
-
-  // Changing the Round Number is how a round gets linked to (or unlinked
-  // from) another — typing in a number that matches an existing round links
-  // them; typing a number nothing else uses makes it stand alone again. The
-  // round's own (never-shown) Round Letter shifts with it, so a letter that
-  // was fine for the old number but is already taken at the new one gets
-  // bumped to the first one that's actually free there.
-  function handleRoundNumberChange(text) {
-    const available = availableLettersFor(Number(text))
-    set({
-      roundNumberText: text,
-      roundLetter: available.includes(draft.roundLetter) ? draft.roundLetter : (available[0] ?? 'A'),
-    })
   }
 
   function searchFacilities() {
@@ -286,10 +270,11 @@ export default function CreateRoundPanel({
   // seeded round's teamCount/rosterOffset) survives the save untouched. No
   // status field here — the round list computes Draft/Ready itself from
   // whether the round actually has a hole assignment yet, not from anything
-  // set on the round.
+  // set on the round. No roundLetter either — TournamentSchedulerPage's own
+  // handleCreateRound decides that (see its own comment for why).
   function handleSave() {
     onCreate({
-      ...editingMeta,
+      ...(editingMeta ?? duplicateFromMeta),
       format: draft.roundFormat?.label ?? 'Round Format Not Set',
       name: draft.roundLabel.trim() ? `Round ${draft.roundLabel.trim()}` : undefined,
       dateTime: formatRoundDateTime(draft.roundDateTime) || 'Date & Time Not Set',
@@ -297,10 +282,7 @@ export default function CreateRoundPanel({
       facilityName: draft.selectedFacility?.name ?? 'Facility Not Set',
       course: draft.selectedCourse?.name ?? 'Course Not Set',
       holes: draft.selectedCourse?.holes ?? 18,
-      ...(roundLinkingEnabled ? {
-        roundNumber: Number(draft.roundNumberText) || nextRoundNumber,
-        roundLetter: draft.roundLetter || 'A',
-      } : {}),
+      roundNumber: Number(draft.roundNumberText) || nextRoundNumber,
     })
   }
 
@@ -377,32 +359,32 @@ export default function CreateRoundPanel({
               </div>
             ),
           },
-          // Always present for a tournament that never went through Round
-          // Setup at all (see roundLinkingEnabled) — on both Add and Edit,
-          // not just the first time a round is created. Two rounds sharing a
-          // Round Number are linked (grouped in the round list, same as
-          // waves used to group rounds); which one displays first within
-          // that group is decided by dragging in the round list itself (see
-          // RoundGroupList), not by anything set here. Editing this field
-          // later is how a round's link gets changed — set it to a number
-          // nothing else uses to unlink it, or to an existing one to link it
-          // there instead.
-          ...(roundLinkingEnabled ? [
-            {
-              label: 'Round Number',
-              required: true,
-              isEditable: true,
-              customView: true,
-              value: (
-                <GSinput
-                  type="number"
-                  placeholder="Round Number"
-                  textValue={draft.roundNumberText}
-                  onChange={e => handleRoundNumberChange(e.target.value)}
-                />
-              ),
-            },
-          ] : []),
+          // Present on every round's form, not just roundLinkingEnabled
+          // tournaments — a Waves/Sequence/Single round still has its own
+          // Round Number under the hood (see roundNumberOf), it just never
+          // otherwise gets a reason to change from whatever it was assigned
+          // on creation. For roundLinkingEnabled tournaments specifically,
+          // two rounds sharing a Round Number are linked (grouped in the
+          // round list, same as waves used to group rounds); which one
+          // displays first within that group is decided by dragging in the
+          // round list itself (see RoundGroupList), not by anything set
+          // here. Editing this field later is how a round's link gets
+          // changed — set it to a number nothing else uses to unlink it, or
+          // to an existing one to link it there instead.
+          {
+            label: 'Round Number',
+            required: true,
+            isEditable: true,
+            customView: true,
+            value: (
+              <GSinput
+                type="number"
+                placeholder="Round Number"
+                textValue={draft.roundNumberText}
+                onChange={e => set({ roundNumberText: e.target.value })}
+              />
+            ),
+          },
           {
             label: 'Players Per Hole',
             isEditable: true,

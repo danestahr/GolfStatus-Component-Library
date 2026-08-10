@@ -308,6 +308,18 @@
   }
 }
 
+.sched-round-group-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sched-round-group-header-desc {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  opacity: 0.7;
+}
+
 // A linked section's rounds (see RoundGroupList) — drag-to-reorder via a
 // grabber that's just another flex child inside the row, alongside the round
 // card itself, so the two read as one list item rather than a card with a
@@ -707,57 +719,6 @@
     text-align: center;
     padding: 120px $x-large-pad;
   }
-}
-
-// Backs the Round Format summary with the page's own white and stacks it above
-// the sticky search bar (z-index higher than .sched-round-list-sticky's) — the
-// search bar's box-shadow blurs upward past its own top edge, and without this
-// the tile would paint underneath that blur instead of covering it.
-.sched-format-summary-wrap {
-  flex-shrink: 0;
-  position: relative;
-  z-index: 4;
-  background: $white;
-}
-
-// Landing-view summary of the saved Round Setup choice
-.sched-format-summary {
-  display: flex;
-  align-items: flex-start;
-  gap: $x-large-pad;
-  padding: $x-large-pad;
-  margin: 0 $x-large-pad;
-  border-radius: $medium-radius;
-  background: $cyan-50;
-}
-
-.sched-format-summary-icon {
-  flex-shrink: 0;
-  font-size: $medium-font;
-  color: $cyan-800;
-  line-height: $regular-line-height;
-}
-
-.sched-format-summary-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: $small-pad;
-}
-
-.sched-format-summary-title {
-  font-size: $small-font;
-  font-weight: $bold-font-weight;
-  color: $grey-800;
-  line-height: $regular-line-height;
-}
-
-.sched-format-summary-desc {
-  font-size: $small-font;
-  font-weight: $regular-font-weight;
-  color: rgba(35, 35, 35, 0.7);
-  line-height: $regular-line-height;
 }
 
 .sched-empty-msg {

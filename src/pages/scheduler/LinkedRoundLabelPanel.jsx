@@ -28,24 +28,20 @@ export default function LinkedRoundLabelPanel({ isOpen, onClose, onSave, roundNu
     <AppSidePanel
       isOpen={isOpen}
       onClose={onClose}
-      title="Linked Round Label"
+      title="Round Group Name"
       actions={[
         { name: 'Save', type: 'black', action: handleSave },
       ]}
     >
-      <GSActionBar type="form-header H3" header="Linked Round Label" />
+      <GSActionBar type="form-header H3" header="Round Group Name" />
       <div className="lrlp-body">
-        <label className="lrlp-label">Label</label>
+        <label className="lrlp-label">Round Group Name</label>
         <GSinput
           textValue={label}
           onChange={e => setLabel(e.target.value)}
           onSubmit={handleSave}
           placeholder={`Round ${roundNumber}`}
         />
-        <div className="lrlp-hint">
-          Shown in place of "Round {roundNumber}" wherever this Round Number is listed. Leave blank to show the
-          Round Number instead.
-        </div>
       </div>
     </AppSidePanel>
   )
