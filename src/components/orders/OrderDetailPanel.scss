@@ -1,0 +1,41 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-detail-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.ord-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ord-detail-header-title {
+  font-size: $large-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ord-detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  flex-shrink: 0;
+}
+
+// Reuses OrderListItem's info-block classes for the buyer summary block —
+// override the list row's own padding/border/hover/cursor since
+// OrderFormSection already supplies the surrounding padding and divider here.
+.ord-row--static {
+  padding: 0;
+  border-bottom: none;
+  cursor: default;
+
+  &:hover {
+    background: none;
+  }
+}

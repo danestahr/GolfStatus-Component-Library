@@ -1,0 +1,29 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-status-pill {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  padding: $medium-pad;
+  border-radius: $huge-radius;
+  white-space: nowrap;
+
+  &.active {
+    background: $green-200;
+    color: $green-800;
+  }
+
+  &.pending {
+    background: rgba($grey-500, 0.12);
+    color: $grey-700;
+  }
+
+  &.warning {
+    background: $orange-200;
+    color: $orange-800;
+  }
+
+  &.inactive {
+    background: rgba($red-500, 0.12);
+    color: $red-700;
+  }
+}

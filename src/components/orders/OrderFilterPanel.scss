@@ -1,0 +1,56 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-filter {
+  padding: $x-large-pad;
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+}
+
+.ord-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  padding-bottom: $x-large-pad;
+  border-bottom: 1px solid $grey-100;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.ord-filter-title {
+  @include gs-font($medium-font, $bold-font-weight, normal);
+  color: $grey-800;
+}
+
+.ord-filter-label {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-letter-spacing);
+  text-transform: uppercase;
+  color: $grey-600;
+  margin-top: $small-pad;
+}
+
+.ord-filter-date {
+  height: 44px;
+  border: 1px solid $grey-200;
+  border-radius: $medium-radius;
+  padding: 0 $medium-large-pad;
+  font-family: $font-family;
+  font-size: $small-font;
+  color: $grey-800;
+
+  &:focus {
+    outline: none;
+    border-color: $grey-500;
+  }
+}
+
+.ord-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $large-pad $x-large-pad;
+  border-top: 1px solid $grey-100;
+}

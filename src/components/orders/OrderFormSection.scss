@@ -1,0 +1,31 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-form-section {
+  padding: 56px $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.ord-form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+  margin-bottom: $large-pad;
+}
+
+.ord-form-section-title {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ord-form-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  padding-top: 0;
+}

@@ -1,0 +1,135 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-page-bg {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: $white;
+  font-family: $font-family;
+
+  > gs-action-bar {
+    &.x-large-pad {
+      padding: 16px;
+    }
+  }
+}
+
+// ── Scrollable list area ─────────────────────────────────────────────────────
+// Mirrors the scheduler round list's own scroll/sticky structure
+// (TournamentSchedulerPage.scss's .sched-round-list-page/.sched-col-scroll):
+// the funds card scrolls away with the page, the search+filter row pins to
+// the top of the scroll area once it does.
+
+.ord-page-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $white;
+}
+
+.ord-col-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
+.ord-funds-wrap {
+  flex-shrink: 0;
+  padding: $x-large-pad;
+}
+
+// Sticky wrapper around the search bar — pinned to the top of the scroll area
+// so it stays visible once the funds card has scrolled out of view.
+.ord-list-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex-shrink: 0;
+  background: $white;
+  box-shadow: $second-layer-shadow;
+}
+
+.ord-search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-pad;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  gs-input {
+    width: 400px;
+    flex: none;
+
+    @include large-phone {
+      width: 100%;
+    }
+  }
+}
+
+.ord-filter-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: $medium-radius;
+  border: none;
+  background: transparent;
+  color: $grey-800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $medium-font;
+  transition: $fast;
+
+  &:hover {
+    background: rgba($grey-500, 0.1);
+  }
+
+  &.has-filters {
+    background: $grey-800;
+    color: $white;
+  }
+}
+
+.ord-filter-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: $huge-radius;
+  background: $green-400;
+  color: $grey-800;
+  font-size: 10px;
+  font-weight: $bold-font-weight;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ord-list-body {
+  flex: 1;
+
+  .ord-row:last-child {
+    border-bottom: none;
+  }
+}
+
+.ord-empty {
+  padding: $xx-large-pad;
+  text-align: center;
+  color: $grey-500;
+  font-size: $small-font;
+}

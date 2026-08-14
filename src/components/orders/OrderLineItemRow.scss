@@ -1,0 +1,46 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-line-item {
+  padding: 0 0 8px;
+  border-bottom: 1px solid $grey-100;
+}
+
+.ord-line-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+}
+
+.ord-line-item-label {
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $grey-600;
+}
+
+// Amount + note stack together so the label can vertically center against
+// the pair of them, rather than the note sitting as its own full-width row
+// below and only the label/amount being centered against each other.
+.ord-line-item-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $x-small-pad;
+}
+
+.ord-line-item-amount {
+  font-size: $small-font;
+  font-weight: $medium-font-weight;
+  color: $grey-800;
+  white-space: nowrap;
+}
+
+.ord-line-item-note {
+  text-align: right;
+  font-size: $small-font;
+  font-weight: $medium-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}

@@ -1,0 +1,162 @@
+// Mock orders — mirrors the Supabase `orders` table for the Orders & Payouts page.
+
+export const availableFunds = {
+  amount: 7702.00,
+  asOf: '2:14 PM on Aug 13, 2026',
+}
+
+export const orderStats = [
+  { key: 'net-revenue', label: 'Net Revenue', value: '$10,000.00', count: '14 Orders' },
+  { key: 'pending-revenue', label: 'Pending Revenue', value: '$2,000.00', count: '2 Orders' },
+  { key: 'paid-out', label: 'Paid Out', value: '$0.00', count: '0 Payouts' },
+  { key: 'refunds', label: 'Refunds', value: '$750.00', count: '1 Refund' },
+  { key: 'products', label: 'GolfStatus Products', value: '$2,298.00', count: '2 Invoices' },
+]
+
+export const orders = [
+  {
+    id: 'ord-1001',
+    buyerName: 'Sarah Mitchell',
+    email: 'sarah.mitchell@email.com',
+    phone: '(555) 219-4482',
+    paymentType: 'Credit Card',
+    date: '2026-08-12',
+    dateTime: '10:42 AM on Aug 12, 2026',
+    orderType: 'Online Order',
+    packages: ['Foursome Package', 'Mulligan Package (x2)'],
+    lineItems: [
+      { name: 'Foursome Package', unitPrice: 800.0, quantity: 1 },
+      { name: 'Mulligan Package', unitPrice: 75.0, quantity: 2 },
+    ],
+    fee: 50.0,
+    amount: 1000.0,
+    status: 'paid',
+    formResponses: [
+      { label: 'Player 1 Name', value: 'Sarah Mitchell' },
+      { label: 'Player 2 Name', value: 'Dan Whitfield' },
+      { label: 'Shirt Size', value: 'Large' },
+      { label: 'Dietary Restrictions', value: 'None' },
+    ],
+  },
+  {
+    id: 'ord-1002',
+    buyerName: 'James Carter',
+    email: 'jcarter@email.com',
+    phone: '(555) 902-1187',
+    paymentType: 'Credit Card',
+    date: '2026-08-12',
+    dateTime: '9:15 AM on Aug 12, 2026',
+    orderType: 'Online Order',
+    packages: ['Single Golfer Package'],
+    lineItems: [
+      { name: 'Single Golfer Package', unitPrice: 225.0, quantity: 1 },
+    ],
+    fee: 25.0,
+    amount: 250.0,
+    status: 'pending',
+    formResponses: [
+      { label: 'Player 1 Name', value: 'James Carter' },
+      { label: 'Shirt Size', value: 'Medium' },
+      { label: 'Dietary Restrictions', value: 'Vegetarian' },
+    ],
+  },
+  {
+    id: 'ord-1003',
+    buyerName: 'Emily Nguyen',
+    email: 'emily.nguyen@email.com',
+    phone: '(555) 340-7765',
+    paymentType: 'Check',
+    date: '2026-08-11',
+    dateTime: '4:03 PM on Aug 11, 2026',
+    orderType: 'Online Order',
+    packages: ['Foursome Package'],
+    lineItems: [
+      { name: 'Foursome Package', unitPrice: 750.0, quantity: 1 },
+    ],
+    fee: 50.0,
+    amount: 800.0,
+    status: 'paid',
+    formResponses: [
+      { label: 'Player 1 Name', value: 'Emily Nguyen' },
+      { label: 'Player 2 Name', value: 'Marcus Nguyen' },
+      { label: 'Player 3 Name', value: 'Alicia Rowe' },
+      { label: 'Player 4 Name', value: 'Tom Rowe' },
+      { label: 'Shirt Size', value: 'Small' },
+    ],
+  },
+  {
+    id: 'ord-1004',
+    buyerName: 'Robert Alvarez',
+    email: 'r.alvarez@email.com',
+    phone: '(555) 774-3320',
+    paymentType: 'Credit Card',
+    date: '2026-08-10',
+    dateTime: '11:58 AM on Aug 10, 2026',
+    orderType: 'Online Order',
+    packages: ['Hole Sponsorship'],
+    lineItems: [
+      { name: 'Hole Sponsorship', unitPrice: 475.0, quantity: 1 },
+    ],
+    fee: 25.0,
+    amount: 500.0,
+    status: 'refunded',
+    formResponses: [
+      { label: 'Company Name', value: 'Alvarez Roofing Co.' },
+      { label: 'Sign Text', value: 'Good luck from Alvarez Roofing!' },
+    ],
+  },
+  {
+    id: 'ord-1005',
+    buyerName: 'Linda Park',
+    email: 'linda.park@email.com',
+    phone: '(555) 610-9924',
+    paymentType: 'Credit Card',
+    date: '2026-08-09',
+    dateTime: '8:27 AM on Aug 9, 2026',
+    orderType: 'Online Order',
+    packages: ['Foursome Package', 'Cart Sponsorship'],
+    lineItems: [
+      { name: 'Foursome Package', unitPrice: 800.0, quantity: 1 },
+      { name: 'Cart Sponsorship', unitPrice: 100.0, quantity: 1 },
+    ],
+    fee: 50.0,
+    amount: 950.0,
+    status: 'void',
+    formResponses: [
+      { label: 'Player 1 Name', value: 'Linda Park' },
+      { label: 'Player 2 Name', value: 'George Park' },
+      { label: 'Player 3 Name', value: 'Nina Osei' },
+      { label: 'Player 4 Name', value: 'Kevin Osei' },
+    ],
+  },
+  {
+    id: 'ord-1006',
+    buyerName: 'Michael Torres',
+    email: 'mtorres@email.com',
+    phone: '(555) 488-2210',
+    paymentType: 'Credit Card',
+    date: '2026-08-08',
+    dateTime: '2:51 PM on Aug 8, 2026',
+    orderType: 'Online Order',
+    packages: ['Single Golfer Package', 'Mulligan Package'],
+    lineItems: [
+      { name: 'Single Golfer Package', unitPrice: 225.0, quantity: 1 },
+      { name: 'Mulligan Package', unitPrice: 50.0, quantity: 1 },
+    ],
+    fee: 25.0,
+    amount: 300.0,
+    status: 'paid',
+    formResponses: [
+      { label: 'Player 1 Name', value: 'Michael Torres' },
+      { label: 'Shirt Size', value: 'X-Large' },
+      { label: 'Dietary Restrictions', value: 'Gluten-Free' },
+    ],
+  },
+]
+
+export const STATUS_LABEL = {
+  paid: 'Paid',
+  pending: 'Pending',
+  refunded: 'Refunded',
+  void: 'Void',
+}

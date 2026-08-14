@@ -14,6 +14,7 @@ import ExclusionPageV2 from './pages/exclusion/ExclusionPageV2.jsx'
 import TournamentSchedulerListPage from './pages/scheduler/TournamentSchedulerListPage.jsx'
 import TournamentSchedulerPage from './pages/scheduler/TournamentSchedulerPage.jsx'
 import MessageDraftPage from './pages/messaging/MessageDraftPage.jsx'
+import OrderListPage from './pages/orders/OrderListPage.jsx'
 
 // To add a new prototype page:
 // 1. Create the file in src/pages/
@@ -43,6 +44,7 @@ export default function App() {
           <NavItem to="/exclusion-v2" label="Exclusion V2" />
           <NavItem to="/scheduler" label="Hole Assignments" />
           <NavItem to="/messaging" label="Message Draft" />
+          <NavItem to="/orders" label="Orders & Payouts" />
         </nav>
 
         {/* Page content */}
@@ -62,6 +64,8 @@ export default function App() {
             <Route path="/scheduler" element={<TournamentSchedulerListPage />} />
             <Route path="/scheduler/:tournamentId" element={<TournamentSchedulerPage />} />
             <Route path="/messaging" element={<MessageDraftPage />} />
+            <Route path="/orders" element={<OrderListPage />} />
+            <Route path="/orders/:id" element={<OrderListPage />} />
           </Routes>
         </main>
 
