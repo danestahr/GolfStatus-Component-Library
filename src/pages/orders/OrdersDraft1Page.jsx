@@ -30,10 +30,6 @@ export default function OrdersDraft1Page() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [editingResponse, setEditingResponse] = useState(null)
-  // Whether All Responses was opened straight from the list's quick link
-  // (skipping Order Details) — if so, the panel's back chevron should close
-  // straight to the list too, instead of landing on Order Details.
-  const [allResponsesFromList, setAllResponsesFromList] = useState(false)
 
   const selectedOrder = orderList.find(o => o.id === id) ?? null
   const viewingAllResponses = location.pathname.endsWith('/responses')
@@ -59,22 +55,15 @@ export default function OrdersDraft1Page() {
 
   function closeDetailPanel() {
     setEditingResponse(null)
-    setAllResponsesFromList(false)
     navigate('/orders-draft-1')
   }
 
   function openAllResponses() {
-    setAllResponsesFromList(false)
     navigate(`/orders-draft-1/${id}/responses`)
   }
 
-  function viewResponsesFromList(orderId) {
-    setAllResponsesFromList(true)
-    navigate(`/orders-draft-1/${orderId}/responses`)
-  }
-
   function closeAllResponses() {
-    navigate(allResponsesFromList ? '/orders-draft-1' : `/orders-draft-1/${id}`)
+    navigate(`/orders-draft-1/${id}`)
   }
 
   function handlePanelBack() {
@@ -208,7 +197,6 @@ export default function OrdersDraft1Page() {
                   key={order.id}
                   order={order}
                   onClick={() => navigate(`/orders-draft-1/${order.id}`)}
-                  onViewResponses={() => viewResponsesFromList(order.id)}
                 />
               ))
             )}

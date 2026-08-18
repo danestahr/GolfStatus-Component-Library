@@ -1,9 +1,7 @@
-import { faClipboardList } from '@fortawesome/free-solid-svg-icons'
-import GSButton from '../../gs-lib/components/gs-button'
 import { formatMoney, STATUS_META } from './orderUtils'
 import './OrderListItem.scss'
 
-export default function OrderListItem({ order, onClick, onViewResponses }) {
+export default function OrderListItem({ order, onClick }) {
   const status = STATUS_META[order.status]
 
   return (
@@ -28,19 +26,6 @@ export default function OrderListItem({ order, onClick, onViewResponses }) {
         </div>
 
         <div className="ord-row-sub">{order.packages.join(', ')}</div>
-
-        {onViewResponses && (
-          <GSButton
-            title={`Form Responses (${order.formResponses.length})`}
-            buttonIcon={faClipboardList}
-            type="light-grey"
-            isFocusable
-            onClick={e => {
-              e.stopPropagation()
-              onViewResponses()
-            }}
-          />
-        )}
       </div>
 
       <div className="ord-row-side">
