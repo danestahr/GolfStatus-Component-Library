@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faArrowUpRightFromSquare, faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
 import GSButton from '../../gs-lib/components/gs-button'
-import { QUESTION_OPTIONS, isAnswerMissing } from './orderUtils'
+import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } from './OrderResponsesFilterNav.jsx'
+import { QUESTION_OPTIONS, isAnswerMissing, occurrenceLabelFor } from './orderUtils'
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 
@@ -59,24 +60,25 @@ function matchesQuery(entry, query) {
   )
 }
 
-// Which of a question's answer tiles to actually show for the current
-// search — keeps every answer if the question itself matched (nothing to
-// narrow down there), otherwise drops the respondents that don't match so
-// only the relevant tiles show. Answers keep their original index (needed
-// for editing/saving/flashing) even once the non-matching ones are filtered
-// out.
-function visibleAnswerEntries(entry, query) {
-  const indexed = entry.answers.map((answer, originalIndex) => ({ answer, originalIndex }))
-  if (!query || entry.question.toLowerCase().includes(query)) return indexed
-  return indexed.filter(
-    ({ answer }) => answer.respondent.toLowerCase().includes(query) || String(answer.value).toLowerCase().includes(query)
-  )
+// 'all' shows every fillLevel — Team/Sponsor/Player Forms narrow to their
+// own occurrence type (see OrderResponsesFilterNav.jsx).
+function matchesCategory(entry, category) {
+  return category === 'all' || entry.fillLevel === category
 }
 
-const FILL_LEVEL_LABELS = { team: 'By Team', player: 'By Player', sponsor: 'By Sponsor' }
-
-function occurrenceLabelFor(fillLevel) {
-  return FILL_LEVEL_LABELS[fillLevel] ?? 'By Order'
+// Which of a question's answer tiles to actually show for the current
+// search and name filter — keeps every answer if the question itself
+// matched the search (nothing to narrow down there), otherwise drops the
+// respondents that don't match so only the relevant tiles show. Answers keep
+// their original index (needed for editing/saving/flashing) even once the
+// non-matching ones are filtered out.
+function visibleAnswerEntries(entry, query, selectedName) {
+  const indexed = entry.answers.map((answer, originalIndex) => ({ answer, originalIndex }))
+  const forName = selectedName ? indexed.filter(({ answer }) => answer.respondent === selectedName) : indexed
+  if (!query || entry.question.toLowerCase().includes(query)) return forName
+  return forName.filter(
+    ({ answer }) => answer.respondent.toLowerCase().includes(query) || String(answer.value).toLowerCase().includes(query)
+  )
 }
 
 // Draft 1 riff — the "uncollapsed" package/form/question/answer view from
@@ -88,12 +90,29 @@ function occurrenceLabelFor(fillLevel) {
 // page uses its own layout — a grey section per form occurrence, with each
 // question inside it as its own white tile — rather than the nested-card
 // style used in the order details view.
-export default function OrderResponsesListDraft1({ order, onEditResponses, onSaveAnswer }) {
+export default function OrderResponsesListDraft1({ order, onEditResponses, onSaveAnswer, onViewFormAcrossOrders }) {
   const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('all')
+  const [selectedName, setSelectedName] = useState(null)
+  const [filterNavOpen, setFilterNavOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [flashedAnswers, setFlashedAnswers] = useState(new Set())
   const editingTileRef = useRef(null)
+
+  function selectCategory(value) {
+    setCategory(value)
+    setSelectedName(null)
+    // A category with only one respondent (or none) has nothing left to
+    // narrow down, so it applies directly and the nav collapses — same as a
+    // one-round wave jumping straight to its round in Hole Assignments.
+    setFilterNavOpen((namesByCategory[value]?.length ?? 0) > 1)
+  }
+
+  function selectName(name) {
+    setSelectedName(name)
+    setFilterNavOpen(false)
+  }
 
   useEffect(() => {
     if (!editingAnswer) return
@@ -110,8 +129,49 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
 
   const fullResponses = order.formResponses
   const query = search.trim().toLowerCase()
-  const filteredResponses = fullResponses.filter(entry => matchesQuery(entry, query))
+  const filteredResponses = fullResponses.filter(entry => matchesQuery(entry, query) && matchesCategory(entry, category))
   const packages = groupResponses(filteredResponses)
+
+  // A name filter can leave a form with no visible answers at all (e.g.
+  // picking a player from one team hides the other team's Player Details
+  // entirely) — drop those empty forms, and the whole package if every one
+  // of its forms comes up empty.
+  const visiblePackages = packages
+    .map(pkg => ({
+      packageName: pkg.packageName,
+      forms: pkg.forms
+        .map(form => ({
+          form,
+          entries: form.questions
+            .map(entry => ({ entry, entryIndex: fullResponses.indexOf(entry) }))
+            .filter(({ entry }) => visibleAnswerEntries(entry, query, selectedName).length > 0),
+        }))
+        .filter(({ entries }) => entries.length > 0),
+    }))
+    .filter(pkg => pkg.forms.length > 0)
+
+  // Every respondent seen at each occurrence type, so the filter nav can
+  // offer a second, "similar to players" pick whenever a Team or Sponsor
+  // category actually has more than one to choose from (multiple teams or
+  // multiple sponsors in the same order).
+  const namesByCategory = { team: [], sponsor: [], player: [] }
+  fullResponses.forEach(entry => {
+    const names = namesByCategory[entry.fillLevel]
+    if (!names) return
+    entry.answers.forEach(a => {
+      if (!names.includes(a.respondent)) names.push(a.respondent)
+    })
+  })
+
+  // Only offer categories this order actually has occurrences of — e.g. no
+  // Sponsor tab on an order with no sponsor forms at all — and skip the
+  // whole filter when there's nothing to narrow down (a single occurrence
+  // type makes "All" and that type identical).
+  const presentFillLevels = new Set(fullResponses.map(entry => entry.fillLevel))
+  const availableCategories = RESPONSE_CATEGORIES.filter(c => c.value === 'all' || presentFillLevels.has(c.value))
+  const showFilter = presentFillLevels.size > 1
+
+  const filterDescription = selectedName ? `${selectedName}'s Responses` : CATEGORY_DESCRIPTIONS[category]
 
   function cancelAnswerEdit() {
     if (isSaving) return
@@ -161,7 +221,7 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
   function renderAnswers(entry, entryIndex) {
     return (
       <div className="ord-form-response-answers">
-        {visibleAnswerEntries(entry, query).map(({ answer, originalIndex: j }) => {
+        {visibleAnswerEntries(entry, query, selectedName).map(({ answer, originalIndex: j }) => {
           const isEditing = editingAnswer?.entryIndex === entryIndex && editingAnswer?.answerIndex === j
           const canSave = isEditing && !isSaving && editingAnswer.draft !== editingAnswer.original
           const isFlashing = flashedAnswers.has(`${entryIndex}-${j}`)
@@ -216,9 +276,14 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
                       <div className="ord-form-response-answer-value">{answer.value}</div>
                     )
                   )}
+                </div>
+              )}
+              {!isEditing && (
+                <div className="ordr1-answer-meta">
                   {answer.editedAt && (
-                    <div className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</div>
+                    <span className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</span>
                   )}
+                  <FontAwesomeIcon icon={faPen} className="ordr1-answer-edit-icon" />
                 </div>
               )}
             </div>
@@ -230,7 +295,41 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
 
   return (
     <div className="ordr1-list">
-      <GSActionBar type="x-large-pad H3" header="All Responses" />
+      <GSActionBar
+        type="x-large-pad H3"
+        header={
+          showFilter ? (
+            <>
+              Form Responses
+              <div className="ordr1-filter-switch">
+                <span className="ordr1-filter-switch-name">{filterDescription}</span>
+                <span className="ordr1-filter-switch-sep">|</span>
+                <button
+                  type="button"
+                  className="ordr1-filter-switch-link"
+                  onClick={() => setFilterNavOpen(v => !v)}
+                >
+                  {filterNavOpen ? 'Close' : 'Change'}
+                </button>
+              </div>
+            </>
+          ) : (
+            'Form Responses'
+          )
+        }
+      />
+
+      {showFilter && (
+        <OrderResponsesFilterNav
+          isOpen={filterNavOpen}
+          categories={availableCategories}
+          category={category}
+          onSelectCategory={selectCategory}
+          namesByCategory={namesByCategory}
+          selectedName={selectedName}
+          onSelectName={selectName}
+        />
+      )}
 
       <div className="ordr1-list-search">
         <GSinput
@@ -244,45 +343,51 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
       </div>
 
       <div className="ordr1-list-body">
-        {packages.length === 0 ? (
-          <div className="ordr1-list-empty">No results for "{search}"</div>
+        {visiblePackages.length === 0 ? (
+          <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
         ) : (
           <div className="ordr1-list-groups">
-            {packages.map(pkg => (
+            {visiblePackages.map(pkg => (
               <div className="ordr1-package" key={pkg.packageName}>
                 <div className="ordr1-package-label">{pkg.packageName}</div>
 
                 <div className="ordr1-forms">
-                  {pkg.forms.map(form => {
-                    const entries = form.questions.map(entry => ({ entry, entryIndex: fullResponses.indexOf(entry) }))
-
-                    return (
-                      <div className="ordr1-form-section" key={form.formName}>
-                        <div className="ordr1-form-section-header">
-                          <div className="ordr1-form-section-text">
-                            <div className="ordr1-form-section-title">{form.formName}</div>
-                            <div className="ordr1-form-section-subtitle">{occurrenceLabelFor(form.questions[0]?.fillLevel)}</div>
+                  {pkg.forms.map(({ form, entries }) => (
+                    <div className="ordr1-form-section" key={form.formName}>
+                      <div className="ordr1-form-section-header">
+                        <div className="ordr1-form-section-text">
+                          <div className="ordr1-form-section-title">{form.formName}</div>
+                          <div className="ordr1-form-section-subtitle">
+                            {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
                           </div>
+                        </div>
 
+                        <div className="ordr1-form-section-actions">
                           <GSButton
                             type="light-grey icon"
                             size="primary"
                             buttonIcon={faPen}
                             onClick={() => onEditResponses(entries)}
                           />
-                        </div>
-
-                        <div className="ordr1-question-tiles">
-                          {entries.map(({ entry, entryIndex }, i) => (
-                            <div className="ordr1-question-tile" key={i}>
-                              <div className="ordr1-question-title">{entry.question}</div>
-                              {renderAnswers(entry, entryIndex)}
-                            </div>
-                          ))}
+                          <GSButton
+                            type="light-grey icon"
+                            size="primary"
+                            buttonIcon={faArrowUpRightFromSquare}
+                            onClick={() => onViewFormAcrossOrders(form.formName)}
+                          />
                         </div>
                       </div>
-                    )
-                  })}
+
+                      <div className="ordr1-question-tiles">
+                        {entries.map(({ entry, entryIndex }, i) => (
+                          <div className="ordr1-question-tile" key={i}>
+                            <div className="ordr1-question-title">{entry.question}</div>
+                            {renderAnswers(entry, entryIndex)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

@@ -51,6 +51,73 @@ export function isAnswerMissing(answer) {
   return !answer.value || answer.value.trim() === ''
 }
 
+// "Team Response(s)" / "Player Response(s)" / "Sponsor Response(s)" — which
+// occurrence type a form entry's `fillLevel` represents, pluralized against
+// however many respondents are actually being labeled. Shared by
+// OrderResponsesListDraft1.jsx (per-order responses) and
+// AllOrderResponsesForFormDraft1.jsx (cross-order, per-question responses)
+// so both label a form section/group the same way.
+const FILL_LEVEL_NOUNS = { team: 'Team', player: 'Player', sponsor: 'Sponsor' }
+
+export function occurrenceLabelFor(fillLevel, count = 1) {
+  const noun = FILL_LEVEL_NOUNS[fillLevel] ?? 'Order'
+  return `${noun} ${count === 1 ? 'Response' : 'Responses'}`
+}
+
+// Label shown under a question's text wherever it's displayed on its own
+// (see the question-nav bar in AllOrderResponsesForFormDraft1.jsx) — a
+// question with a fixed answer set (QUESTION_OPTIONS) renders as a select
+// everywhere it's edited, so it reads as "Multiple Choice"; anything else is
+// free text, i.e. "Text Response". Numeric-only questions would read as
+// "Number Response" the same way once one exists in the data.
+export function responseTypeFor(question) {
+  return QUESTION_OPTIONS[question] ? 'Multiple Choice' : 'Text Response'
+}
+
+// Which questions a respondent must answer before their registration/order
+// is considered complete — logistics questions (course, shirt size) block
+// completion, preference/RSVP questions (dietary, happy hour) don't. Powers
+// the "(Required)"/"(Optional)" label and hides the pointless Unanswered
+// filter on a required question in AllOrderResponsesForFormDraft1.jsx, since
+// a required question is expected to end up fully answered anyway.
+const REQUIRED_QUESTIONS = new Set(['Which course do you want to play?', 'What is your shirt size?'])
+
+export function isQuestionRequired(question) {
+  return REQUIRED_QUESTIONS.has(question)
+}
+
+// Every response recorded for a given form name, gathered across every
+// order rather than just one — powers the "view all orders' responses to
+// this form" panel opened from a form section's arrow button (see
+// OrderResponsesListDraft1.jsx / AllOrderResponsesForFormDraft1.jsx). Groups
+// by question (a form can carry more than one) and tags each answer with
+// the order it came from so the cross-order list can still show whose
+// response it is.
+export function responsesForFormAcrossOrders(orders, formName) {
+  const questions = []
+  orders.forEach(order => {
+    order.formResponses
+      .filter(entry => entry.formName === formName)
+      .forEach(entry => {
+        let question = questions.find(q => q.question === entry.question)
+        if (!question) {
+          question = { question: entry.question, fillLevel: entry.fillLevel, answers: [] }
+          questions.push(question)
+        }
+        entry.answers.forEach(answer => {
+          question.answers.push({
+            ...answer,
+            orderId: order.id,
+            buyerName: order.buyerName,
+            businessName: order.businessName,
+            packageName: entry.packageName,
+          })
+        })
+      })
+  })
+  return questions
+}
+
 // Tallies individual respondent answers (not questions) across a form
 // response list — a single question can carry several once a form has
 // multiple respondents, so counting at the answer level is the more

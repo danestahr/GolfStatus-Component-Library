@@ -1,0 +1,130 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// All/Answered/Unanswered filter tabs plus the response count for whichever
+// of those is selected — sits directly in the grey form-section, above the
+// white question tile, rather than inside it.
+.aof-answer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $medium-large-pad;
+  margin-bottom: $x-large-pad;
+}
+
+// e.g. "20 Responses" — reflects whichever of All/Answered/Unanswered is
+// currently selected (see `filteredCount` in AllOrderResponsesForFormDraft1.jsx).
+.aof-answer-summary {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.aof-answer-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+// Question-nav bar (see AllOrderResponsesForFormDraft1.jsx) — no pad-class
+// passed in `type`, so this bar has zero built-in padding; a fixed 24px gap
+// to the grey section below stands in for it instead of relying on padding.
+.aof-question-nav {
+  margin-bottom: $x-large-pad;
+
+  // GSActionBar's built-in H-classes set an inline font-size via
+  // defaultTypography, so this skips those and sets its own class instead.
+  .head {
+    font-size: 16px;
+  }
+}
+
+// "Text Response" / "Number Response" / "Multiple Choice" — the question's
+// answer-type label under its text (see responseTypeFor in orderUtils.js).
+.aof-question-type {
+  margin-top: $x-small-pad;
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+// One white tile per order, every question's answers are grouped back into
+// their per-order unit (see `groupAnswersByOrder` in
+// AllOrderResponsesForFormDraft1.jsx) — a single-respondent team/sponsor
+// question gets one order per tile same as a multi-respondent player one.
+.aof-order-groups {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.aof-order-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-large-pad;
+  margin-bottom: $medium-large-pad;
+}
+
+// "{Buyer}'s Order | View Order" — same text-plus-link pattern as
+// OrderResponsesListDraft1.scss's .ordr1-filter-switch-*.
+.aof-order-group-name-row {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.aof-order-group-name {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.aof-order-group-sep {
+  font-size: $x-small-font;
+  color: $grey-400;
+}
+
+// Jumps back to that order's own Order Details screen (see `onViewOrder` in
+// AllOrderResponsesForFormDraft1.jsx / `viewOrderDetails` in OrdersDraft1Page.jsx).
+.aof-order-group-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $cyan-700;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $cyan-800;
+    text-decoration: underline;
+  }
+}
+
+.aof-order-group-type {
+  font-size: $x-small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+// Sponsor-level group header: business name (+ View Order) on top, the
+// actual sponsor contact person named underneath (see `renderGroupName` in
+// AllOrderResponsesForFormDraft1.jsx).
+.aof-order-group-name-col {
+  display: flex;
+  flex-direction: column;
+  gap: $x-small-pad;
+}
+
+.aof-order-group-contact {
+  font-size: $x-small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}

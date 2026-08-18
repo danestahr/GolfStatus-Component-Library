@@ -11,6 +11,43 @@
   flex-direction: column;
 }
 
+// "{Category} Responses | Change" line under the "Responses" header —
+// mirrors TournamentSchedulerPage.scss's .sched-wave-switch* for the same
+// pattern above Hole Assignments' WaveRoundNav.
+.ordr1-filter-switch {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  margin-top: $small-pad;
+}
+
+.ordr1-filter-switch-name {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+}
+
+.ordr1-filter-switch-sep {
+  font-size: $small-font;
+  color: $grey-400;
+}
+
+.ordr1-filter-switch-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $cyan-700;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $cyan-800;
+  }
+}
+
 // Full-width, sticky under the page header — its own background so it
 // reads as a fixed bar rather than inheriting the body's padding/inset.
 .ordr1-list-search {
@@ -86,6 +123,13 @@
   min-width: 0;
 }
 
+.ordr1-form-section-actions {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  flex-shrink: 0;
+}
+
 .ordr1-form-section-title {
   font-size: $small-font;
   font-weight: $bold-font-weight;
@@ -135,11 +179,16 @@
 // instead of the cyan-100/grey-800 treatment used elsewhere.
 .ordr1-list {
   .ord-form-response-answer {
+    position: relative;
     background: $cyan-700;
     border: 1px solid transparent;
 
     &:hover {
       background: $cyan-800;
+
+      .ordr1-answer-edit-icon {
+        opacity: 0.85;
+      }
     }
 
     // A respondent that hasn't answered yet — outlined instead of filled so
@@ -181,6 +230,12 @@
 
       gs-field {
         animation: ordr1-answer-fade-in 0.2s ease;
+        width: 50%;
+        max-width: 50%;
+
+        .field {
+          width: 100%;
+        }
       }
     }
 
@@ -193,6 +248,27 @@
     }
   }
 
+  // Right-side meta group (edited-at + edit hint), centered on the tile's
+  // full height regardless of how tall the name/value stack on the left is.
+  .ordr1-answer-meta {
+    position: absolute;
+    top: 50%;
+    right: $large-pad;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: $large-pad;
+  }
+
+  // Hints that the tile is clickable — otherwise nothing about the resting
+  // cyan-700 tile suggests it opens into an edit field.
+  .ordr1-answer-edit-icon {
+    color: $cyan-400;
+    opacity: 0.55;
+    font-size: $small-font;
+    transition: $fast;
+  }
+
   .ord-form-response-answer-name,
   .ord-form-response-answer-value {
     color: $white;
@@ -200,7 +276,7 @@
   }
 
   .ord-form-response-answer-edited {
-    color: $white;
+    color: $cyan-100;
   }
 
   // Smooths the swap back from the edit input to the read-only value/edited

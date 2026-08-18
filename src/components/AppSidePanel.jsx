@@ -23,6 +23,8 @@ import './AppSidePanel.scss'
  *   noTransition  boolean — skip the open/close slide animation, e.g. for a panel opened on top of another (optional)
  *   dimOverlay    boolean — darken the backdrop (default true); pass false when this panel opens on top of
  *                 another already-dimmed AppSidePanel, so the two overlays don't stack into a darker tint (optional)
+ *   bodyRef       ref attached to the scrollable body div — lets a caller read/reset/restore
+ *                 scrollTop across content swaps, since the div itself never unmounts (optional)
  *   children      scrollable panel content
  */
 export default function AppSidePanel({
@@ -39,6 +41,7 @@ export default function AppSidePanel({
   animateWidth,
   noTransition,
   dimOverlay = true,
+  bodyRef,
   children,
 }) {
   return (
@@ -64,7 +67,7 @@ export default function AppSidePanel({
           )}
 
           <div className="app-side-panel-body-wrapper">
-            <div className="app-side-panel-body">
+            <div className="app-side-panel-body" ref={bodyRef}>
               {children}
             </div>
             {bottomContent && (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faFolderOpen, faHandHoldingDollar, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -12,6 +12,7 @@ import OrderFilterPanel from '../../components/orders/OrderFilterPanel.jsx'
 import { orderActionsFor } from '../../components/orders/OrderDetailPanel.jsx'
 import OrderDetailPanelDraft1 from '../../components/orders/OrderDetailPanelDraft1.jsx'
 import OrderResponsesListDraft1 from '../../components/orders/OrderResponsesListDraft1.jsx'
+import AllOrderResponsesForFormDraft1 from '../../components/orders/AllOrderResponsesForFormDraft1.jsx'
 import OrderFormResponseEditFieldsDraft1 from '../../components/orders/OrderFormResponseEditFieldsDraft1.jsx'
 import { availableFunds, orderStats, orders as initialOrders } from '../../data/mockOrders.js'
 import './OrdersDraft1Page.scss'
@@ -30,9 +31,47 @@ export default function OrdersDraft1Page() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [editingResponse, setEditingResponse] = useState(null)
+  const [viewingFormName, setViewingFormName] = useState(null)
 
   const selectedOrder = orderList.find(o => o.id === id) ?? null
   const viewingAllResponses = location.pathname.endsWith('/responses')
+
+  // Scroll position of the AppSidePanel body, kept per "screen" so a forward
+  // navigation (Details -> Responses -> Form Responses -> Edit) always opens
+  // at the top, while stepping back with the panel's chevron restores
+  // wherever that screen was scrolled to before — the body div itself never
+  // unmounts across these content swaps, so its scrollTop otherwise just
+  // carries over untouched from whatever screen came before it.
+  const panelBodyRef = useRef(null)
+  const scrollPositions = useRef({})
+  const pendingScrollAction = useRef(null)
+
+  function currentScreenKey() {
+    if (editingResponse) return `edit:${editingResponse.orderId}`
+    if (viewingFormName) return `form:${viewingFormName}`
+    if (viewingAllResponses) return `responses:${id}`
+    if (selectedOrder) return `details:${id}`
+    return 'none'
+  }
+
+  function saveCurrentScroll() {
+    if (panelBodyRef.current) {
+      scrollPositions.current[currentScreenKey()] = panelBodyRef.current.scrollTop
+    }
+  }
+
+  const screenKey = currentScreenKey()
+  useEffect(() => {
+    const body = panelBodyRef.current
+    if (!body) return
+    if (pendingScrollAction.current === 'restore') {
+      body.scrollTop = scrollPositions.current[screenKey] ?? 0
+    } else {
+      body.scrollTop = 0
+    }
+    pendingScrollAction.current = null
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenKey])
 
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -55,20 +94,40 @@ export default function OrdersDraft1Page() {
 
   function closeDetailPanel() {
     setEditingResponse(null)
+    setViewingFormName(null)
     navigate('/orders-draft-1')
   }
 
   function openAllResponses() {
+    saveCurrentScroll()
     navigate(`/orders-draft-1/${id}/responses`)
   }
 
   function closeAllResponses() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
     navigate(`/orders-draft-1/${id}`)
   }
 
+  function viewFormAcrossOrders(formName) {
+    saveCurrentScroll()
+    setViewingFormName(formName)
+  }
+
+  function viewOrderDetails(orderId) {
+    saveCurrentScroll()
+    setEditingResponse(null)
+    setViewingFormName(null)
+    navigate(`/orders-draft-1/${orderId}`)
+  }
+
   function handlePanelBack() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
     if (editingResponse) {
       setEditingResponse(null)
+    } else if (viewingFormName) {
+      setViewingFormName(null)
     } else if (viewingAllResponses) {
       closeAllResponses()
     }
@@ -105,6 +164,7 @@ export default function OrdersDraft1Page() {
   // (see OrderFormResponses.jsx's single "Edit All" per form card) — each
   // becomes its own group here so they can all be saved as one unit.
   function startEditingResponse(orderId, entries) {
+    saveCurrentScroll()
     setEditingResponse({
       orderId,
       groups: entries.map(({ entry, entryIndex }) => ({
@@ -128,7 +188,15 @@ export default function OrdersDraft1Page() {
     }))
   }
 
+  function cancelEditingResponse() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
+    setEditingResponse(null)
+  }
+
   function saveEditingResponse() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
     const { orderId, groups } = editingResponse
     setOrderList(prev =>
       prev.map(o => {
@@ -215,20 +283,25 @@ export default function OrdersDraft1Page() {
       <AppSidePanel
         isOpen={!!selectedOrder}
         onClose={closeDetailPanel}
-        onBack={editingResponse || viewingAllResponses ? handlePanelBack : undefined}
+        onBack={editingResponse || viewingFormName || viewingAllResponses ? handlePanelBack : undefined}
+        bodyRef={panelBodyRef}
         title={
           editingResponse
             ? `Edit ${editingResponse.groups[0]?.formName ?? ''}`
+            : viewingFormName
+            ? `${viewingFormName} Responses`
             : viewingAllResponses
-            ? 'All Responses'
+            ? 'Form Responses'
             : 'Order Details'
         }
         actions={
           editingResponse
             ? [
                 { name: 'Save', type: 'black', action: saveEditingResponse },
-                { name: 'Cancel', type: 'light-grey', action: () => setEditingResponse(null) },
+                { name: 'Cancel', type: 'light-grey', action: cancelEditingResponse },
               ]
+            : viewingFormName
+            ? []
             : viewingAllResponses
             ? []
             : selectedOrder
@@ -246,6 +319,8 @@ export default function OrdersDraft1Page() {
             onChangeAnswer={updateEditingAnswer}
             onSubmit={saveEditingResponse}
           />
+        ) : viewingFormName ? (
+          <AllOrderResponsesForFormDraft1 orders={orderList} formName={viewingFormName} onViewOrder={viewOrderDetails} />
         ) : viewingAllResponses ? (
           selectedOrder && (
             <OrderResponsesListDraft1
@@ -254,6 +329,7 @@ export default function OrdersDraft1Page() {
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(selectedOrder.id, responseIndex, answerIndex, value)
               }
+              onViewFormAcrossOrders={viewFormAcrossOrders}
             />
           )
         ) : (

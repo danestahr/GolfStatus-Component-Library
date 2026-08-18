@@ -2317,13 +2317,12 @@ export default function TournamentSchedulerPage() {
                     }
                     // Round-Number groups have nothing to "manage" the way a
                     // wave does (no membership panel; dragging a round's own
-                    // grabber, see RoundGroupList, is what reorders one) —
-                    // except its own cosmetic label, available for every
-                    // Round Number here, solo or not.
+                    // grabber, see RoundGroupList, is what reorders one). The
+                    // group's cosmetic label is still editable via
+                    // openLinkedRoundLabelPanel, but the edit entry point is
+                    // hidden here for now.
                     pageActions={section.kind === 'wave' ? [
                       { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => setWavesPanelOpen(true) },
-                    ] : section.kind === 'roundNumber' ? [
-                      { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => openLinkedRoundLabelPanel(section.number) },
                     ] : []}
                   />
                   <RoundGroupList

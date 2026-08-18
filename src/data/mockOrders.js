@@ -77,6 +77,7 @@ export const orders = [
   {
     id: 'ord-1002',
     buyerName: 'James Carter',
+    businessName: 'Carter Insurance Group',
     email: 'jcarter@email.com',
     phone: '(555) 902-1187',
     paymentType: 'Credit Card',
@@ -103,6 +104,7 @@ export const orders = [
   {
     id: 'ord-1003',
     buyerName: 'Emily Nguyen',
+    businessName: 'Nguyen Family Dentistry',
     email: 'emily.nguyen@email.com',
     phone: '(555) 340-7765',
     paymentType: 'Check',
@@ -161,6 +163,7 @@ export const orders = [
   {
     id: 'ord-1004',
     buyerName: 'Robert Alvarez',
+    businessName: 'Alvarez Construction',
     email: 'r.alvarez@email.com',
     phone: '(555) 774-3320',
     paymentType: 'Credit Card',
@@ -218,6 +221,7 @@ export const orders = [
   {
     id: 'ord-1005',
     buyerName: 'Linda Park',
+    businessName: 'Park Legal Group',
     email: 'linda.park@email.com',
     phone: '(555) 610-9924',
     paymentType: 'Credit Card',
@@ -307,6 +311,7 @@ export const orders = [
   {
     id: 'ord-1006',
     buyerName: 'Michael Torres',
+    businessName: 'Torres Auto Body',
     email: 'mtorres@email.com',
     phone: '(555) 488-2210',
     paymentType: 'Credit Card',

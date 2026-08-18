@@ -1,0 +1,65 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Animates open/closed via grid-template-rows (0fr → 1fr) rather than
+// mounting/unmounting outright — see WaveRoundNav.scss for the same trick.
+.ordr1-filter-nav-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ordr1-filter-nav-collapse--open {
+  grid-template-rows: 1fr;
+}
+
+.ordr1-filter-nav-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.ordr1-filter-nav {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  padding: $large-pad $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ordr1-filter-nav-label {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.ordr1-filter-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: $medium-large-pad;
+  overflow-x: auto;
+  padding: $small-pad;
+  margin: (-$small-pad);
+  animation: ordr1-filter-nav-tabs-in 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes ordr1-filter-nav-tabs-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ordr1-filter-nav-tab {
+  flex-shrink: 0;
+}
