@@ -374,6 +374,160 @@ export const orders = [
       },
     ],
   },
+  // ord-1007 through ord-1009: support-ticket practice scenario — each
+  // team's shirt sizes are wrong/missing on purpose so a coworker can use
+  // the tile's inline edit to correct them to the sizes the (fictional)
+  // ticket actually asked for.
+  {
+    id: 'ord-1007',
+    buyerName: 'Tim Nacrelli',
+    email: 'tim.nacrelli@email.com',
+    phone: '(555) 349-2201',
+    paymentType: 'Credit Card',
+    date: '2026-08-17',
+    dateTime: '9:20 AM on Aug 17, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration'],
+    lineItems: [
+      { name: 'Team Registration', unitPrice: 800.0, quantity: 1 },
+    ],
+    fee: 50.0,
+    amount: 850.0,
+    status: 'paid',
+    formResponses: [
+      {
+        formName: 'Course Selection',
+        packageName: 'Team Registration',
+        question: 'Which course do you want to play?',
+        fillLevel: 'team',
+        answers: [{ respondent: 'Tim Nacrelli', value: 'Course 2' }],
+      },
+      {
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Tim Nacrelli', value: 'L' },
+          { respondent: 'Eric Sporre', value: 'M' },
+          { respondent: 'TBD', value: '' },
+          { respondent: 'TBD', value: '' },
+        ],
+      },
+      {
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Tim Nacrelli', value: 'None' },
+          { respondent: 'Eric Sporre', value: 'None' },
+          { respondent: 'TBD', value: '' },
+          { respondent: 'TBD', value: '' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'ord-1008',
+    buyerName: 'Jane Hood',
+    email: 'jane.hood@email.com',
+    phone: '(555) 762-4489',
+    paymentType: 'Credit Card',
+    date: '2026-08-16',
+    dateTime: '1:45 PM on Aug 16, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration'],
+    lineItems: [
+      { name: 'Team Registration', unitPrice: 800.0, quantity: 1 },
+    ],
+    fee: 50.0,
+    amount: 850.0,
+    status: 'paid',
+    formResponses: [
+      {
+        formName: 'Course Selection',
+        packageName: 'Team Registration',
+        question: 'Which course do you want to play?',
+        fillLevel: 'team',
+        answers: [{ respondent: 'Jane Hood', value: 'Course 1' }],
+      },
+      {
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Jane Hood', value: 'M' },
+          { respondent: 'Brendan Carroll', value: 'XL' },
+          { respondent: 'TBD', value: '' },
+          { respondent: 'TBD', value: '' },
+        ],
+      },
+      {
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Jane Hood', value: 'None' },
+          { respondent: 'Brendan Carroll', value: 'Vegetarian' },
+          { respondent: 'TBD', value: '' },
+          { respondent: 'TBD', value: '' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'ord-1009',
+    buyerName: 'Gerald Graves',
+    email: 'gerald.graves@email.com',
+    phone: '(555) 810-3376',
+    paymentType: 'Credit Card',
+    date: '2026-08-15',
+    dateTime: '3:10 PM on Aug 15, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration'],
+    lineItems: [
+      { name: 'Team Registration', unitPrice: 800.0, quantity: 1 },
+    ],
+    fee: 50.0,
+    amount: 850.0,
+    status: 'paid',
+    formResponses: [
+      {
+        formName: 'Course Selection',
+        packageName: 'Team Registration',
+        question: 'Which course do you want to play?',
+        fillLevel: 'team',
+        answers: [{ respondent: 'Gerald Graves', value: 'Course 3' }],
+      },
+      {
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Gerald Graves', value: 'M' },
+          { respondent: 'Griffin Graves', value: 'S' },
+          { respondent: 'Brad Blyth', value: 'L' },
+          { respondent: 'Halle Miller', value: 'M' },
+        ],
+      },
+      {
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Gerald Graves', value: 'None' },
+          { respondent: 'Griffin Graves', value: 'None' },
+          { respondent: 'Brad Blyth', value: 'Gluten-Free' },
+          { respondent: 'Halle Miller', value: 'None' },
+        ],
+      },
+    ],
+  },
 ]
 
 export const STATUS_LABEL = {
