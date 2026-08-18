@@ -28,11 +28,6 @@ export default function OrderListItem({ order, onClick, onViewResponses }) {
         </div>
 
         <div className="ord-row-sub">{order.packages.join(', ')}</div>
-      </div>
-
-      <div className="ord-row-side">
-        <div className="ord-row-amount">${formatMoney(order.amount)}</div>
-        <span className={`ord-status-pill ${status.className}`}>{status.label}</span>
 
         {onViewResponses && (
           <GSButton
@@ -46,6 +41,11 @@ export default function OrderListItem({ order, onClick, onViewResponses }) {
             }}
           />
         )}
+      </div>
+
+      <div className="ord-row-side">
+        <div className="ord-row-amount">${formatMoney(order.amount)}</div>
+        <span className={`ord-status-pill ${status.className}`}>{status.label}</span>
       </div>
     </div>
   )

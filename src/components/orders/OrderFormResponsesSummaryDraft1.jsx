@@ -1,4 +1,4 @@
-import { faCircleInfo } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { countAnswerStats } from './orderUtils.js'
 import './OrderFormResponsesSummaryDraft1.scss'
@@ -23,11 +23,13 @@ export default function OrderFormResponsesSummaryDraft1({ responses, onViewAll }
       onClick={onViewAll}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onViewAll()}
     >
-      <div className="ordr1-summary-main">
-        <div className="ordr1-summary-text">
-          <div className="ordr1-summary-title">Form Responses</div>
-          <div className="ordr1-summary-subtitle">
-            {formCount} {formCount === 1 ? 'Form' : 'Forms'} · {questionCount} {questionCount === 1 ? 'Question' : 'Questions'}
+      <div className="ordr1-summary-content">
+        <div className="ordr1-summary-main">
+          <div className="ordr1-summary-text">
+            <div className="ordr1-summary-title">Form Responses</div>
+            <div className="ordr1-summary-subtitle">
+              {formCount} {formCount === 1 ? 'Form' : 'Forms'} · {questionCount} {questionCount === 1 ? 'Question' : 'Questions'}
+            </div>
           </div>
         </div>
 
@@ -38,6 +40,8 @@ export default function OrderFormResponsesSummaryDraft1({ responses, onViewAll }
           </div>
         )}
       </div>
+
+      <FontAwesomeIcon icon={faChevronRight} className="ordr1-summary-chevron" />
     </div>
   )
 }
