@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faFolderOpen, faHandHoldingDollar, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 
@@ -9,23 +9,34 @@ import AppSidePanel from '../../components/AppSidePanel.jsx'
 import OrderFundsCard from '../../components/orders/OrderFundsCard.jsx'
 import OrderListItem from '../../components/orders/OrderListItem.jsx'
 import OrderFilterPanel from '../../components/orders/OrderFilterPanel.jsx'
-import OrderDetailPanel, { orderActionsFor } from '../../components/orders/OrderDetailPanel.jsx'
-import OrderFormResponseEditFields from '../../components/orders/OrderFormResponseEditFields.jsx'
+import { orderActionsFor } from '../../components/orders/OrderDetailPanel.jsx'
+import OrderDetailPanelDraft1 from '../../components/orders/OrderDetailPanelDraft1.jsx'
+import OrderResponsesListDraft1 from '../../components/orders/OrderResponsesListDraft1.jsx'
+import OrderFormResponseEditFieldsDraft1 from '../../components/orders/OrderFormResponseEditFieldsDraft1.jsx'
 import { availableFunds, orderStats, orders as initialOrders } from '../../data/mockOrders.js'
-import './OrderListPage.scss'
+import './OrdersDraft1Page.scss'
 
 const EMPTY_FILTERS = { status: null, activatedOn: '', deactivatedOn: '' }
 
-export default function OrderListPage() {
+// Draft 1 — a standalone copy of OrderListPage.jsx (own file + own scss with
+// ord-d1- prefixed classes) so it can be riffed on without touching the
+// original Orders & Payouts page or Draft 2.
+export default function OrdersDraft1Page() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams()
   const [orderList, setOrderList] = useState(initialOrders)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [filterOpen, setFilterOpen] = useState(false)
   const [editingResponse, setEditingResponse] = useState(null)
+  // Whether All Responses was opened straight from the list's quick link
+  // (skipping Order Details) — if so, the panel's back chevron should close
+  // straight to the list too, instead of landing on Order Details.
+  const [allResponsesFromList, setAllResponsesFromList] = useState(false)
 
   const selectedOrder = orderList.find(o => o.id === id) ?? null
+  const viewingAllResponses = location.pathname.endsWith('/responses')
 
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -48,7 +59,30 @@ export default function OrderListPage() {
 
   function closeDetailPanel() {
     setEditingResponse(null)
-    navigate('/orders/original')
+    setAllResponsesFromList(false)
+    navigate('/orders-draft-1')
+  }
+
+  function openAllResponses() {
+    setAllResponsesFromList(false)
+    navigate(`/orders-draft-1/${id}/responses`)
+  }
+
+  function viewResponsesFromList(orderId) {
+    setAllResponsesFromList(true)
+    navigate(`/orders-draft-1/${orderId}/responses`)
+  }
+
+  function closeAllResponses() {
+    navigate(allResponsesFromList ? '/orders-draft-1' : `/orders-draft-1/${id}`)
+  }
+
+  function handlePanelBack() {
+    if (editingResponse) {
+      setEditingResponse(null)
+    } else if (viewingAllResponses) {
+      closeAllResponses()
+    }
   }
 
   function setOrderStatus(orderId, status) {
@@ -127,24 +161,24 @@ export default function OrderListPage() {
   }
 
   return (
-    <div className="ord-page-bg">
+    <div className="ord-d1-page-bg">
       <GSActionBar
         type="x-large-pad H3"
-        header="Orders & Payouts"
+        header="Orders & Payouts — Draft 1"
         pageActions={[
           { buttonTitle: 'Payouts', actionIcon: faHandHoldingDollar, type: 'black', actionClick: () => {} },
           { buttonTitle: 'Documents', actionIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
         ]}
       />
 
-      <div className="ord-page-list">
-        <div className="ord-col-scroll">
-          <div className="ord-funds-wrap">
+      <div className="ord-d1-page-list">
+        <div className="ord-d1-col-scroll">
+          <div className="ord-d1-funds-wrap">
             <OrderFundsCard funds={availableFunds} stats={orderStats} />
           </div>
 
-          <div className="ord-list-sticky">
-            <div className="ord-search-row">
+          <div className="ord-d1-list-sticky">
+            <div className="ord-d1-search-row">
               <GSinput
                 leftIcon={faMagnifyingGlass}
                 rightIcon={search ? faXmark : null}
@@ -155,22 +189,27 @@ export default function OrderListPage() {
               />
               <button
                 type="button"
-                className={`ord-filter-toggle${activeFilterCount ? ' has-filters' : ''}`}
+                className={`ord-d1-filter-toggle${activeFilterCount ? ' has-filters' : ''}`}
                 onClick={() => setFilterOpen(true)}
                 aria-label="Filter orders"
               >
                 <FontAwesomeIcon icon={faBars} />
-                {activeFilterCount > 0 && <span className="ord-filter-badge">{activeFilterCount}</span>}
+                {activeFilterCount > 0 && <span className="ord-d1-filter-badge">{activeFilterCount}</span>}
               </button>
             </div>
           </div>
 
-          <div className="ord-list-body">
+          <div className="ord-d1-list-body">
             {filteredOrders.length === 0 ? (
-              <div className="ord-empty">No orders match your search.</div>
+              <div className="ord-d1-empty">No orders match your search.</div>
             ) : (
               filteredOrders.map(order => (
-                <OrderListItem key={order.id} order={order} onClick={() => navigate(`/orders/original/${order.id}`)} />
+                <OrderListItem
+                  key={order.id}
+                  order={order}
+                  onClick={() => navigate(`/orders-draft-1/${order.id}`)}
+                  onViewResponses={() => viewResponsesFromList(order.id)}
+                />
               ))
             )}
           </div>
@@ -188,14 +227,22 @@ export default function OrderListPage() {
       <AppSidePanel
         isOpen={!!selectedOrder}
         onClose={closeDetailPanel}
-        onBack={editingResponse ? () => setEditingResponse(null) : undefined}
-        title={editingResponse ? `Edit ${editingResponse.groups[0]?.formName ?? ''}` : 'Order Details'}
+        onBack={editingResponse || viewingAllResponses ? handlePanelBack : undefined}
+        title={
+          editingResponse
+            ? `Edit ${editingResponse.groups[0]?.formName ?? ''}`
+            : viewingAllResponses
+            ? 'All Responses'
+            : 'Order Details'
+        }
         actions={
           editingResponse
             ? [
                 { name: 'Save', type: 'black', action: saveEditingResponse },
                 { name: 'Cancel', type: 'light-grey', action: () => setEditingResponse(null) },
               ]
+            : viewingAllResponses
+            ? []
             : selectedOrder
             ? orderActionsFor(selectedOrder, {
                 onMarkPaid: () => setOrderStatus(selectedOrder.id, 'paid'),
@@ -206,20 +253,24 @@ export default function OrderListPage() {
         }
       >
         {editingResponse ? (
-          <OrderFormResponseEditFields
+          <OrderFormResponseEditFieldsDraft1
             groups={editingResponse.groups}
             onChangeAnswer={updateEditingAnswer}
             onSubmit={saveEditingResponse}
           />
-        ) : (
+        ) : viewingAllResponses ? (
           selectedOrder && (
-            <OrderDetailPanel
+            <OrderResponsesListDraft1
               order={selectedOrder}
               onEditResponses={entries => startEditingResponse(selectedOrder.id, entries)}
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(selectedOrder.id, responseIndex, answerIndex, value)
               }
             />
+          )
+        ) : (
+          selectedOrder && (
+            <OrderDetailPanelDraft1 order={selectedOrder} onViewAllResponses={openAllResponses} />
           )
         )}
       </AppSidePanel>

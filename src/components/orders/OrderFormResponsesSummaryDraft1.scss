@@ -1,0 +1,53 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ordr1-summary {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  background: $grey-50;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+  cursor: pointer;
+  transition: $fast;
+
+  &:hover {
+    background: $grey-100;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px $grey-700;
+  }
+}
+
+.ordr1-summary-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+}
+
+.ordr1-summary-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ordr1-summary-subtitle {
+  margin-top: $x-small-pad;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+// Neutral, non-alarming heads-up — shown only when something's actually
+// missing, so a fully-answered order doesn't carry the extra line.
+.ordr1-summary-notice {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: $small-pad;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}

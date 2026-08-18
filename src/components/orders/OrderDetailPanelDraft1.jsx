@@ -2,26 +2,17 @@ import { faCircleArrowDown, faPaperPlane, faPen } from '@fortawesome/free-solid-
 import GSButton from '../../gs-lib/components/gs-button'
 import OrderFormSection from './OrderFormSection.jsx'
 import OrderLineItemRow from './OrderLineItemRow.jsx'
-import OrderFormResponses from './OrderFormResponses.jsx'
+import OrderFormResponsesSummaryDraft1 from './OrderFormResponsesSummaryDraft1.jsx'
 import { formatMoney, STATUS_META } from './orderUtils.js'
 import './OrderDetailPanel.scss'
 import '../orders/OrderListItem.scss'
 
-export function orderActionsFor(order, { onMarkPaid, onVoid, onRefund }) {
-  switch (order.status) {
-    case 'paid':
-      return [{ name: 'Refund Order', type: 'light-grey', action: onRefund }]
-    case 'pending':
-      return [
-        { name: 'Mark as Paid', type: 'green', action: onMarkPaid },
-        { name: 'Void Invoice', type: 'light-grey', action: onVoid },
-      ]
-    default:
-      return []
-  }
-}
-
-export default function OrderDetailPanel({ order, onEditResponses, onSaveAnswer }) {
+// Draft 1 fork of OrderDetailPanel.jsx — swaps the inline, expandable Form
+// Responses section for a summary row that links out to a dedicated list
+// page (see OrdersDraft1Page.jsx's onViewAllResponses). `orderActionsFor`
+// still comes from the original OrderDetailPanel.jsx, it's unrelated to
+// this rendering change.
+export default function OrderDetailPanelDraft1({ order, onViewAllResponses }) {
   const status = STATUS_META[order.status]
 
   return (
@@ -56,7 +47,7 @@ export default function OrderDetailPanel({ order, onEditResponses, onSaveAnswer 
           </div>
         </div>
 
-        <OrderFormResponses responses={order.formResponses} onEditResponses={onEditResponses} onSaveAnswer={onSaveAnswer} />
+        <OrderFormResponsesSummaryDraft1 responses={order.formResponses} onViewAll={onViewAllResponses} />
       </OrderFormSection>
 
       <OrderFormSection title="Order Details">

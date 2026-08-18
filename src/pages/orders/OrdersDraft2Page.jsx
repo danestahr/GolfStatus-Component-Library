@@ -12,11 +12,14 @@ import OrderFilterPanel from '../../components/orders/OrderFilterPanel.jsx'
 import OrderDetailPanel, { orderActionsFor } from '../../components/orders/OrderDetailPanel.jsx'
 import OrderFormResponseEditFields from '../../components/orders/OrderFormResponseEditFields.jsx'
 import { availableFunds, orderStats, orders as initialOrders } from '../../data/mockOrders.js'
-import './OrderListPage.scss'
+import './OrdersDraft2Page.scss'
 
 const EMPTY_FILTERS = { status: null, activatedOn: '', deactivatedOn: '' }
 
-export default function OrderListPage() {
+// Draft 2 — a standalone copy of OrderListPage.jsx (own file + own scss with
+// ord-d2- prefixed classes) so it can be riffed on without touching the
+// original Orders & Payouts page or Draft 1.
+export default function OrdersDraft2Page() {
   const navigate = useNavigate()
   const { id } = useParams()
   const [orderList, setOrderList] = useState(initialOrders)
@@ -48,7 +51,7 @@ export default function OrderListPage() {
 
   function closeDetailPanel() {
     setEditingResponse(null)
-    navigate('/orders/original')
+    navigate('/orders-draft-2')
   }
 
   function setOrderStatus(orderId, status) {
@@ -127,24 +130,24 @@ export default function OrderListPage() {
   }
 
   return (
-    <div className="ord-page-bg">
+    <div className="ord-d2-page-bg">
       <GSActionBar
         type="x-large-pad H3"
-        header="Orders & Payouts"
+        header="Orders & Payouts — Draft 2"
         pageActions={[
           { buttonTitle: 'Payouts', actionIcon: faHandHoldingDollar, type: 'black', actionClick: () => {} },
           { buttonTitle: 'Documents', actionIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
         ]}
       />
 
-      <div className="ord-page-list">
-        <div className="ord-col-scroll">
-          <div className="ord-funds-wrap">
+      <div className="ord-d2-page-list">
+        <div className="ord-d2-col-scroll">
+          <div className="ord-d2-funds-wrap">
             <OrderFundsCard funds={availableFunds} stats={orderStats} />
           </div>
 
-          <div className="ord-list-sticky">
-            <div className="ord-search-row">
+          <div className="ord-d2-list-sticky">
+            <div className="ord-d2-search-row">
               <GSinput
                 leftIcon={faMagnifyingGlass}
                 rightIcon={search ? faXmark : null}
@@ -155,22 +158,22 @@ export default function OrderListPage() {
               />
               <button
                 type="button"
-                className={`ord-filter-toggle${activeFilterCount ? ' has-filters' : ''}`}
+                className={`ord-d2-filter-toggle${activeFilterCount ? ' has-filters' : ''}`}
                 onClick={() => setFilterOpen(true)}
                 aria-label="Filter orders"
               >
                 <FontAwesomeIcon icon={faBars} />
-                {activeFilterCount > 0 && <span className="ord-filter-badge">{activeFilterCount}</span>}
+                {activeFilterCount > 0 && <span className="ord-d2-filter-badge">{activeFilterCount}</span>}
               </button>
             </div>
           </div>
 
-          <div className="ord-list-body">
+          <div className="ord-d2-list-body">
             {filteredOrders.length === 0 ? (
-              <div className="ord-empty">No orders match your search.</div>
+              <div className="ord-d2-empty">No orders match your search.</div>
             ) : (
               filteredOrders.map(order => (
-                <OrderListItem key={order.id} order={order} onClick={() => navigate(`/orders/original/${order.id}`)} />
+                <OrderListItem key={order.id} order={order} onClick={() => navigate(`/orders-draft-2/${order.id}`)} />
               ))
             )}
           </div>

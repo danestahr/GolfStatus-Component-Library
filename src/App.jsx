@@ -14,7 +14,10 @@ import ExclusionPageV2 from './pages/exclusion/ExclusionPageV2.jsx'
 import TournamentSchedulerListPage from './pages/scheduler/TournamentSchedulerListPage.jsx'
 import TournamentSchedulerPage from './pages/scheduler/TournamentSchedulerPage.jsx'
 import MessageDraftPage from './pages/messaging/MessageDraftPage.jsx'
+import OrdersHubPage from './pages/orders/OrdersHubPage.jsx'
 import OrderListPage from './pages/orders/OrderListPage.jsx'
+import OrdersDraft1Page from './pages/orders/OrdersDraft1Page.jsx'
+import OrdersDraft2Page from './pages/orders/OrdersDraft2Page.jsx'
 
 // To add a new prototype page:
 // 1. Create the file in src/pages/
@@ -64,8 +67,14 @@ export default function App() {
             <Route path="/scheduler" element={<TournamentSchedulerListPage />} />
             <Route path="/scheduler/:tournamentId" element={<TournamentSchedulerPage />} />
             <Route path="/messaging" element={<MessageDraftPage />} />
-            <Route path="/orders" element={<OrderListPage />} />
-            <Route path="/orders/:id" element={<OrderListPage />} />
+            <Route path="/orders" element={<OrdersHubPage />} />
+            <Route path="/orders/original" element={<OrderListPage />} />
+            <Route path="/orders/original/:id" element={<OrderListPage />} />
+            <Route path="/orders-draft-1" element={<OrdersDraft1Page />} />
+            <Route path="/orders-draft-1/:id" element={<OrdersDraft1Page />} />
+            <Route path="/orders-draft-1/:id/responses" element={<OrdersDraft1Page />} />
+            <Route path="/orders-draft-2" element={<OrdersDraft2Page />} />
+            <Route path="/orders-draft-2/:id" element={<OrdersDraft2Page />} />
           </Routes>
         </main>
 

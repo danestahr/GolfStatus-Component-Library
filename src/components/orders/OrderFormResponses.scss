@@ -1,0 +1,201 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-form-responses {
+  background: $grey-50;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+}
+
+.ord-form-responses-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+}
+
+.ord-form-responses-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ord-form-responses-subtitle {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+  margin-top: $x-small-pad;
+}
+
+.ord-form-responses-toggle {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $grey-800;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+.ord-form-responses-list {
+  margin-top: $x-large-pad;
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+}
+
+// A package can carry more than one form fill-out — the label sits once
+// above however many occurrence cards (.ord-form-response-group) it has.
+.ord-form-response-package-label {
+  margin-bottom: $medium-large-pad;
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $grey-600;
+}
+
+.ord-form-response-occurrences {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+}
+
+// One card per form occurrence — a single Edit Responses action covers
+// every question the form asks, since a form can carry several (Shirt
+// Size, Course Preference, ...) that all belong to the same fill-out. A
+// form with only one question collapses its header into the question
+// itself instead of nesting a redundant single-item question list.
+.ord-form-response-group {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  background: $white;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+}
+
+.ord-form-response-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+}
+
+.ord-form-response-group-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ord-form-response-group-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ord-form-response-group-subtitle {
+  margin-top: $x-small-pad;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.ord-form-response-questions {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+}
+
+.ord-form-response-question-block {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.ord-form-response-question {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ord-form-response-answers {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.ord-form-response-answer {
+  background: $cyan-100;
+  border-radius: $medium-radius;
+  padding: $large-pad;
+  cursor: pointer;
+  transition: $fast;
+
+  &:hover {
+    background: $cyan-200;
+  }
+
+  &.is-editing {
+    cursor: default;
+    background: $grey-100;
+
+    &:hover {
+      background: $grey-100;
+    }
+
+    gs-field {
+      display: block;
+      margin-top: $large-pad;
+      width: 50vw;
+      max-width: 100%;
+
+      .field {
+        width: 100%;
+      }
+    }
+  }
+
+  &.is-saving {
+    gs-input {
+      opacity: 0.6;
+    }
+  }
+}
+
+.ord-form-response-answer-name {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.ord-form-response-answer-row {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.ord-form-response-answer-value {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.ord-form-response-answer-edited {
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
+  font-size: $x-small-font;
+  color: $grey-800;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+

@@ -1,0 +1,29 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ofref-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+// Each question's OrderFormSection already provides the x-large-pad inset
+// and bottom border, spanning full width like a section divider.
+.ofref-rows {
+  display: flex;
+  flex-direction: column;
+  gap: $xx-large-pad;
+}
+
+.ofref-row {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.ofref-label {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+  text-transform: uppercase;
+}

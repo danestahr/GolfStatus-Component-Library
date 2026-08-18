@@ -1,6 +1,9 @@
 @import '../../gs-lib/styles/golfstatus.scss';
 
 .ord-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   padding: 56px $x-large-pad;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
@@ -14,7 +17,6 @@
   align-items: center;
   justify-content: space-between;
   gap: $large-pad;
-  margin-bottom: $large-pad;
 }
 
 .ord-form-section-title {
@@ -26,6 +28,6 @@
 .ord-form-section-body {
   display: flex;
   flex-direction: column;
-  gap: 36px;
+  gap: 24px;
   padding-top: 0;
 }

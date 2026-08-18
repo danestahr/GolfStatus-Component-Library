@@ -1,0 +1,51 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ord-hub-page-bg {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: $grey-50;
+  font-family: $font-family;
+
+  > gs-action-bar {
+    background: $white;
+
+    &.x-large-pad {
+      padding: $large-pad;
+    }
+  }
+}
+
+.ord-hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  overflow-y: auto;
+}
+
+.ord-hub-card {
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $grey-50;
+  }
+}
+
+.ord-hub-card-name {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.ord-hub-card-sub {
+  margin-top: $medium-pad;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}

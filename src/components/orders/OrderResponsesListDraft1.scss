@@ -1,0 +1,237 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Structural classes for this page's own layout. The individual respondent
+// answer chips (.ord-form-response-answer*) are reused as-is from
+// OrderFormResponses.scss — only the section/tile scaffolding around them
+// is different here: a grey section per form occurrence, with each
+// question inside it broken out as its own white tile.
+
+.ordr1-list {
+  display: flex;
+  flex-direction: column;
+}
+
+// Full-width, sticky under the page header — its own background so it
+// reads as a fixed bar rather than inheriting the body's padding/inset.
+.ordr1-list-search {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: $white;
+  padding: 16px $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  gs-input {
+    width: 100%;
+  }
+}
+
+.ordr1-list-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.ordr1-list-groups {
+  display: flex;
+  flex-direction: column;
+}
+
+// Each package is its own full-width section — matches OrderFormSection's
+// spacing convention (56px top/bottom, 24px left/right) with a divider
+// between packages instead of floating them apart with gaps.
+.ordr1-package {
+  padding: 56px $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.ordr1-package-label {
+  margin-bottom: $medium-large-pad;
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  color: $grey-600;
+}
+
+.ordr1-forms {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+}
+
+// One grey section per form occurrence — questions live inside it as their
+// own white tiles rather than being listed bare under a shared header.
+.ordr1-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  background: $grey-50;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+}
+
+.ordr1-form-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+}
+
+.ordr1-form-section-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ordr1-form-section-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ordr1-form-section-subtitle {
+  margin-top: $x-small-pad;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.ordr1-question-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+// One white tile per question, holding its own title and response chips —
+// separates questions visually within the grey form section instead of
+// stacking bare titles.
+.ordr1-question-tile {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  background: $white;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+}
+
+.ordr1-question-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.ordr1-list-empty {
+  padding: $xx-large-pad;
+  text-align: center;
+  color: $grey-500;
+  font-size: $small-font;
+}
+
+// Scoped to this page only — recolors the shared .ord-form-response-answer*
+// chips (from OrderFormResponses.scss) to a cyan-700 tile with white content
+// instead of the cyan-100/grey-800 treatment used elsewhere.
+.ordr1-list {
+  .ord-form-response-answer {
+    background: $cyan-700;
+    border: 1px solid transparent;
+
+    &:hover {
+      background: $cyan-800;
+    }
+
+    // A respondent that hasn't answered yet — outlined instead of filled so
+    // it reads as "not there yet" rather than just a blank cyan tile.
+    &.ordr1-answer-missing {
+      background: transparent;
+      border-width: 2px;
+      border-color: $grey-100;
+      border-style: dashed;
+
+      &:hover {
+        background: rgba($grey-500, 0.08);
+      }
+
+      .ord-form-response-answer-name {
+        color: $grey-800;
+        opacity: 0.7;
+      }
+
+      .ord-form-response-answer-edited {
+        color: $grey-800;
+        opacity: 0.7;
+      }
+    }
+
+    &.is-editing {
+      background: $grey-100;
+
+      &:hover {
+        background: $grey-100;
+      }
+
+      // Back to the resting dark-on-light look while editing — the white
+      // override below is only meant for the cyan-700 resting/flash tile.
+      .ord-form-response-answer-name {
+        color: $grey-800;
+        opacity: 0.7;
+      }
+
+      gs-field {
+        animation: ordr1-answer-fade-in 0.2s ease;
+      }
+    }
+
+    // Confirmation flash once a save lands — same treatment as an assigned
+    // slot in Hole Assignments (see TournamentSchedulerPage.scss's
+    // sched-slot-flash): holds cyan-800 for a beat, then fades to the
+    // resting cyan-700.
+    &.is-flash {
+      animation: ordr1-answer-flash 3s ease forwards;
+    }
+  }
+
+  .ord-form-response-answer-name,
+  .ord-form-response-answer-value {
+    color: $white;
+    opacity: 1;
+  }
+
+  .ord-form-response-answer-edited {
+    color: $white;
+  }
+
+  // Smooths the swap back from the edit input to the read-only value/edited
+  // row once a save lands, instead of it popping straight in.
+  .ord-form-response-answer-row {
+    animation: ordr1-answer-fade-in 0.2s ease;
+  }
+
+  .ordr1-answer-placeholder {
+    font-size: $small-font;
+    color: $grey-800;
+    opacity: 0.6;
+  }
+}
+
+@keyframes ordr1-answer-flash {
+  0%, 33.33% {
+    background: $cyan-800;
+  }
+  100% {
+    background: $cyan-700;
+  }
+}
+
+@keyframes ordr1-answer-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
