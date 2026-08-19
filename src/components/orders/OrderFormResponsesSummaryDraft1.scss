@@ -35,31 +35,49 @@
   gap: $large-pad;
 }
 
-.ordr1-summary-chevron {
-  flex-shrink: 0;
+.ordr1-summary-forms {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+}
+
+.ordr1-summary-form {
+  display: flex;
+  align-items: stretch;
+  gap: $medium-large-pad;
+  font-size: $small-font;
   color: $grey-800;
 }
 
-.ordr1-summary-title {
-  font-size: $small-font;
+.ordr1-summary-form-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ordr1-summary-form-name {
   font-weight: $bold-font-weight;
-  color: $grey-800;
 }
 
-.ordr1-summary-subtitle {
-  margin-top: $x-small-pad;
-  font-size: $small-font;
-  color: $grey-800;
-  opacity: 0.7;
-}
-
-// Neutral, non-alarming heads-up — shown only when something's actually
-// missing, so a fully-answered order doesn't carry the extra line.
-.ordr1-summary-notice {
+.ordr1-summary-form-status-wrap {
   display: flex;
   align-items: center;
-  gap: $small-pad;
-  font-size: $small-font;
-  color: $grey-800;
-  opacity: 0.7;
+  padding-right: $medium-large-pad;
+  border-right: 1px solid $grey-300;
+}
+
+.ordr1-summary-form-status {
+  font-size: $medium-font;
+
+  &.is-complete {
+    color: $cyan-700;
+  }
+
+  &.is-incomplete {
+    color: $grey-400;
+  }
+}
+
+.ordr1-summary-form-question {
+  margin-top: $x-small-pad;
+  color: rgba($grey-800, 0.7);
 }

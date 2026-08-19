@@ -9,6 +9,12 @@
 .ordr1-list {
   display: flex;
   flex-direction: column;
+
+  // Separates the page's own H3 title bar (GSActionBar) from the search bar
+  // below it — GSActionBar has no border option of its own for this type.
+  > gs-action-bar {
+    border-bottom: $light-border;
+  }
 }
 
 // "{Category} Responses | Change" line under the "Responses" header —
@@ -137,8 +143,14 @@
 }
 
 .ordr1-form-section-subtitle {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
   margin-top: $x-small-pad;
   font-size: $small-font;
+}
+
+.ordr1-form-section-subtitle-text {
   color: $grey-800;
   opacity: 0.7;
 }
@@ -146,7 +158,7 @@
 .ordr1-question-tiles {
   display: flex;
   flex-direction: column;
-  gap: $medium-large-pad;
+  gap: $x-large-pad;
 }
 
 // One white tile per question, holding its own title and response chips —

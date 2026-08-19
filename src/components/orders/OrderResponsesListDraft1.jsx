@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faArrowUpRightFromSquare, faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
@@ -9,6 +9,16 @@ import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } f
 import { QUESTION_OPTIONS, isAnswerMissing, occurrenceLabelFor } from './orderUtils'
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
+
+// Label for the "| View ___" link next to a form section's response-type
+// subtitle — players roll up under their team the same way a team-level
+// question does, so both read as "View Team"; there's nothing to view for a
+// plain "Order Response" (no fillLevel), so it's left out of this map.
+const VIEW_LINK_LABEL = {
+  team: 'View Team',
+  player: 'View Team',
+  sponsor: 'View Sponsor',
+}
 
 const SAVE_DELAY_MS = 1000
 // Matches the confirmation flash duration used for an assigned slot in the
@@ -60,7 +70,7 @@ function matchesQuery(entry, query) {
   )
 }
 
-// 'all' shows every fillLevel — Team/Sponsor/Player Forms narrow to their
+// 'all' shows every fillLevel — Team/Sponsor/Players narrow to their
 // own occurrence type (see OrderResponsesFilterNav.jsx).
 function matchesCategory(entry, category) {
   return category === 'all' || entry.fillLevel === category
@@ -358,7 +368,21 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
                         <div className="ordr1-form-section-text">
                           <div className="ordr1-form-section-title">{form.formName}</div>
                           <div className="ordr1-form-section-subtitle">
-                            {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
+                            <span className="ordr1-form-section-subtitle-text">
+                              {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
+                            </span>
+                            {VIEW_LINK_LABEL[form.questions[0]?.fillLevel] && (
+                              <>
+                                <span className="ordr1-filter-switch-sep">|</span>
+                                <button
+                                  type="button"
+                                  className="ordr1-filter-switch-link"
+                                  onClick={() => onViewFormAcrossOrders(form.formName)}
+                                >
+                                  {VIEW_LINK_LABEL[form.questions[0]?.fillLevel]}
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -370,9 +394,10 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
                             onClick={() => onEditResponses(entries)}
                           />
                           <GSButton
-                            type="light-grey icon"
+                            type="light-grey"
                             size="primary"
-                            buttonIcon={faArrowUpRightFromSquare}
+                            title="View Form"
+                            rightIcon={faArrowRight}
                             onClick={() => onViewFormAcrossOrders(form.formName)}
                           />
                         </div>

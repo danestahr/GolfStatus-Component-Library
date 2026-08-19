@@ -9,12 +9,15 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: $medium-large-pad;
-  margin-bottom: $x-large-pad;
 }
 
 // e.g. "20 Responses" — reflects whichever of All/Answered/Unanswered is
 // currently selected (see `filteredCount` in AllOrderResponsesForFormDraft1.jsx).
+// Sits directly under the page's "{Form Name} Responses" header rather than
+// down by the filter tabs, so the total reads as a page-level stat rather
+// than something scoped to the answered/unanswered toggle next to it.
 .aof-answer-summary {
+  margin-top: $x-small-pad;
   font-size: $small-font;
   font-weight: $regular-font-weight;
   color: $grey-800;
@@ -50,6 +53,100 @@
   opacity: 0.7;
 }
 
+// The currently-viewed question's answer breakdown, one bar per fixed
+// option (plus a "No Response" bar) — only rendered for multiple-choice
+// questions (see `optionBreakdown` in orderUtils.js); a text/number question
+// has no fixed value set to break down this way. Sits in its own white tile
+// (reusing .ordr1-question-tile) same as the per-order answer tiles below it.
+.aof-option-bars-tile {
+  margin-bottom: $x-large-pad;
+}
+
+.aof-option-bars {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+// Each bar row doubles as a filter control (see `setOptionFilter` in
+// AllOrderResponsesForFormDraft1.jsx) — a plain <button> reset back to the
+// grid layout, with a highlight for whichever option is currently filtered.
+.aof-option-bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 32px;
+  align-items: center;
+  gap: $medium-pad;
+  width: 100%;
+  appearance: none;
+  background: none;
+  border: none;
+  border-radius: $small-medium-radius;
+  padding: $x-small-pad $small-pad;
+  margin: (-$x-small-pad) (-$small-pad);
+  font-family: $font-family;
+  cursor: pointer;
+  transition: $fast;
+
+  &:hover {
+    background: $grey-100;
+  }
+
+  &.is-active {
+    background: rgba($cyan-700, 0.1);
+
+    .aof-option-bar-label,
+    .aof-option-bar-count {
+      color: $cyan-800;
+    }
+
+    .aof-option-bar-fill {
+      background: $cyan-800;
+    }
+  }
+}
+
+.aof-option-bar-label {
+  font-size: $small-font;
+  color: $grey-800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aof-option-bar-track {
+  height: 8px;
+  border-radius: $small-radius;
+  background: $grey-100;
+  overflow: hidden;
+}
+
+.aof-option-bar-fill {
+  height: 100%;
+  border-radius: $small-radius;
+  background: $cyan-700;
+  transition: width 0.3s ease;
+}
+
+.aof-option-bar-count {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  text-align: right;
+}
+
+// The "No Response" bar reads as an absence, not just another option — grey
+// fill instead of cyan, muted label/count to match.
+.aof-option-bar-row.is-missing {
+  .aof-option-bar-fill {
+    background: $grey-400;
+  }
+
+  .aof-option-bar-label,
+  .aof-option-bar-count {
+    opacity: 0.6;
+  }
+}
+
 // One white tile per order, every question's answers are grouped back into
 // their per-order unit (see `groupAnswersByOrder` in
 // AllOrderResponsesForFormDraft1.jsx) — a single-respondent team/sponsor
@@ -68,22 +165,25 @@
   margin-bottom: $medium-large-pad;
 }
 
-// "{Buyer}'s Order | View Order" — same text-plus-link pattern as
-// OrderResponsesListDraft1.scss's .ordr1-filter-switch-*.
-.aof-order-group-name-row {
+// "View Order | View Team" (or "View Sponsor") sitting on the right of the
+// header, opposite the name/type column — same text-plus-link pattern as
+// OrderResponsesListDraft1.scss's .ordr1-filter-switch-*, just with two
+// links instead of one.
+.aof-order-group-links {
   display: flex;
   align-items: center;
   gap: $medium-pad;
+  flex-shrink: 0;
 }
 
 .aof-order-group-name {
-  font-size: $x-small-font;
+  font-size: $small-font;
   font-weight: $bold-font-weight;
   color: $grey-800;
 }
 
 .aof-order-group-sep {
-  font-size: $x-small-font;
+  font-size: $small-font;
   color: $grey-400;
 }
 
@@ -95,8 +195,8 @@
   padding: 0;
   cursor: pointer;
   font-family: $font-family;
-  font-size: $x-small-font;
-  font-weight: $bold-font-weight;
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
   color: $cyan-700;
   transition: color 0.15s;
 
@@ -107,15 +207,15 @@
 }
 
 .aof-order-group-type {
-  font-size: $x-small-font;
+  font-size: $small-font;
   font-weight: $regular-font-weight;
   color: $grey-800;
   opacity: 0.7;
 }
 
-// Sponsor-level group header: business name (+ View Order) on top, the
-// actual sponsor contact person named underneath (see `renderGroupName` in
-// AllOrderResponsesForFormDraft1.jsx).
+// Left side of the header: name/business (+ the sponsor contact underneath,
+// for a sponsor-level group) with the occurrence-type label stacked below
+// that (see `renderGroupName` in AllOrderResponsesForFormDraft1.jsx).
 .aof-order-group-name-col {
   display: flex;
   flex-direction: column;
@@ -123,7 +223,7 @@
 }
 
 .aof-order-group-contact {
-  font-size: $x-small-font;
+  font-size: $small-font;
   font-weight: $regular-font-weight;
   color: $grey-800;
   opacity: 0.7;

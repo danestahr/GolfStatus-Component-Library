@@ -64,6 +64,16 @@ export function occurrenceLabelFor(fillLevel, count = 1) {
   return `${noun} ${count === 1 ? 'Response' : 'Responses'}`
 }
 
+// "View Team" / "View Sponsor" — a player rolls up under their team the same
+// way a team-level question does, so both read as "View Team"; there's
+// nothing more specific than the order itself for a plain fillLevel-less
+// response. Shared by the same two pages as occurrenceLabelFor above.
+const VIEW_LINK_LABELS = { team: 'View Team', player: 'View Team', sponsor: 'View Sponsor' }
+
+export function viewLinkLabelFor(fillLevel) {
+  return VIEW_LINK_LABELS[fillLevel] ?? 'View Order'
+}
+
 // Label shown under a question's text wherever it's displayed on its own
 // (see the question-nav bar in AllOrderResponsesForFormDraft1.jsx) — a
 // question with a fixed answer set (QUESTION_OPTIONS) renders as a select
@@ -132,4 +142,29 @@ export function countAnswerStats(responses) {
     })
   })
   return { total, missing }
+}
+
+// A fixed-choice question breaks down into one bar per option (plus a "No
+// Response" bar when someone hasn't answered yet) — there's no equivalent
+// breakdown for free text/number questions since they don't share a value
+// set to tally against. Powers the option-bar chart on
+// AllOrderResponsesForFormDraft1.jsx's currently-viewed question.
+// Sentinel `value` for the "No Response" bar — no real option value could
+// ever collide with it, so it doubles as the filter key AllOrderResponsesForFormDraft1.jsx
+// passes back in to select "just the missing answers" when that bar is clicked.
+export const MISSING_OPTION_FILTER = '__no_response__'
+
+export function optionBreakdown(question, answers) {
+  const options = QUESTION_OPTIONS[question]
+  if (!options) return null
+
+  const bars = options.map(option => ({
+    label: option.label,
+    value: option.value,
+    count: answers.filter(a => a.value === option.value).length,
+  }))
+  const missingCount = answers.filter(isAnswerMissing).length
+  if (missingCount > 0) bars.push({ label: 'No Response', value: MISSING_OPTION_FILTER, count: missingCount, isMissing: true })
+
+  return { bars, total: answers.length }
 }

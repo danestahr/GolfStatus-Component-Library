@@ -1,4 +1,4 @@
-import { faCircleArrowDown, faPaperPlane, faPen } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faCircleArrowDown, faPaperPlane, faPen } from '@fortawesome/free-solid-svg-icons'
 import GSButton from '../../gs-lib/components/gs-button'
 import OrderFormSection from './OrderFormSection.jsx'
 import OrderLineItemRow from './OrderLineItemRow.jsx'
@@ -46,7 +46,20 @@ export default function OrderDetailPanelDraft1({ order, onViewAllResponses }) {
             <span className={`ord-status-pill ${status.className}`}>{status.label}</span>
           </div>
         </div>
+      </OrderFormSection>
 
+      <OrderFormSection
+        title="Form Responses"
+        action={
+          <GSButton
+            title="View Responses"
+            type="black"
+            rightIcon={faArrowRight}
+            isFocusable
+            onClick={onViewAllResponses}
+          />
+        }
+      >
         <OrderFormResponsesSummaryDraft1 responses={order.formResponses} onViewAll={onViewAllResponses} />
       </OrderFormSection>
 

@@ -7,7 +7,7 @@ export const RESPONSE_CATEGORIES = [
   { value: 'all', label: 'All' },
   { value: 'team', label: 'Team' },
   { value: 'sponsor', label: 'Sponsor' },
-  { value: 'player', label: 'Player Forms' },
+  { value: 'player', label: 'Players' },
 ]
 
 export const CATEGORY_DESCRIPTIONS = {
@@ -20,7 +20,7 @@ export const CATEGORY_DESCRIPTIONS = {
 // Two-step filter for the All Responses list — same collapsible drill-down
 // shape as Hole Assignments' wave/round nav (see scheduler/WaveRoundNav.jsx
 // and the "{Wave Name} Wave | Change Round" switch above it): a top row of
-// categories (All/Team/Sponsor/Player Forms), and picking one that has more
+// categories (All/Team/Sponsor/Players), and picking one that has more
 // than one respondent (multiple teams, multiple sponsors, multiple players)
 // swaps that row for a name picker instead, with a back arrow. A single-
 // respondent category has nothing left to narrow, so it applies directly
@@ -49,7 +49,7 @@ export default function OrderResponsesFilterNav({ isOpen, categories, category, 
           <div className="ordr1-filter-nav-label">
             {showNames
               ? [RESPONSE_CATEGORIES.find(c => c.value === category)?.label, selectedName].filter(Boolean).join(' / ')
-              : 'Filter'}
+              : 'Response Type'}
           </div>
           <div className="ordr1-filter-nav-tabs" key={tabsKey}>
             {showNames ? (

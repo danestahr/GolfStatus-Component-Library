@@ -1,0 +1,93 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Stat-grid card — same grey-card/4-up-grid shape as RoundHero.scss's
+// .hero-card/.hero-stats on the Scorecards page, just without the pill/
+// toggle row up top since a form has no live/finalized state to show.
+.fov-hero {
+  padding: $x-large-pad;
+  border-bottom: $light-border;
+}
+
+.fov-hero-card {
+  background: $grey-50;
+  border-radius: $large-radius;
+  padding: $x-large-pad;
+}
+
+.fov-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $medium-large-pad;
+}
+
+.fov-stat-box {
+  text-align: center;
+  background: $grey-100;
+  border-radius: $medium-radius;
+  padding: $large-pad;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fov-stat-value {
+  font-size: 20px;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: 1.2;
+}
+
+.fov-stat-label {
+  font-size: 8px;
+  font-weight: $bold-font-weight;
+  color: rgba($grey-800, 0.7);
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+// Scoped to this page's tiles rather than .ordr1-question-tile generally —
+// other pages reusing that class (e.g. AllOrderResponsesForFormDraft1) keep
+// their white tile on a grey section; here it's flipped, so each question
+// tile is grey on the section's own white background.
+.fov-list .ordr1-question-tile {
+  background: $grey-50;
+}
+
+.fov-questions {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.fov-question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+}
+
+.fov-question-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.fov-question-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.fov-question-subtitle {
+  margin-top: $x-small-pad;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.fov-question-actions {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  flex-shrink: 0;
+}

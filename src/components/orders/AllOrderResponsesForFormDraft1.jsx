@@ -8,8 +8,11 @@ import {
   isAnswerMissing,
   responseTypeFor,
   occurrenceLabelFor,
+  viewLinkLabelFor,
   isQuestionRequired,
   QUESTION_OPTIONS,
+  optionBreakdown,
+  MISSING_OPTION_FILTER,
 } from './orderUtils'
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
@@ -49,14 +52,26 @@ function groupAnswersByOrder(answers) {
 // Rather than a tab per question, a form with more than one question is
 // paged through one at a time via the left/right arrows on the question nav
 // bar — there's nothing to gain from seeing every question's answers at
-// once when the whole point of this view is to focus on a single one.
-export default function AllOrderResponsesForFormDraft1({ orders, formName, onViewOrder }) {
+// once when the whole point of this view is to focus on a single one (the
+// "all questions as tiles" overview lives one level up, on
+// OrderFormOverviewDraft1, not here).
+// `initialQuestion` opens straight to a specific question (by text) instead
+// of always starting at index 0 — used when this page is reached via a
+// question's own "View Responses" button on OrderFormOverviewDraft1, so the
+// respondent picked jumps right to the question they clicked rather than
+// making them page over to it. The caller keys this component by
+// formName+initialQuestion (see OrdersDraft1Page.jsx) so a new question pick
+// remounts it instead of leaving a stale questionIndex from the last visit.
+export default function AllOrderResponsesForFormDraft1({ orders, formName, initialQuestion, onViewOrder }) {
   const [search, setSearch] = useState('')
-  const [questionIndex, setQuestionIndex] = useState(0)
   const [answeredFilter, setAnsweredFilter] = useState('all')
   const [optionFilter, setOptionFilter] = useState('all')
 
   const allQuestions = responsesForFormAcrossOrders(orders, formName)
+  const [questionIndex, setQuestionIndex] = useState(() => {
+    const idx = initialQuestion ? allQuestions.findIndex(q => q.question === initialQuestion) : 0
+    return idx === -1 ? 0 : idx
+  })
   const hasMultipleQuestions = allQuestions.length > 1
   const currentQuestion = allQuestions[questionIndex] ?? null
   const query = search.trim().toLowerCase()
@@ -78,10 +93,19 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, onVie
   // anyway, so that filter is skipped there too regardless of question type.
   const effectiveAnsweredFilter = isMultipleChoice || isRequired ? 'all' : answeredFilter
 
+  // The "No Response" bar filters to just the missing answers via a sentinel
+  // value (MISSING_OPTION_FILTER) that can't collide with a real option
+  // value — everything else matches the answer's value directly.
+  function matchesOptionFilter(answer) {
+    if (optionFilter === 'all') return true
+    if (optionFilter === MISSING_OPTION_FILTER) return isAnswerMissing(answer)
+    return answer.value === optionFilter
+  }
+
   const answeredCount = currentQuestion ? currentQuestion.answers.filter(a => !isAnswerMissing(a)).length : 0
   const unansweredCount = currentQuestion ? currentQuestion.answers.filter(isAnswerMissing).length : 0
   const filteredCount = isMultipleChoice
-    ? currentQuestion.answers.filter(a => optionFilter === 'all' || a.value === optionFilter).length
+    ? currentQuestion.answers.filter(matchesOptionFilter).length
     : effectiveAnsweredFilter === 'answered'
     ? answeredCount
     : effectiveAnsweredFilter === 'unanswered'
@@ -92,7 +116,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, onVie
     ? currentQuestion.answers
         .filter(answer => matchesQuery(answer, query))
         .filter(answer => {
-          if (isMultipleChoice) return optionFilter === 'all' || answer.value === optionFilter
+          if (isMultipleChoice) return matchesOptionFilter(answer)
           if (effectiveAnsweredFilter === 'answered') return !isAnswerMissing(answer)
           if (effectiveAnsweredFilter === 'unanswered') return isAnswerMissing(answer)
           return true
@@ -100,39 +124,22 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, onVie
     : []
   const orderGroups = groupAnswersByOrder(visibleAnswers)
 
-  // A team-level group reads as "{captain}'s Team"; a sponsor-level group
-  // leads with the sponsor's business name (falling back to the contact's
-  // name if a business name isn't on file) with the actual contact person
-  // named underneath — anything else (player-level) keeps the plain
-  // "{buyer}'s Order" label used everywhere else in this view.
+  // Left side: the name/business (plus the sponsor contact underneath, for
+  // a sponsor-level group) with the occurrence-type label underneath that —
+  // a team-level group reads as "{captain}'s Team", a sponsor-level group
+  // leads with the business name, and anything else (player-level) keeps
+  // the plain "{buyer}'s Order" label used everywhere else in this view.
   function renderGroupName(group, fillLevel) {
-    const viewOrderLink = (
-      <>
-        <span className="aof-order-group-sep">|</span>
-        <button type="button" className="aof-order-group-link" onClick={() => onViewOrder(group.orderId)}>
-          View Order
-        </button>
-      </>
-    )
-
     if (fillLevel === 'sponsor') {
       return (
-        <div className="aof-order-group-name-col">
-          <div className="aof-order-group-name-row">
-            <span className="aof-order-group-name">{group.businessName ?? group.buyerName}</span>
-            {viewOrderLink}
-          </div>
+        <>
+          <span className="aof-order-group-name">{group.businessName ?? group.buyerName}</span>
           <div className="aof-order-group-contact">{group.buyerName}</div>
-        </div>
+        </>
       )
     }
 
-    return (
-      <div className="aof-order-group-name-row">
-        <span className="aof-order-group-name">{group.buyerName}'s {fillLevel === 'team' ? 'Team' : 'Order'}</span>
-        {viewOrderLink}
-      </div>
-    )
+    return <span className="aof-order-group-name">{group.buyerName}'s {fillLevel === 'team' ? 'Team' : 'Order'}</span>
   }
 
   function renderAnswerTile(answer, key) {
@@ -158,9 +165,23 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, onVie
     setQuestionIndex(i => Math.min(allQuestions.length - 1, i + 1))
   }
 
+  const breakdown = currentQuestion ? optionBreakdown(currentQuestion.question, currentQuestion.answers) : null
+
   return (
     <div className="ordr1-list aof-list">
-      <GSActionBar type="x-large-pad H3" header={`${formName} Responses`} />
+      <GSActionBar
+        type="x-large-pad H3"
+        header={
+          <>
+            {`${formName} Responses`}
+            {currentQuestion && (
+              <div className="aof-answer-summary">
+                {filteredCount} {filteredCount === 1 ? 'Response' : 'Responses'}
+              </div>
+            )}
+          </>
+        }
+      />
 
       <div className="ordr1-list-search">
         <GSinput
@@ -208,57 +229,60 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, onVie
               }
             />
 
+            {breakdown && (
+              <div className="ordr1-question-tile aof-option-bars-tile">
+                <div className="aof-option-bars">
+                  {breakdown.bars.map(bar => {
+                    const isActive = optionFilter === bar.value
+                    return (
+                      <button
+                        type="button"
+                        className={`aof-option-bar-row${bar.isMissing ? ' is-missing' : ''}${isActive ? ' is-active' : ''}`}
+                        key={bar.label}
+                        onClick={() => setOptionFilter(isActive ? 'all' : bar.value)}
+                      >
+                        <div className="aof-option-bar-label">{bar.label}</div>
+                        <div className="aof-option-bar-track">
+                          <div
+                            className="aof-option-bar-fill"
+                            style={{ width: `${breakdown.total ? (bar.count / breakdown.total) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <div className="aof-option-bar-count">{bar.count}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {currentQuestion && (
               <div className="ordr1-forms">
                 <div className="ordr1-form-section">
-                  <div className="aof-answer-meta">
-                    {isMultipleChoice ? (
+                  {!isMultipleChoice && !isRequired && (
+                    <div className="aof-answer-meta">
                       <div className="aof-answer-filter-tabs">
                         <GSButton
-                          type={optionFilter === 'all' ? 'black' : 'light-grey'}
+                          type={answeredFilter === 'all' ? 'black' : 'light-grey'}
                           isFocusable
                           title="All"
-                          onClick={() => setOptionFilter('all')}
+                          onClick={() => setAnsweredFilter('all')}
                         />
-                        {questionOptions.map(option => (
-                          <GSButton
-                            key={option.value}
-                            type={optionFilter === option.value ? 'black' : 'light-grey'}
-                            isFocusable
-                            title={option.label}
-                            onClick={() => setOptionFilter(option.value)}
-                          />
-                        ))}
+                        <GSButton
+                          type={answeredFilter === 'answered' ? 'black' : 'light-grey'}
+                          isFocusable
+                          title="Answered"
+                          onClick={() => setAnsweredFilter('answered')}
+                        />
+                        <GSButton
+                          type={answeredFilter === 'unanswered' ? 'black' : 'light-grey'}
+                          isFocusable
+                          title="Unanswered"
+                          onClick={() => setAnsweredFilter('unanswered')}
+                        />
                       </div>
-                    ) : (
-                      !isRequired && (
-                        <div className="aof-answer-filter-tabs">
-                          <GSButton
-                            type={answeredFilter === 'all' ? 'black' : 'light-grey'}
-                            isFocusable
-                            title="All"
-                            onClick={() => setAnsweredFilter('all')}
-                          />
-                          <GSButton
-                            type={answeredFilter === 'answered' ? 'black' : 'light-grey'}
-                            isFocusable
-                            title="Answered"
-                            onClick={() => setAnsweredFilter('answered')}
-                          />
-                          <GSButton
-                            type={answeredFilter === 'unanswered' ? 'black' : 'light-grey'}
-                            isFocusable
-                            title="Unanswered"
-                            onClick={() => setAnsweredFilter('unanswered')}
-                          />
-                        </div>
-                      )
-                    )}
-
-                    <div className="aof-answer-summary">
-                      {filteredCount} {filteredCount === 1 ? 'Response' : 'Responses'}
                     </div>
-                  </div>
+                  )}
 
                   {orderGroups.length === 0 ? (
                     <div className="ordr1-question-tile">
@@ -269,9 +293,21 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, onVie
                       {orderGroups.map(group => (
                         <div className="ordr1-question-tile aof-order-group" key={group.orderId}>
                           <div className="aof-order-group-header">
-                            {renderGroupName(group, currentQuestion.fillLevel)}
-                            <div className="aof-order-group-type">
-                              {occurrenceLabelFor(currentQuestion.fillLevel, group.answers.length)}
+                            <div className="aof-order-group-name-col">
+                              {renderGroupName(group, currentQuestion.fillLevel)}
+                              <div className="aof-order-group-type">
+                                {occurrenceLabelFor(currentQuestion.fillLevel, group.answers.length)}
+                              </div>
+                            </div>
+
+                            <div className="aof-order-group-links">
+                              <button type="button" className="aof-order-group-link" onClick={() => onViewOrder(group.orderId)}>
+                                View Order
+                              </button>
+                              <span className="aof-order-group-sep">|</span>
+                              <button type="button" className="aof-order-group-link" onClick={() => onViewOrder(group.orderId)}>
+                                {viewLinkLabelFor(currentQuestion.fillLevel)}
+                              </button>
                             </div>
                           </div>
 

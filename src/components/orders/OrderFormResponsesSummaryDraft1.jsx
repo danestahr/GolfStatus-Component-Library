@@ -1,6 +1,6 @@
-import { faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faCircleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { countAnswerStats } from './orderUtils.js'
+import { isAnswerMissing } from './orderUtils'
 import './OrderFormResponsesSummaryDraft1.scss'
 
 // Draft 1 riff: replaces the inline Hide/Show toggle (which expanded the
@@ -8,12 +8,31 @@ import './OrderFormResponsesSummaryDraft1.scss'
 // link out to a dedicated, searchable "All Responses" list page instead
 // (see OrderResponsesListDraft1.jsx). The whole tile is the click target —
 // no separate "View All" button.
+
+// Groups the flat responses list back into one entry per form (a form can
+// carry more than one question) so the summary can list each form's actual
+// question text instead of a bare "N Forms · M Questions" tally. Also rolls
+// up whether every answer, across every question in the form, has been
+// filled in — powers the inline complete/incomplete icon next to the form
+// name below.
+function groupByForm(responses) {
+  const forms = []
+  responses.forEach(entry => {
+    let form = forms.find(f => f.formName === entry.formName)
+    if (!form) {
+      form = { formName: entry.formName, questions: [], isComplete: true }
+      forms.push(form)
+    }
+    form.questions.push(entry.question)
+    if (entry.answers.some(isAnswerMissing)) form.isComplete = false
+  })
+  return forms
+}
+
 export default function OrderFormResponsesSummaryDraft1({ responses, onViewAll }) {
   if (!responses || responses.length === 0) return null
 
-  const formCount = new Set(responses.map(r => r.formName)).size
-  const questionCount = responses.length
-  const { missing } = countAnswerStats(responses)
+  const forms = groupByForm(responses)
 
   return (
     <div
@@ -26,22 +45,29 @@ export default function OrderFormResponsesSummaryDraft1({ responses, onViewAll }
       <div className="ordr1-summary-content">
         <div className="ordr1-summary-main">
           <div className="ordr1-summary-text">
-            <div className="ordr1-summary-title">Form Responses</div>
-            <div className="ordr1-summary-subtitle">
-              {formCount} {formCount === 1 ? 'Form' : 'Forms'} · {questionCount} {questionCount === 1 ? 'Question' : 'Questions'}
+            <div className="ordr1-summary-forms">
+              {forms.map(form => (
+                <div className="ordr1-summary-form" key={form.formName}>
+                  <span className="ordr1-summary-form-status-wrap">
+                    <FontAwesomeIcon
+                      icon={form.isComplete ? faCircleCheck : faCircleExclamation}
+                      className={`ordr1-summary-form-status${form.isComplete ? ' is-complete' : ' is-incomplete'}`}
+                    />
+                  </span>
+                  <div className="ordr1-summary-form-text">
+                    <div className="ordr1-summary-form-name">{form.formName}</div>
+                    {form.questions.map((question, i) => (
+                      <div className="ordr1-summary-form-question" key={i}>
+                        {question}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {missing > 0 && (
-          <div className="ordr1-summary-notice">
-            <FontAwesomeIcon icon={faCircleInfo} />
-            <span>{missing} {missing === 1 ? 'question' : 'questions'} not yet answered</span>
-          </div>
-        )}
       </div>
-
-      <FontAwesomeIcon icon={faChevronRight} className="ordr1-summary-chevron" />
     </div>
   )
 }
