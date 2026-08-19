@@ -277,11 +277,16 @@ export const TOURNAMENTS = [
     hidden: true,
     name: '2026 Heritage Classic Invitational (Copy)',
     courseName: 'Heritage Golf Club',
+    // roundNumber/roundLetter here mirror what assignRoundToWaveGroup would
+    // set on these same four rounds if the two waves below had instead been
+    // built by hand in the UI — each wave numbers its own pair independently
+    // (Morning's 1A/1B, Afternoon's 2A/2B), which is what lets round cards
+    // and each wave's own group-header description tell the two apart.
     rounds: {
-      1: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18 },
-      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '11:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18 },
-      3: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18 },
-      4: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '4:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18 },
+      1: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'A' },
+      2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '11:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'B' },
+      3: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 2, roundLetter: 'A' },
+      4: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '4:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 2, roundLetter: 'B' },
     },
     savedRoundFormat: 'waves',
     waves: [

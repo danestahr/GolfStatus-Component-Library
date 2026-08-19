@@ -751,8 +751,20 @@ export default function TournamentSchedulerPage() {
     return ROUND_META[r]?.name || roundGroupMates(r).length > 1 ? roundName(r) : ''
   }
 
-  // "A, B, or C" for a group's own header description below — reads off
-  // each round's actual Round Letter rather than just the group's size, so
+  // What a round contributes to its group header's own "(1A, 1B)" list
+  // below — the full Round Number + Letter, same suffix roundName itself
+  // uses for a grouped round. A manually-added Round Label (e.g. "Round
+  // FIN") overrides that outright rather than decorating it, same as it
+  // already wins outright in roundName, so the list stays legible as
+  // whatever the rounds are actually now called.
+  function roundGroupLetter(r) {
+    const customLabel = ROUND_META[r]?.name?.match(/^Round\s+(.{1,3})$/i)?.[1]
+    if (customLabel) return customLabel
+    return `${roundNumberOf(r)}${ROUND_META[r]?.roundLetter ?? 'A'}`
+  }
+
+  // "1A, 1B, or 1C" for a group's own header description below — reads off
+  // each round's own roundGroupLetter rather than just the group's size, so
   // it stays accurate as rounds join or leave (see the group header
   // rendering further down).
   function formatOxfordList(items) {
@@ -1644,22 +1656,22 @@ export default function TournamentSchedulerPage() {
     closeLinkedRoundLabelPanel()
   }
 
-  // Fallback grouping for tournaments that never went through Round Setup at
-  // all (no waves, no savedRoundFormat) — rounds instead get linked directly
-  // by sharing a Round Number (see CreateRoundPanel's own Round Number
-  // field), so the list groups those the same way it groups waves. Every
-  // Round Number always gets its own section here, solo (unlinked) ones
-  // included — same as a wave section shows even with just one round in it
-  // — so every group, from its very first round on, already has somewhere
-  // to hang its own Linked Round Label (see the header's edit pencil
-  // further down) and its own Add a Course shortcut (see
+  // Fallback grouping for every tournament that isn't wave-based — rounds get
+  // linked directly by sharing a Round Number (see CreateRoundPanel's own
+  // Round Number field), so the list groups those the same way it groups
+  // waves. Every Round Number always gets its own section here, solo
+  // (unlinked) ones included — same as a wave section shows even with just
+  // one round in it — so every group, from its very first round on, already
+  // has somewhere to hang its own Linked Round Label (see the header's edit
+  // pencil further down) and its own Add Round shortcut (see
   // handleAddRoundToGroupClick), which always links a new round into that
-  // same Round Number.
+  // same Round Number. Round linking isn't gated by savedRoundFormat — every
+  // tournament, whatever format it was set up with, is eligible to link
+  // rounds together this way.
   const roundNumberGroupedSections = useMemo(() => {
-    // Waves group rounds their own way (see groupedRoundSections); a format
-    // like Single/Sequence never uses Round Number linking at all, so its
-    // rounds stay a plain flat list rather than each getting a solo section.
-    if (waves.length > 0 || !roundLinkingEnabled || filteredRounds.length === 0) return null
+    // Waves group rounds their own way (see groupedRoundSections) — anything
+    // not wave-based groups by Round Number instead.
+    if (waves.length > 0 || filteredRounds.length === 0) return null
     const byNumber = new Map()
     filteredRounds.forEach(r => {
       const num = roundNumberOf(r)
@@ -2338,8 +2350,8 @@ export default function TournamentSchedulerPage() {
                         <div className="sched-round-group-header-title">{section.title}</div>
                         <div className="sched-round-group-header-desc">
                           {section.rounds.length === 1
-                            ? 'All players and teams can play in this round'
-                            : `Teams can play in one round (${formatOxfordList(section.rounds.map(r => ROUND_META[r]?.roundLetter ?? 'A'))})`}
+                            ? `All teams can play in Round ${roundNumberOf(section.rounds[0])}`
+                            : `Teams can play once in Round ${roundNumberOf(section.rounds[0])} (${formatOxfordList(section.rounds.map(roundGroupLetter))})`}
                         </div>
                       </div>
                     }
@@ -2355,7 +2367,7 @@ export default function TournamentSchedulerPage() {
                     // entry point is hidden here for now.
                     pageActions={[
                       ...(section.key !== 'ungrouped' ? [
-                        { buttonTitle: 'Add Course', buttonIcon: faPlus, type: 'grey', isFocusable: true, actionClick: () => handleAddRoundToGroupClick(section) },
+                        { buttonIcon: faPlus, type: 'light-grey icon', isFocusable: true, actionClick: () => handleAddRoundToGroupClick(section) },
                       ] : []),
                       ...(section.kind === 'wave' ? [
                         { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => setWavesPanelOpen(true) },
