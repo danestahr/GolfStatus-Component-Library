@@ -377,7 +377,7 @@ function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, 
     <div className="sched-round-card">
       <div className="sched-filter-round-details">
         <div className="sched-filter-round-group">
-          <div className="sched-filter-round-name">{name}</div>
+          {name && <div className="sched-filter-round-name">{name}</div>}
           <div className="sched-filter-round-sub">{meta.format}</div>
         </div>
         <div className="sched-filter-round-group">
@@ -736,6 +736,31 @@ export default function TournamentSchedulerPage() {
     // isn't actually linked to anything) just reads as "Round 1" same as ever.
     return roundGroupMates(r).length > 1 ? `Round ${number}${ROUND_META[r]?.roundLetter ?? 'A'}` : `Round ${number}`
   }
+
+  // The round list item's own name, as distinct from roundName above — a
+  // solo round's card already sits right under its group's own "Round 1"
+  // header (see the Round Number group rendering further down), so
+  // repeating that same plain number on the card too just doubles it up
+  // with nothing gained; it only earns a name of its own once there's
+  // something to actually distinguish (a custom Round Label, or a real
+  // Round Letter once a second round joins the group). Every other place
+  // roundName is used (panel titles, nav labels, the Link-to-Round choice
+  // grid, search) keeps the plain fallback — those aren't sitting under a
+  // group header repeating it back.
+  function roundCardName(r) {
+    return ROUND_META[r]?.name || roundGroupMates(r).length > 1 ? roundName(r) : ''
+  }
+
+  // "A, B, or C" for a group's own header description below — reads off
+  // each round's actual Round Letter rather than just the group's size, so
+  // it stays accurate as rounds join or leave (see the group header
+  // rendering further down).
+  function formatOxfordList(items) {
+    if (items.length <= 1) return items[0] ?? ''
+    if (items.length === 2) return `${items[0]} or ${items[1]}`
+    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`
+  }
+
   function roundCourse(r) {
     return ROUND_META[r]?.course ?? COURSE_NAME
   }
@@ -975,48 +1000,52 @@ export default function TournamentSchedulerPage() {
   }
 
   // Round Number linking's own guided picker — shown before CreateRoundPanel
-  // itself any time a round is being added or duplicated into a tournament
-  // that already has at least one round (see handleAddRoundClick/
-  // handleCloneRoundClick below); the only way straight into a blank
-  // CreateRoundPanel is a tournament with no rounds at all yet, since
-  // there's nothing to possibly link to. 'choice' offers Linked/Unlinked;
-  // 'target' (skipped entirely when exactly one Round Number already
-  // exists — see chooseLinkedRound) lets a Linked choice pick which
-  // existing Round Number to share. cloningRound is what tells Add Round
-  // and Copy Round apart once a choice comes back: set, it's a round to
-  // duplicate once the new Round Number is settled (see duplicateFromMeta
-  // above); null, it's a brand-new round headed into a blank
-  // CreateRoundPanel. addRoundTargetWaveId carries a wave-scoped Add Round
-  // (e.g. a wave card's own "Add Round" button) through the same picker,
-  // same as it would have gone straight into openCreateRoundPanel before.
+  // for Copy Round (see handleCloneRoundClick below), since a duplicate
+  // needs its own Round Number decided same as any other new round would —
+  // silently inheriting the original's would either double up an existing
+  // link or leave the two indistinguishable with no chance to reconsider.
+  // 'choice' offers Linked/Unlinked; 'target' (skipped entirely when
+  // exactly one Round Number already exists — see chooseLinkedRound) lets a
+  // Linked choice pick which existing Round Number to share. Add Round
+  // itself no longer goes through this picker at all — every round is
+  // always shown grouped by its own Round Number now (see
+  // roundNumberGroupedSections), solo groups included, so "Add Round" only
+  // ever needs to mean "a brand new, not-yet-linked-to-anything round" —
+  // linking one into an existing group instead is what each group's own
+  // Add Course shortcut is for (see handleAddRoundToGroupClick).
+  // addRoundTargetWaveId carries a wave-scoped Copy Round through the same
+  // picker.
   const [addRoundChoicePanelOpen, setAddRoundChoicePanelOpen] = useState(false)
   const [addRoundChoiceStep, setAddRoundChoiceStep] = useState('choice')
   const [cloningRound, setCloningRound] = useState(null)
   const [addRoundTargetWaveId, setAddRoundTargetWaveId] = useState(null)
 
+  // Always heads straight into a blank CreateRoundPanel — no Linked/Unlinked
+  // ask (see the picker's own comment above) — landing on the next unused
+  // Round Number of its own (CreateRoundPanel's own nextRoundNumber default,
+  // since initialNumber is left unset here) rather than joining any
+  // existing group.
   function handleAddRoundClick(targetWaveId = null) {
-    setCloningRound(null)
-    setAddRoundTargetWaveId(targetWaveId)
-    if (hasRounds) {
-      setAddRoundChoiceStep('choice')
-      setAddRoundChoicePanelOpen(true)
-    } else {
-      openCreateRoundPanel(targetWaveId)
-    }
+    openCreateRoundPanel(targetWaveId)
   }
 
-  // Copy Round: same Linked/Unlinked ask as Add Round, since a duplicate
-  // needs its own Round Number decided same as any other new round would —
-  // silently inheriting the original's would either double up an existing
-  // link or leave the two indistinguishable with no chance to reconsider.
-  // Cloning only ever happens on an existing round, so there's always at
-  // least one round already — no direct-to-form exception here the way
-  // handleAddRoundClick has for a round-less tournament.
   function handleCloneRoundClick(round) {
     setCloningRound(round)
     setAddRoundTargetWaveId(null)
     setAddRoundChoiceStep('choice')
     setAddRoundChoicePanelOpen(true)
+  }
+
+  // Round group header's own Add Round shortcut: unlike handleCloneRoundClick,
+  // the group a new round belongs to is already known from context (this is
+  // its section), so there's nothing left for the Linked/Unlinked picker to
+  // ask — this goes straight into CreateRoundPanel pre-linked to the group,
+  // duplicating its last round the same way Copy Round would.
+  function handleAddRoundToGroupClick(section) {
+    const source = section.rounds[section.rounds.length - 1]
+    if (source === undefined) return
+    const number = section.kind === 'roundNumber' ? section.number : roundNumberOf(source)
+    openCreateRoundPanel(section.waveId ?? null, number, false, source)
   }
 
   function closeAddRoundChoicePanel() {
@@ -1570,6 +1599,7 @@ export default function TournamentSchedulerPage() {
       .map(w => ({
         key: `wave-${w.id}`,
         kind: 'wave',
+        waveId: w.id,
         title: w.name,
         rounds: filteredRounds.filter(r => w.roundIds.includes(r)),
       }))
@@ -1618,30 +1648,24 @@ export default function TournamentSchedulerPage() {
   // all (no waves, no savedRoundFormat) — rounds instead get linked directly
   // by sharing a Round Number (see CreateRoundPanel's own Round Number
   // field), so the list groups those the same way it groups waves. Every
-  // Round Number gets its own section header here, whether or not anything
-  // else actually shares it, so every one of them — solo included — has
-  // somewhere to hang its own Linked Round Label (see the group header's
-  // edit pencil further down).
+  // Round Number always gets its own section here, solo (unlinked) ones
+  // included — same as a wave section shows even with just one round in it
+  // — so every group, from its very first round on, already has somewhere
+  // to hang its own Linked Round Label (see the header's edit pencil
+  // further down) and its own Add a Course shortcut (see
+  // handleAddRoundToGroupClick), which always links a new round into that
+  // same Round Number.
   const roundNumberGroupedSections = useMemo(() => {
     // Waves group rounds their own way (see groupedRoundSections); a format
     // like Single/Sequence never uses Round Number linking at all, so its
     // rounds stay a plain flat list rather than each getting a solo section.
-    if (waves.length > 0 || !roundLinkingEnabled) return null
+    if (waves.length > 0 || !roundLinkingEnabled || filteredRounds.length === 0) return null
     const byNumber = new Map()
     filteredRounds.forEach(r => {
       const num = roundNumberOf(r)
       if (!byNumber.has(num)) byNumber.set(num, [])
       byNumber.get(num).push(r)
     })
-    // Only worth breaking the list into sections once something's actually
-    // linked (2+ rounds sharing a number) — otherwise every round already
-    // has a number all its own, which is exactly the plain flat list
-    // groupedRoundSections being null already falls back to. Once that's
-    // true, though, every Round Number gets its own section here, solo ones
-    // included, so any of them can still pick up its own Linked Round Label
-    // rather than only the ones that happen to already be linked.
-    const hasAnyLink = [...byNumber.values()].some(group => group.length > 1)
-    if (!hasAnyLink) return null
     return [...byNumber.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([num, rounds]) => ({
@@ -2237,12 +2261,11 @@ export default function TournamentSchedulerPage() {
         type="x-large-pad H3"
         header="Rounds & Scorecards"
         pageActions={[
-          // Add Round and Team Check In are always available, regardless of
-          // format or whether the tournament already has rounds — even a
-          // Single Round tournament with its one round already saved can
-          // still use Team Check In, and re-showing Add Round there is
-          // harmless (Single's own one-round rule is enforced elsewhere, not
-          // by hiding the button).
+          // Add Round is always available, regardless of format or whether
+          // the tournament already has rounds — even a Single Round
+          // tournament with its one round already saved can still re-show
+          // it (Single's own one-round rule is enforced elsewhere, not by
+          // hiding the button).
           { buttonTitle: 'Add Round', buttonIcon: faPlus, type: 'black', actionClick: () => handleAddRoundClick() },
           // Waves and Hybrid both organize every round into a wave — Manage
           // Waves is the occasional setup/reorganizing action alongside Add
@@ -2250,8 +2273,13 @@ export default function TournamentSchedulerPage() {
           ...(formatManagesWaves(savedRoundFormat) ? [
             { buttonTitle: 'Manage Waves', buttonIcon: faWater, type: 'light-grey', actionClick: () => setWavesPanelOpen(true) },
           ] : []),
-          { buttonTitle: 'Team Check In', buttonIcon: faListCheck, type: 'light-grey', actionClick: () => {} },
-          { buttonTitle: 'Documents', buttonIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
+          // Team Check In and Documents both operate on rounds that already
+          // exist — nothing to check a team into or attach a document to
+          // before this tournament's first round is actually created.
+          ...(hasRounds ? [
+            { buttonTitle: 'Team Check In', buttonIcon: faListCheck, type: 'light-grey', actionClick: () => {} },
+            { buttonTitle: 'Documents', buttonIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
+          ] : []),
           ...(!useLegacyFilter && savedRoundFormat && !tournament.hideSettingsButton ? [{ buttonIcon: faGear, type: 'light-grey', actionClick: openSettingsPanel }] : []),
         ]}
       />
@@ -2261,11 +2289,12 @@ export default function TournamentSchedulerPage() {
           className="sched-col-scroll"
           style={{ '--round-group-header-offset': `${roundListStickyHeight}px` }}
         >
-          {/* Once waves (or linked Round Numbers) group the list below, each
-              group's own sticky header carries the shadow — keeping it here
-              too would double it up. */}
+          {/* Once waves (or linked Round Numbers) group the list below — or
+              the placeholder Round 1 group takes its place before any round
+              exists — that group's own sticky header carries the shadow;
+              keeping it here too would double it up. */}
           <div
-            className={`sched-round-list-sticky${displayedRoundSections ? ' sched-round-list-sticky--no-shadow' : ''}`}
+            className={`sched-round-list-sticky${displayedRoundSections || (!hasRounds && !savedRoundFormat) ? ' sched-round-list-sticky--no-shadow' : ''}`}
             ref={roundListStickyRef}
           >
             <div className="sched-round-search">
@@ -2279,8 +2308,33 @@ export default function TournamentSchedulerPage() {
               />
             </div>
           </div>
-          <div className={`sched-round-list-body${filteredRounds.length === 0 ? ' sched-round-list-body--empty' : ''}`}>
-            {filteredRounds.length === 0 ? (
+          <div className={`sched-round-list-body${filteredRounds.length === 0 && savedRoundFormat ? ' sched-round-list-body--empty' : ''}`}>
+            {!hasRounds && !savedRoundFormat ? (
+              // A brand new tournament (nothing added, no format chosen yet)
+              // always starts on a real "Round 1" group — same header as any
+              // other Round Number group further down — rather than the
+              // generic "Add & Manage Rounds" placeholder screen this used to
+              // drop into. Its own Add a Course action stands in for a round
+              // card until one actually exists; clicking it goes straight to
+              // Add Round the same as the page header's own button does
+              // (skipping the Linked/Unlinked ask, same as any first round —
+              // see handleAddRoundClick), and the round it creates lands as
+              // Round 1 by simply being the tournament's first.
+              <div className="sched-round-group">
+                <GSActionBar
+                  type="form-header"
+                  header={
+                    <div className="sched-round-group-header">
+                      <div className="sched-round-group-header-title">Round 1</div>
+                      <div className="sched-round-group-header-desc">Add a course to create this round</div>
+                    </div>
+                  }
+                  pageActions={[
+                    { buttonTitle: 'Add a Course', buttonIcon: faPlus, type: 'grey', isFocusable: true, actionClick: () => handleAddRoundClick() },
+                  ]}
+                />
+              </div>
+            ) : filteredRounds.length === 0 ? (
               <GSEmptyList
                 title={hasRounds ? `No results for "${roundListSearch}"` : 'Add & Manage Rounds'}
                 detail={hasRounds ? undefined : 'Add new rounds and manage all round details in one spot.'}
@@ -2311,26 +2365,35 @@ export default function TournamentSchedulerPage() {
                         <div className="sched-round-group-header-desc">
                           {section.rounds.length === 1
                             ? 'All players and teams can play in this round'
-                            : `Players and teams can play in 1 of ${section.rounds.length} rounds`}
+                            : `Teams can play in one round (${formatOxfordList(section.rounds.map(r => ROUND_META[r]?.roundLetter ?? 'A'))})`}
                         </div>
                       </div>
                     }
-                    // Round-Number groups have nothing to "manage" the way a
-                    // wave does (no membership panel; dragging a round's own
-                    // grabber, see RoundGroupList, is what reorders one). The
-                    // group's cosmetic label is still editable via
-                    // openLinkedRoundLabelPanel, but the edit entry point is
-                    // hidden here for now.
-                    pageActions={section.kind === 'wave' ? [
-                      { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => setWavesPanelOpen(true) },
-                    ] : []}
+                    // The Add Round shortcut is skipped for the wave-format
+                    // catch-all "Not Assigned to Waves" section — it has no
+                    // single Round Number of its own to link a new round
+                    // into (see handleAddRoundToGroupClick). Round-Number
+                    // groups have nothing to "manage" the way a wave does
+                    // (no membership panel; dragging a round's own grabber,
+                    // see RoundGroupList, is what reorders one), so the edit
+                    // pencil stays wave-only — the group's cosmetic label is
+                    // still editable via openLinkedRoundLabelPanel, but that
+                    // entry point is hidden here for now.
+                    pageActions={[
+                      ...(section.key !== 'ungrouped' ? [
+                        { buttonTitle: 'Add Course', buttonIcon: faPlus, type: 'grey', isFocusable: true, actionClick: () => handleAddRoundToGroupClick(section) },
+                      ] : []),
+                      ...(section.kind === 'wave' ? [
+                        { buttonIcon: faPen, type: 'light-grey icon', actionClick: () => setWavesPanelOpen(true) },
+                      ] : []),
+                    ]}
                   />
                   <RoundGroupList
                     rounds={section.rounds}
                     onReorder={newOrder => setRoundOrderOverrides(prev => ({ ...prev, [section.key]: newOrder }))}
                     renderRound={r => (
                       <RoundListCard
-                        name={roundName(r)}
+                        name={roundCardName(r)}
                         roundMeta={ROUND_META[r]}
                         courseName={roundCourse(r)}
                         hasAssignments={Object.keys(assignmentsByRound[r] || {}).length > 0}
