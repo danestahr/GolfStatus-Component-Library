@@ -2289,12 +2289,11 @@ export default function TournamentSchedulerPage() {
           className="sched-col-scroll"
           style={{ '--round-group-header-offset': `${roundListStickyHeight}px` }}
         >
-          {/* Once waves (or linked Round Numbers) group the list below — or
-              the placeholder Round 1 group takes its place before any round
-              exists — that group's own sticky header carries the shadow;
-              keeping it here too would double it up. */}
+          {/* Once waves (or linked Round Numbers) group the list below, each
+              group's own sticky header carries the shadow — keeping it here
+              too would double it up. */}
           <div
-            className={`sched-round-list-sticky${displayedRoundSections || (!hasRounds && !savedRoundFormat) ? ' sched-round-list-sticky--no-shadow' : ''}`}
+            className={`sched-round-list-sticky${displayedRoundSections ? ' sched-round-list-sticky--no-shadow' : ''}`}
             ref={roundListStickyRef}
           >
             <div className="sched-round-search">
@@ -2308,33 +2307,8 @@ export default function TournamentSchedulerPage() {
               />
             </div>
           </div>
-          <div className={`sched-round-list-body${filteredRounds.length === 0 && savedRoundFormat ? ' sched-round-list-body--empty' : ''}`}>
-            {!hasRounds && !savedRoundFormat ? (
-              // A brand new tournament (nothing added, no format chosen yet)
-              // always starts on a real "Round 1" group — same header as any
-              // other Round Number group further down — rather than the
-              // generic "Add & Manage Rounds" placeholder screen this used to
-              // drop into. Its own Add a Course action stands in for a round
-              // card until one actually exists; clicking it goes straight to
-              // Add Round the same as the page header's own button does
-              // (skipping the Linked/Unlinked ask, same as any first round —
-              // see handleAddRoundClick), and the round it creates lands as
-              // Round 1 by simply being the tournament's first.
-              <div className="sched-round-group">
-                <GSActionBar
-                  type="form-header"
-                  header={
-                    <div className="sched-round-group-header">
-                      <div className="sched-round-group-header-title">Round 1</div>
-                      <div className="sched-round-group-header-desc">Add a course to create this round</div>
-                    </div>
-                  }
-                  pageActions={[
-                    { buttonTitle: 'Add a Course', buttonIcon: faPlus, type: 'grey', isFocusable: true, actionClick: () => handleAddRoundClick() },
-                  ]}
-                />
-              </div>
-            ) : filteredRounds.length === 0 ? (
+          <div className={`sched-round-list-body${filteredRounds.length === 0 ? ' sched-round-list-body--empty' : ''}`}>
+            {filteredRounds.length === 0 ? (
               <GSEmptyList
                 title={hasRounds ? `No results for "${roundListSearch}"` : 'Add & Manage Rounds'}
                 detail={hasRounds ? undefined : 'Add new rounds and manage all round details in one spot.'}
