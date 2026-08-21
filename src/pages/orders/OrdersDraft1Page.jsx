@@ -15,14 +15,17 @@ import OrderResponsesListDraft1 from '../../components/orders/OrderResponsesList
 import OrderFormOverviewDraft1 from '../../components/orders/OrderFormOverviewDraft1.jsx'
 import AllOrderResponsesForFormDraft1 from '../../components/orders/AllOrderResponsesForFormDraft1.jsx'
 import OrderFormResponseEditFieldsDraft1 from '../../components/orders/OrderFormResponseEditFieldsDraft1.jsx'
+import SponsorOverviewPanel from '../../components/orders-forms/SponsorOverviewPanel.jsx'
+import TeamOverviewPanel from '../../components/orders-forms/TeamOverviewPanel.jsx'
 import { availableFunds, orderStats, orders as initialOrders } from '../../data/mockOrders.js'
+import { sponsors } from '../../data/mockSponsors.js'
+import { registeredTeams } from '../../data/mockTeams.js'
 import './OrdersDraft1Page.scss'
 
 const EMPTY_FILTERS = { status: null, activatedOn: '', deactivatedOn: '' }
 
-// Draft 1 — a standalone copy of OrderListPage.jsx (own file + own scss with
-// ord-d1- prefixed classes) so it can be riffed on without touching the
-// original Orders & Payouts page or Draft 2.
+// The Orders & Payouts page, reached from the "Orders & Payouts" tile on
+// the Orders and Forms hub.
 export default function OrdersDraft1Page() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -34,6 +37,10 @@ export default function OrdersDraft1Page() {
   const [editingResponse, setEditingResponse] = useState(null)
   const [viewingFormName, setViewingFormName] = useState(null)
   const [viewingFormQuestion, setViewingFormQuestion] = useState(null)
+  const [viewingSponsor, setViewingSponsor] = useState(null)
+  const [viewingTeam, setViewingTeam] = useState(null)
+  const [responsesPlayerFilter, setResponsesPlayerFilter] = useState(null)
+  const [responsesCategory, setResponsesCategory] = useState(null)
 
   const selectedOrder = orderList.find(o => o.id === id) ?? null
   const viewingAllResponses = location.pathname.endsWith('/responses')
@@ -49,6 +56,8 @@ export default function OrdersDraft1Page() {
   const pendingScrollAction = useRef(null)
 
   function currentScreenKey() {
+    if (viewingSponsor) return `sponsor:${viewingSponsor.id}`
+    if (viewingTeam) return `team:${viewingTeam.id}`
     if (editingResponse) return `edit:${editingResponse.orderId}`
     if (viewingFormQuestion) return `formQuestion:${viewingFormQuestion.formName}:${viewingFormQuestion.question}`
     if (viewingFormName) return `form:${viewingFormName}`
@@ -99,11 +108,17 @@ export default function OrdersDraft1Page() {
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
+    setViewingSponsor(null)
+    setViewingTeam(null)
+    setResponsesPlayerFilter(null)
+    setResponsesCategory(null)
     navigate('/orders-draft-1')
   }
 
   function openAllResponses() {
     saveCurrentScroll()
+    setResponsesPlayerFilter(null)
+    setResponsesCategory(null)
     navigate(`/orders-draft-1/${id}/responses`)
   }
 
@@ -113,9 +128,50 @@ export default function OrdersDraft1Page() {
     navigate(`/orders-draft-1/${id}`)
   }
 
+  // The "| View ___" link on a form section — whether reached from a single
+  // order's response list (see VIEW_LINK_LABEL in OrderResponsesListDraft1.jsx)
+  // or from the cross-order "view every order's answer to this question"
+  // breakdown (see AllOrderResponsesForFormDraft1.jsx) — a team/player-
+  // fillLevel form belongs to a registered team and a sponsor-fillLevel form
+  // belongs to a sponsor (matched by their `orderId`, which may be a
+  // DIFFERENT order than whichever one is currently selected here — a
+  // cross-order group can belong to any order). Rather than navigating away
+  // to the Teams & Players / Sponsors pages, that overview opens as an
+  // overlay ON TOP of wherever the user currently is (Order Details, Form
+  // Responses, or the cross-order breakdown) — same pattern as
+  // SponsorOverviewPanel / TeamOverviewPanel opening on top of an order
+  // there — so the back chevron un-covers this same screen again instead of
+  // leaving the page. If somehow no matching entity exists, it falls back to
+  // that page's bare list; any other fillLevel still falls back to the
+  // cross-order breakdown.
+  function viewEntityAcrossOrders(orderId, fillLevel) {
+    if (fillLevel === 'sponsor') {
+      const sponsor = sponsors.find(s => s.orderId === orderId)
+      if (sponsor) {
+        saveCurrentScroll()
+        setViewingSponsor(sponsor)
+      } else {
+        navigate('/orders-forms/sponsors')
+      }
+    } else if (fillLevel === 'team' || fillLevel === 'player') {
+      const team = registeredTeams.find(t => t.orderId === orderId)
+      if (team) {
+        saveCurrentScroll()
+        setViewingTeam(team)
+      } else {
+        navigate('/orders-forms/teams')
+      }
+    }
+  }
+
   function viewFormAcrossOrders(formName) {
-    saveCurrentScroll()
-    setViewingFormName(formName)
+    const fillLevel = selectedOrder?.formResponses.find(entry => entry.formName === formName)?.fillLevel
+    if (fillLevel === 'sponsor' || fillLevel === 'team' || fillLevel === 'player') {
+      viewEntityAcrossOrders(selectedOrder.id, fillLevel)
+    } else {
+      saveCurrentScroll()
+      setViewingFormName(formName)
+    }
   }
 
   function viewFormQuestion(formName, question) {
@@ -128,13 +184,68 @@ export default function OrdersDraft1Page() {
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
+    setViewingSponsor(null)
+    setViewingTeam(null)
+    setResponsesPlayerFilter(null)
+    setResponsesCategory(null)
     navigate(`/orders-draft-1/${orderId}`)
+  }
+
+  // Nav rows on the overlaid Sponsor/Team Overview panel — both link back
+  // into this same order's own Order Details / Form Responses screens
+  // rather than anywhere else, since the sponsor/team is always the one
+  // attached to the order already open underneath. The "Form Responses"
+  // rows land pre-filtered to that entity's own category (see
+  // OrderResponsesFilterNav.jsx's Team/Sponsor/Players tabs) so an order
+  // that bundles more than one occurrence type doesn't show, say, a
+  // sponsor's answers mixed in when you got here from the team.
+  function viewSponsorOrderDetails() {
+    saveCurrentScroll()
+    setViewingSponsor(null)
+    if (viewingAllResponses) navigate(`/orders-draft-1/${id}`)
+  }
+
+  function viewSponsorFormResponses() {
+    saveCurrentScroll()
+    setViewingSponsor(null)
+    setResponsesPlayerFilter(null)
+    setResponsesCategory('sponsor')
+    if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
+  }
+
+  function viewTeamOrderDetails() {
+    saveCurrentScroll()
+    setViewingTeam(null)
+    if (viewingAllResponses) navigate(`/orders-draft-1/${id}`)
+  }
+
+  function viewTeamFormResponses() {
+    saveCurrentScroll()
+    setViewingTeam(null)
+    setResponsesPlayerFilter(null)
+    setResponsesCategory('team')
+    if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
+  }
+
+  // The Team Overview player card's "Form Responses" button — same
+  // overlay-closing pattern as viewTeamOrderDetails/viewSponsorFormResponses
+  // above, but lands on Form Responses pre-filtered to just this player.
+  function viewTeamPlayerResponses(player) {
+    saveCurrentScroll()
+    setViewingTeam(null)
+    setResponsesPlayerFilter(player.name)
+    setResponsesCategory(null)
+    if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
   }
 
   function handlePanelBack() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
-    if (editingResponse) {
+    if (viewingSponsor) {
+      setViewingSponsor(null)
+    } else if (viewingTeam) {
+      setViewingTeam(null)
+    } else if (editingResponse) {
       setEditingResponse(null)
     } else if (viewingFormQuestion) {
       setViewingFormQuestion(null)
@@ -296,13 +407,17 @@ export default function OrdersDraft1Page() {
         isOpen={!!selectedOrder}
         onClose={closeDetailPanel}
         onBack={
-          editingResponse || viewingFormQuestion || viewingFormName || viewingAllResponses
+          viewingSponsor || viewingTeam || editingResponse || viewingFormQuestion || viewingFormName || viewingAllResponses
             ? handlePanelBack
             : undefined
         }
         bodyRef={panelBodyRef}
         title={
-          editingResponse
+          viewingSponsor
+            ? 'Sponsor Overview'
+            : viewingTeam
+            ? 'Team Overview'
+            : editingResponse
             ? `Edit ${editingResponse.groups[0]?.formName ?? ''}`
             : viewingFormQuestion
             ? viewingFormQuestion.question
@@ -313,7 +428,9 @@ export default function OrdersDraft1Page() {
             : 'Order Details'
         }
         actions={
-          editingResponse
+          viewingSponsor || viewingTeam
+            ? [{ name: 'Delete', type: 'red', action: () => {} }]
+            : editingResponse
             ? [
                 { name: 'Save', type: 'black', action: saveEditingResponse },
                 { name: 'Cancel', type: 'light-grey', action: cancelEditingResponse },
@@ -333,7 +450,20 @@ export default function OrdersDraft1Page() {
             : []
         }
       >
-        {editingResponse ? (
+        {viewingSponsor ? (
+          <SponsorOverviewPanel
+            sponsor={viewingSponsor}
+            onViewOrderDetails={viewSponsorOrderDetails}
+            onViewFormResponses={viewSponsorFormResponses}
+          />
+        ) : viewingTeam ? (
+          <TeamOverviewPanel
+            team={viewingTeam}
+            onViewOrderDetails={viewTeamOrderDetails}
+            onViewFormResponses={viewTeamFormResponses}
+            onViewPlayerResponses={viewTeamPlayerResponses}
+          />
+        ) : editingResponse ? (
           <OrderFormResponseEditFieldsDraft1
             groups={editingResponse.groups}
             onChangeAnswer={updateEditingAnswer}
@@ -346,6 +476,7 @@ export default function OrdersDraft1Page() {
             formName={viewingFormQuestion.formName}
             initialQuestion={viewingFormQuestion.question}
             onViewOrder={viewOrderDetails}
+            onViewEntity={viewEntityAcrossOrders}
           />
         ) : viewingFormName ? (
           <OrderFormOverviewDraft1
@@ -362,6 +493,8 @@ export default function OrdersDraft1Page() {
                 saveResponseAnswer(selectedOrder.id, responseIndex, answerIndex, value)
               }
               onViewFormAcrossOrders={viewFormAcrossOrders}
+              initialSelectedName={responsesPlayerFilter}
+              initialCategory={responsesCategory}
             />
           )
         ) : (

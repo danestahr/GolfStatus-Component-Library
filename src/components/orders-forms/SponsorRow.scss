@@ -1,0 +1,77 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.spn-row {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: $fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $grey-50;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px $grey-700;
+  }
+}
+
+.spn-row-thumb {
+  flex-shrink: 0;
+  width: 240px;
+  height: 120px;
+  border-radius: $medium-radius;
+  background: $grey-500;
+}
+
+.spn-row-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.spn-row-side {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.spn-status-pill {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  padding: $medium-pad;
+  border-radius: $huge-radius;
+  white-space: nowrap;
+
+  &.active {
+    background: $green-200;
+    color: $green-800;
+  }
+
+  &.inactive {
+    background: rgba($red-500, 0.12);
+    color: $red-700;
+  }
+}
+
+.spn-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: $medium-radius;
+  color: $grey-500;
+  cursor: grab;
+
+  &:hover {
+    background: $grey-100;
+    color: $grey-700;
+  }
+}

@@ -1,0 +1,24 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Sponsors-only override — the shared EntityListPage search bar keeps its
+// shadow and border on the other tile pages (Teams, Event Site & Packages).
+.spn-page .efp-list-sticky {
+  box-shadow: none;
+}
+
+.spn-page .efp-search-row {
+  border-bottom: none;
+}
+
+// Sponsor Overview panel — its last nav row now carries its own
+// border-bottom (see SponsorOverviewPanel.scss), so the action drawer's
+// usual border-top would double up with it right at that seam.
+.app-side-panel-content.spn-overview-panel > gs-action-drawer {
+  border-top: none;
+}
+
+// Delete as a soft/transparent red instead of the app's solid danger red.
+.app-side-panel-content.spn-overview-panel gs-action-drawer gs-button.enabled.red {
+  background: $red-100;
+  color: $grey-800;
+}

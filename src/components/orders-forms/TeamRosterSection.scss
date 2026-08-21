@@ -1,0 +1,90 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.tmr-section-header {
+  position: sticky;
+  // Sticks right beneath EntityListPage's own sticky search bar — see
+  // SponsorTierSection.scss for why the offset var exists.
+  top: var(--efp-sticky-offset, 0px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-pad;
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: $second-layer-shadow;
+}
+
+.tmr-section-title {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.tmr-section-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.tmr-header-btn {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  height: 40px;
+  padding: $medium-pad $medium-large-pad;
+  border: none;
+  border-radius: $medium-radius;
+  background: $grey-100;
+  color: $grey-800;
+  @include gs-font($x-small-font, $bold-font-weight, $medium-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: $fast;
+
+  svg {
+    font-size: $medium-font;
+  }
+
+  &:hover {
+    background: $grey-200;
+  }
+}
+
+.tmr-header-icon-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: $medium-radius;
+  background: $grey-100;
+  color: $grey-800;
+  cursor: pointer;
+  transition: $fast;
+
+  svg {
+    font-size: $medium-font;
+  }
+
+  &:hover {
+    background: $grey-200;
+  }
+}
+
+.tmr-section-strip {
+  display: flex;
+  gap: $large-pad;
+  align-items: flex-start;
+  padding: $x-large-pad;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+}

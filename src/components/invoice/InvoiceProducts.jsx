@@ -57,7 +57,7 @@ function QuantityStepper({ value, onChange, min = 1 }) {
         style={{ width: 44, height: 42, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer" }}>
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5h9" stroke="#555" strokeWidth="1.5" strokeLinecap="round"/></svg>
       </button>
-      <span style={{ flex: 1, textAlign: "center", fontSize: 14, fontWeight: 500, color: "#111" }}>{value}</span>
+      <span style={{ flex: 1, textAlign: "center", fontSize: 14, lineHeight: 1.2, fontWeight: 500, color: "#111" }}>{value}</span>
       <button type="button" onClick={() => onChange(value + 1)}
         style={{ width: 44, height: 42, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer" }}>
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2 6.5h9" stroke="#555" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -283,8 +283,8 @@ function ProductSelect({ value, onChange, options }) {
         style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 13px", background: "#fff", border: "1px solid #e2e2e2", borderRadius: 6, cursor: "pointer", textAlign: "left" }}>
         <div>
           {selected
-            ? <><div style={{ fontWeight: 500, fontSize: 14, color: "#111" }}>{selected.name}</div><div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{selected.startingAt != null ? `Starting at $${selected.startingAt.toFixed(2)}` : `$${selected.basePrice.toFixed(2)}`}</div></>
-            : <span style={{ fontSize: 14, color: "#aaa" }}>Select a product</span>}
+            ? <><div style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.2, color: "#111" }}>{selected.name}</div><div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{selected.startingAt != null ? `Starting at $${selected.startingAt.toFixed(2)}` : `$${selected.basePrice.toFixed(2)}`}</div></>
+            : <span style={{ fontSize: 14, lineHeight: 1.2, color: "#aaa" }}>Select a product</span>}
         </div>
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
           <path d="M3.5 5.5l4 4 4-4" stroke="#888" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -327,14 +327,14 @@ function ItemsList({ items, onRemoveGroup }) {
           <div key={groupId} style={{ marginBottom: 4, border: "1px solid #f0f0f0", borderRadius: 8, overflow: "hidden" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "11px 14px", background: "#fff" }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#111" }}>{parent.name}</div>
+                <div style={{ fontSize: 14, lineHeight: 1.2, fontWeight: 500, color: "#111" }}>{parent.name}</div>
                 <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
                   Qty {parent.quantity}{parent.notes?.length ? ` · ${parent.notes.join(", ")}` : ""}
                   {parent.priceOverridden && <span style={{ marginLeft: 6, padding: "1px 6px", background: "#fff3cd", color: "#856404", borderRadius: 4, fontSize: 11, fontWeight: 500 }}>price overridden</span>}
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 500, color: "#111" }}>${(parent.price * parent.quantity).toFixed(2)}</span>
+                <span style={{ fontSize: 14, lineHeight: 1.2, fontWeight: 500, color: "#111" }}>${(parent.price * parent.quantity).toFixed(2)}</span>
                 <button type="button" onClick={() => onRemoveGroup(groupId)}
                   style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "1px solid #e2e2e2", borderRadius: 6, cursor: "pointer", color: "#888" }}>
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -356,7 +356,7 @@ function ItemsList({ items, onRemoveGroup }) {
           </div>
         );
       })}
-      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", fontWeight: 600, fontSize: 14, color: "#111" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 0", fontWeight: 600, fontSize: 14, lineHeight: 1.2, color: "#111" }}>
         <span>Total</span>
         <span>${total.toFixed(2)}</span>
       </div>

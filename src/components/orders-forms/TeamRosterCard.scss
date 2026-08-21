@@ -1,0 +1,77 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.tmr-card {
+  flex: 0 0 auto;
+  width: 300px;
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  box-shadow: $first-layer-shadow;
+}
+
+.tmr-card-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.tmr-card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tmr-card-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.tmr-card-sub {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.tmr-card-add-team {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  padding: $medium-pad $medium-large-pad;
+  border: none;
+  border-radius: $small-medium-radius;
+  background: $grey-100;
+  color: $grey-800;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: $fast;
+
+  &:hover {
+    background: $grey-200;
+  }
+}
+
+.tmr-card-message {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: $small-medium-radius;
+  background: none;
+  color: $grey-800;
+  cursor: pointer;
+  transition: $fast;
+
+  &:hover {
+    background: $grey-100;
+  }
+}

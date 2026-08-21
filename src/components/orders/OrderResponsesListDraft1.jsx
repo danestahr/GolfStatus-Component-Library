@@ -100,10 +100,17 @@ function visibleAnswerEntries(entry, query, selectedName) {
 // page uses its own layout — a grey section per form occurrence, with each
 // question inside it as its own white tile — rather than the nested-card
 // style used in the order details view.
-export default function OrderResponsesListDraft1({ order, onEditResponses, onSaveAnswer, onViewFormAcrossOrders }) {
+export default function OrderResponsesListDraft1({
+  order,
+  onEditResponses,
+  onSaveAnswer,
+  onViewFormAcrossOrders,
+  initialSelectedName = null,
+  initialCategory = null,
+}) {
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('all')
-  const [selectedName, setSelectedName] = useState(null)
+  const [category, setCategory] = useState(initialSelectedName ? 'player' : initialCategory ?? 'all')
+  const [selectedName, setSelectedName] = useState(initialSelectedName)
   const [filterNavOpen, setFilterNavOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -384,15 +391,6 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
                               </>
                             )}
                           </div>
-                        </div>
-
-                        <div className="ordr1-form-section-actions">
-                          <GSButton
-                            type="light-grey icon"
-                            size="primary"
-                            buttonIcon={faPen}
-                            onClick={() => onEditResponses(entries)}
-                          />
                         </div>
                       </div>
 

@@ -1,0 +1,14 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Teams-only override — the shared EntityListPage search bar keeps its
+// shadow and border on the other tile pages (Sponsors, Event Site &
+// Packages), but here the section headers right beneath it (Unassigned
+// Players, Waitlist Entries, Registered Teams) carry their own shadow, and
+// two stacked shadows read as a double border. Mirrors SponsorsListPage.scss.
+.tm-page .efp-list-sticky {
+  box-shadow: none;
+}
+
+.tm-page .efp-search-row {
+  border-bottom: none;
+}

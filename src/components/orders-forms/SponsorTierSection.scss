@@ -1,0 +1,43 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.spn-tier-header {
+  position: sticky;
+  // Sticks right beneath EntityListPage's own sticky search bar (both are
+  // position:sticky, and without this they'd both try to pin at the same
+  // top:0) by its *measured* height — see EntityListPage.jsx.
+  top: var(--efp-sticky-offset, 0px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-pad;
+  padding: $large-pad $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: $second-layer-shadow;
+}
+
+.spn-tier-name {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.spn-tier-edit {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: $medium-radius;
+  border: none;
+  background: $grey-100;
+  color: $grey-800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: $fast;
+
+  &:hover {
+    background: $grey-200;
+  }
+}

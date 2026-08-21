@@ -62,7 +62,7 @@ function groupAnswersByOrder(answers) {
 // making them page over to it. The caller keys this component by
 // formName+initialQuestion (see OrdersDraft1Page.jsx) so a new question pick
 // remounts it instead of leaving a stale questionIndex from the last visit.
-export default function AllOrderResponsesForFormDraft1({ orders, formName, initialQuestion, onViewOrder }) {
+export default function AllOrderResponsesForFormDraft1({ orders, formName, initialQuestion, onViewOrder, onViewEntity }) {
   const [search, setSearch] = useState('')
   const [answeredFilter, setAnsweredFilter] = useState('all')
   const [optionFilter, setOptionFilter] = useState('all')
@@ -305,7 +305,16 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
                                 View Order
                               </button>
                               <span className="aof-order-group-sep">|</span>
-                              <button type="button" className="aof-order-group-link" onClick={() => onViewOrder(group.orderId)}>
+                              {/* Unlike "View Order", this group's order can belong to a
+                                  different team/sponsor than whichever one the caller's
+                                  panel currently has open — onViewEntity re-resolves the
+                                  specific team/sponsor for THIS order rather than assuming
+                                  it's the one already on screen. */}
+                              <button
+                                type="button"
+                                className="aof-order-group-link"
+                                onClick={() => onViewEntity(group.orderId, currentQuestion.fillLevel)}
+                              >
                                 {viewLinkLabelFor(currentQuestion.fillLevel)}
                               </button>
                             </div>

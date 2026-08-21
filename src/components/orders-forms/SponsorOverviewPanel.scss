@@ -1,0 +1,40 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.spn-overview {
+  display: flex;
+  flex-direction: column;
+}
+
+.spn-overview-hero {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: 56px $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.spn-overview-stack {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $large-pad;
+}
+
+.spn-overview-thumb {
+  flex-shrink: 0;
+  width: 180px;
+  height: 90px;
+  // Matches the Figma "Sponsor Image" node's own radius token, distinct
+  // from the $medium-radius (8px) used for the list page's thumbnails.
+  border-radius: $medium-border-radius;
+  background: $grey-500;
+}
+
+// Every nav row gets a border-bottom, including the last one — it sits
+// right above the action drawer, whose own border-top is suppressed below
+// so the two don't double up into a thicker line at that seam.
+.spn-overview .efp-nav-row:last-child {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}

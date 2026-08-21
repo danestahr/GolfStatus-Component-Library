@@ -1,0 +1,32 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.spn-details {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+.spn-details-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.spn-details-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.spn-details-type {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.spn-details-contact {
+  display: flex;
+  flex-direction: column;
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}

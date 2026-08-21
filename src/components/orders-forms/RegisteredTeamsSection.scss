@@ -1,0 +1,65 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.rtm-section-header {
+  position: sticky;
+  top: var(--efp-sticky-offset, 0px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $medium-pad;
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: $second-layer-shadow;
+}
+
+.rtm-section-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.rtm-section-title {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.rtm-section-subtitle {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.rtm-section-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.rtm-header-btn {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  height: 40px;
+  padding: $medium-pad $medium-large-pad;
+  border: none;
+  border-radius: $medium-radius;
+  background: $grey-100;
+  color: $grey-800;
+  @include gs-font($x-small-font, $bold-font-weight, $medium-letter-spacing);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: $fast;
+
+  svg {
+    font-size: $medium-font;
+  }
+
+  &:hover {
+    background: $grey-200;
+  }
+}

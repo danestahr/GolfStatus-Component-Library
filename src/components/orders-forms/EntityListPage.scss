@@ -1,0 +1,75 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.efp-page-bg {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: $white;
+  font-family: $font-family;
+
+  > gs-action-bar {
+    &.x-large-pad {
+      padding: 16px;
+    }
+  }
+}
+
+.efp-page-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: $white;
+}
+
+.efp-col-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
+.efp-list-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex-shrink: 0;
+  background: $white;
+  box-shadow: $second-layer-shadow;
+}
+
+.efp-search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-pad;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  gs-input {
+    width: 400px;
+    flex: none;
+
+    @include large-phone {
+      width: 100%;
+    }
+  }
+}
+
+.efp-list-body {
+  flex: 1;
+}
+
+.efp-empty {
+  padding: $xx-large-pad;
+  text-align: center;
+  color: $grey-500;
+  font-size: $small-font;
+}

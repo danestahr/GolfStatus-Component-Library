@@ -8,6 +8,7 @@ import './AppSidePanel.scss'
  * Standard app-wide side panel wrapper.
  *
  * Props:
+ *   className     extra class on the panel's content wrapper, for one-off overrides (optional)
  *   isOpen        boolean
  *   onClose       () => void
  *   onBack        () => void (optional) — overrides what the panel's own top-left
@@ -28,6 +29,7 @@ import './AppSidePanel.scss'
  *   children      scrollable panel content
  */
 export default function AppSidePanel({
+  className,
   isOpen,
   onClose,
   onBack,
@@ -54,7 +56,7 @@ export default function AppSidePanel({
       )}
 
       <GSSidePanel sidePanelOpen={isOpen} noTransition={noTransition} animateWidth={animateWidth}>
-        <div className={`light app-side-panel-content${expanded ? ' expanded' : ''}`}>
+        <div className={`light app-side-panel-content${expanded ? ' expanded' : ''}${className ? ` ${className}` : ''}`}>
           <GSSidePanelNavigation
             title={title}
             leftIcon={faChevronLeft}

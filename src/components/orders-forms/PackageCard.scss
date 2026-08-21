@@ -1,0 +1,61 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.efp-pkg-card {
+  flex: 0 0 auto;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  box-shadow: $first-layer-shadow;
+}
+
+.efp-pkg-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.efp-pkg-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.efp-pkg-sub {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.efp-pkg-counts {
+  display: flex;
+  flex-direction: column;
+}
+
+.efp-pkg-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: $medium-pad;
+  align-self: flex-start;
+  padding: $medium-pad $medium-large-pad;
+  border-radius: $huge-radius;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+
+  &.active {
+    background: $green-200;
+    color: $grey-800;
+  }
+
+  &.pending {
+    background: rgba($grey-500, 0.12);
+    color: $grey-700;
+  }
+
+  &.inactive {
+    background: rgba($red-500, 0.12);
+    color: $red-700;
+  }
+}

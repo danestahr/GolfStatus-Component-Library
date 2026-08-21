@@ -18,7 +18,7 @@ export default function InvoiceListPage() {
             border: '1px solid #e8e8e8', textDecoration: 'none', color: 'inherit',
           }}>
             <div>
-              <div style={{ fontWeight: 500, fontSize: 14 }}>{inv.id}</div>
+              <div style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.2 }}>{inv.id}</div>
               <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{inv.createdAt}</div>
             </div>
             <span style={{

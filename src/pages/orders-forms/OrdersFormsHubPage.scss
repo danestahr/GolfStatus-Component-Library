@@ -1,6 +1,6 @@
 @import '../../gs-lib/styles/golfstatus.scss';
 
-.ord-hub-page-bg {
+.off-hub-page-bg {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -16,15 +16,22 @@
   }
 }
 
-.ord-hub-list {
-  display: flex;
-  flex-direction: column;
+.off-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: $large-pad;
   padding: $x-large-pad;
   overflow-y: auto;
+
+  @include large-phone {
+    grid-template-columns: 1fr;
+  }
 }
 
-.ord-hub-card {
+.off-hub-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   padding: $x-large-pad;
   border-radius: $medium-radius;
   background: $white;
@@ -36,14 +43,27 @@
   }
 }
 
-.ord-hub-card-name {
+.off-hub-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: $medium-pad;
+  border-radius: $medium-radius;
+  background: $grey-50;
+  color: $grey-800;
+  font-size: $medium-font;
+}
+
+.off-hub-tile-name {
   font-size: $medium-font;
   font-weight: $bold-font-weight;
   color: $grey-800;
   line-height: $regular-line-height;
 }
 
-.ord-hub-card-sub {
+.off-hub-tile-sub {
   margin-top: $medium-pad;
   font-size: $small-font;
   color: $grey-800;
