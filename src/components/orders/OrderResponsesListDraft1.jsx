@@ -384,7 +384,7 @@ export default function OrderResponsesListDraft1({
                                 <button
                                   type="button"
                                   className="ordr1-filter-switch-link"
-                                  onClick={() => onViewFormAcrossOrders(form.formName)}
+                                  onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
                                 >
                                   {VIEW_LINK_LABEL[form.questions[0]?.fillLevel]}
                                 </button>

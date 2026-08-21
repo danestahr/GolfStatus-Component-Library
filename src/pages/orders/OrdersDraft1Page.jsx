@@ -143,8 +143,11 @@ export default function OrdersDraft1Page() {
   // there — so the back chevron un-covers this same screen again instead of
   // leaving the page. If somehow no matching entity exists, it falls back to
   // that page's bare list; any other fillLevel still falls back to the
-  // cross-order breakdown.
-  function viewEntityAcrossOrders(orderId, fillLevel) {
+  // cross-order breakdown. `packageName` disambiguates the rare order that
+  // bundles two separate teams (see the ord-1005 comment in mockTeams.js) —
+  // falls back to matching by orderId alone whenever a caller doesn't have
+  // a packageName to pass, or the order only has the one team anyway.
+  function viewEntityAcrossOrders(orderId, fillLevel, packageName) {
     if (fillLevel === 'sponsor') {
       const sponsor = sponsors.find(s => s.orderId === orderId)
       if (sponsor) {
@@ -154,7 +157,9 @@ export default function OrdersDraft1Page() {
         navigate('/orders-forms/sponsors')
       }
     } else if (fillLevel === 'team' || fillLevel === 'player') {
-      const team = registeredTeams.find(t => t.orderId === orderId)
+      const team =
+        registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName) ??
+        registeredTeams.find(t => t.orderId === orderId)
       if (team) {
         saveCurrentScroll()
         setViewingTeam(team)
@@ -164,10 +169,12 @@ export default function OrdersDraft1Page() {
     }
   }
 
-  function viewFormAcrossOrders(formName) {
-    const fillLevel = selectedOrder?.formResponses.find(entry => entry.formName === formName)?.fillLevel
+  function viewFormAcrossOrders(formName, packageName) {
+    const fillLevel = selectedOrder?.formResponses.find(
+      entry => entry.formName === formName && entry.packageName === packageName
+    )?.fillLevel
     if (fillLevel === 'sponsor' || fillLevel === 'team' || fillLevel === 'player') {
-      viewEntityAcrossOrders(selectedOrder.id, fillLevel)
+      viewEntityAcrossOrders(selectedOrder.id, fillLevel, packageName)
     } else {
       saveCurrentScroll()
       setViewingFormName(formName)

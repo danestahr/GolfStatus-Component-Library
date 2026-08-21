@@ -155,10 +155,16 @@ export default function SponsorsListPage() {
   // shares this same order (see that team's own `orderId` in mockTeams.js) —
   // navigating there passes teamId through location.state so the Teams page
   // opens straight to that team's overview, mirroring how arriving here via
-  // a sponsor's own orderId opens straight to this panel.
-  function viewEntityAcrossOrders(orderId, fillLevel) {
+  // a sponsor's own orderId opens straight to this panel. `packageName`
+  // disambiguates the rare order that bundles two separate teams (see the
+  // ord-1005 comment in mockTeams.js) — falls back to matching by orderId
+  // alone whenever a caller doesn't have a packageName to pass, or the
+  // order only has the one team anyway.
+  function viewEntityAcrossOrders(orderId, fillLevel, packageName) {
     if (fillLevel === 'team' || fillLevel === 'player') {
-      const team = registeredTeams.find(t => t.orderId === orderId)
+      const team =
+        registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName) ??
+        registeredTeams.find(t => t.orderId === orderId)
       navigate('/orders-forms/teams', team ? { state: { teamId: team.id } } : undefined)
       return
     }
@@ -172,10 +178,12 @@ export default function SponsorsListPage() {
     setShowSponsorOverview(true)
   }
 
-  function viewFormEntity(formName) {
-    const fillLevel = viewingOrder?.formResponses.find(entry => entry.formName === formName)?.fillLevel
+  function viewFormEntity(formName, packageName) {
+    const fillLevel = viewingOrder?.formResponses.find(
+      entry => entry.formName === formName && entry.packageName === packageName
+    )?.fillLevel
     if (fillLevel === 'sponsor' || fillLevel === 'team' || fillLevel === 'player') {
-      viewEntityAcrossOrders(viewingOrder.id, fillLevel)
+      viewEntityAcrossOrders(viewingOrder.id, fillLevel, packageName)
     } else {
       saveCurrentScroll()
       setViewingFormName(formName)

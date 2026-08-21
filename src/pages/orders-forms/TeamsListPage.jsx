@@ -148,14 +148,20 @@ export default function TeamsListPage() {
   // to leave. A sponsor-fillLevel form instead navigates to the Sponsors
   // page, passing sponsorId through location.state so it opens straight to
   // that sponsor's overview, mirroring how arriving here via a sponsor's
-  // own orderId opens straight to this panel.
-  function viewEntityAcrossOrders(orderId, fillLevel) {
+  // own orderId opens straight to this panel. `packageName` disambiguates
+  // the rare order that bundles two separate teams (see the ord-1005
+  // comment in mockTeams.js) — falls back to matching by orderId alone
+  // whenever a caller doesn't have a packageName to pass, or the order only
+  // has the one team anyway.
+  function viewEntityAcrossOrders(orderId, fillLevel, packageName) {
     if (fillLevel === 'sponsor') {
       const sponsor = sponsors.find(s => s.orderId === orderId)
       navigate('/orders-forms/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
       return
     }
-    const team = registeredTeams.find(t => t.orderId === orderId)
+    const team =
+      registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName) ??
+      registeredTeams.find(t => t.orderId === orderId)
     if (!team) {
       openOrderDetails(orderId)
       return
@@ -165,10 +171,12 @@ export default function TeamsListPage() {
     setShowTeamOverview(true)
   }
 
-  function viewFormEntity(formName) {
-    const fillLevel = viewingOrder?.formResponses.find(entry => entry.formName === formName)?.fillLevel
+  function viewFormEntity(formName, packageName) {
+    const fillLevel = viewingOrder?.formResponses.find(
+      entry => entry.formName === formName && entry.packageName === packageName
+    )?.fillLevel
     if (fillLevel === 'team' || fillLevel === 'player' || fillLevel === 'sponsor') {
-      viewEntityAcrossOrders(viewingOrder.id, fillLevel)
+      viewEntityAcrossOrders(viewingOrder.id, fillLevel, packageName)
     } else {
       saveCurrentScroll()
       setViewingFormName(formName)

@@ -31,13 +31,23 @@ function matchesQuery(answer, query) {
 // order's players belong together the same way a single team or sponsor
 // contact does — so once a question's answers are rolled up across orders
 // they're grouped back into that per-order unit rather than left as one
-// long list mixing every order together.
+// long list mixing every order together. Grouped by packageName too, not
+// just orderId — an order can bundle two separate teams (one per package,
+// e.g. a Team Registration plus a Premium Hole Sponsor's included team), and
+// each needs its own group/"View Team" link rather than getting merged into
+// one combined roster (see the ord-1005 comment in mockTeams.js).
 function groupAnswersByOrder(answers) {
   const groups = []
   answers.forEach(answer => {
-    let group = groups.find(g => g.orderId === answer.orderId)
+    let group = groups.find(g => g.orderId === answer.orderId && g.packageName === answer.packageName)
     if (!group) {
-      group = { orderId: answer.orderId, buyerName: answer.buyerName, businessName: answer.businessName, answers: [] }
+      group = {
+        orderId: answer.orderId,
+        packageName: answer.packageName,
+        buyerName: answer.buyerName,
+        businessName: answer.businessName,
+        answers: [],
+      }
       groups.push(group)
     }
     group.answers.push(answer)
@@ -291,7 +301,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
                   ) : (
                     <div className="aof-order-groups">
                       {orderGroups.map(group => (
-                        <div className="ordr1-question-tile aof-order-group" key={group.orderId}>
+                        <div className="ordr1-question-tile aof-order-group" key={`${group.orderId}-${group.packageName}`}>
                           <div className="aof-order-group-header">
                             <div className="aof-order-group-name-col">
                               {renderGroupName(group, currentQuestion.fillLevel)}
@@ -309,11 +319,13 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
                                   different team/sponsor than whichever one the caller's
                                   panel currently has open — onViewEntity re-resolves the
                                   specific team/sponsor for THIS order rather than assuming
-                                  it's the one already on screen. */}
+                                  it's the one already on screen. Passing this group's own
+                                  packageName along disambiguates which of an order's teams
+                                  it is, for the rare order that bundles more than one. */}
                               <button
                                 type="button"
                                 className="aof-order-group-link"
-                                onClick={() => onViewEntity(group.orderId, currentQuestion.fillLevel)}
+                                onClick={() => onViewEntity(group.orderId, currentQuestion.fillLevel, group.packageName)}
                               >
                                 {viewLinkLabelFor(currentQuestion.fillLevel)}
                               </button>
