@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faArrowRight, faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
@@ -392,13 +392,6 @@ export default function OrderResponsesListDraft1({ order, onEditResponses, onSav
                             size="primary"
                             buttonIcon={faPen}
                             onClick={() => onEditResponses(entries)}
-                          />
-                          <GSButton
-                            type="light-grey"
-                            size="primary"
-                            title="View Form"
-                            rightIcon={faArrowRight}
-                            onClick={() => onViewFormAcrossOrders(form.formName)}
                           />
                         </div>
                       </div>
