@@ -1,5 +1,7 @@
-import { Fragment, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Fragment, useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCircleNotch } from '@fortawesome/free-solid-svg-icons'
 
 import EntityListPage from '../../components/orders-forms/EntityListPage.jsx'
 import NavRow from '../../components/orders-forms/NavRow.jsx'
@@ -70,15 +72,31 @@ function matches(query, ...texts) {
   return !query || texts.some(text => text.toLowerCase().includes(query))
 }
 
+const FORMS_PATH = '/orders-forms/event-site-packages/forms'
+
 // One side panel for the whole Forms flow (list → add form → form overview →
-// add question) — `panelScreen` picks which content it shows, same single-
-// panel-many-screens convention as TeamsListPage/SponsorsListPage, rather
-// than each destination opening its own stacked panel. Side panels replace
-// each other here; they aren't routes.
+// add question), same single-panel-many-screens convention as TeamsListPage/
+// SponsorsListPage, rather than each destination opening its own stacked
+// panel. Unlike those, though, the "which form"/"viewing its responses"
+// screens ARE routes here (see `formId`/`viewingResponses` below) — the
+// Responses button on a question tile is hidden for now (still being worked
+// on; see OrderFormOverviewDraft1.jsx) but the screen it opened stays
+// reachable by appending /responses to a form's own URL. Add Form/Add
+// Question stay plain local-state overlays (`addingForm`/`addingQuestion`)
+// on top of whichever route screen is showing, same as before.
 export default function EventSitePackagesListPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { formId: formOverviewId } = useParams()
   const [search, setSearch] = useState('')
-  const [panelScreen, setPanelScreen] = useState(null) // null | 'forms' | 'add-form' | 'form-overview' | 'add-question' | 'view-responses'
+  const [addingForm, setAddingForm] = useState(false)
+  // True for a beat between clicking Save & Continue on a brand new form and
+  // actually landing on its overview — simulates the save/load a real
+  // form-builder backend would need, same convention as ScorecardListPage's
+  // isInitialLoading. Only the *create* path gets this (see
+  // `handleAddFormSave`); renaming an existing form still commits instantly.
+  const [creatingForm, setCreatingForm] = useState(false)
+  const [addingQuestion, setAddingQuestion] = useState(false)
   const [formsList, setFormsList] = useState(initialForms)
   // Only mutated by AllOrderResponsesForFormDraft1's inline answer editing
   // (see `saveResponseAnswer` below) — this page has no order-details screen
@@ -87,28 +105,47 @@ export default function EventSitePackagesListPage() {
   const [orderList, setOrderList] = useState(initialOrders)
   const [addFormName, setAddFormName] = useState('')
   // null while adding a brand new form; the form's stable id while editing
-  // an existing one (opened via OrderFormOverviewDraft1's edit pencil) —
-  // same convention as `editingQuestionKey` below.
+  // an existing one (opened via OrderFormOverviewDraft1's edit pencil, which
+  // is itself currently hidden — see that component) — same convention as
+  // `editingQuestionKey` below.
   const [editingFormId, setEditingFormId] = useState(null)
-  // The id, not the name — a rename only ever touches its `formsList` entry
-  // (see `handleAddFormSave`), so keying the "currently open" form by id and
-  // deriving its live display name from `formsList` below means the panel
-  // just reflects the rename automatically, with nothing to keep in sync by
-  // hand. It's also what lets `orders` responses stay linked across a rename
-  // (see `formId` in OrderFormOverviewDraft1.jsx/orderUtils.js) — a form's
-  // `formsList` name can drift from what's stored on its `orders` responses,
-  // but its id never does.
-  const [formOverviewId, setFormOverviewId] = useState(null)
-  const formOverviewName = formsList.find(f => f.id === formOverviewId)?.name ?? null
+  // `formOverviewId` (above) comes straight from the :formId route param
+  // now, not local state — a rename only ever touches its `formsList` entry
+  // (see `handleAddFormSave`), so deriving the live display name from
+  // `formsList` below means the panel just reflects the rename
+  // automatically, with nothing to keep in sync by hand. It's also what
+  // lets `orders` responses stay linked across a rename (see `formId` in
+  // OrderFormOverviewDraft1.jsx/orderUtils.js) — a form's `formsList` name
+  // can drift from what's stored on its `orders` responses, but its id
+  // never does.
+  const formOverviewName = formOverviewId ? formsList.find(f => f.id === formOverviewId)?.name ?? null : null
+  const showingFormsList = location.pathname === FORMS_PATH
+  const viewingResponses = location.pathname.endsWith('/responses')
+  const panelOpen = location.pathname.startsWith(FORMS_PATH)
   // The Form Name field's draft on OrderFormOverviewDraft1 itself (renaming
   // moved inline there — see `handleSaveFormName`/`handleCancelFormName`
-  // below). Seeded from the form's current name wherever `formOverviewId`
-  // gets set (`openFormOverview`, and the new-form branch of
-  // `handleAddFormSave`) rather than synced via effect.
+  // below). Reseeded from the form's current name whenever the *route's*
+  // formId changes (a fresh visit or switching forms) — not on every
+  // `formOverviewName` change, or saving a rename would immediately stomp
+  // right back over its own draft.
   const [formNameDraft, setFormNameDraft] = useState('')
+  useEffect(() => {
+    if (formOverviewName != null) setFormNameDraft(formOverviewName)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formOverviewId])
   const isEditingFormName = formOverviewName != null && formNameDraft !== formOverviewName
+  // Which question AllOrderResponsesForFormDraft1 should open on — only
+  // ever set by clicking a question's own Responses button (see
+  // `openViewResponses`), so a direct/bookmarked visit to a form's
+  // /responses URL just leaves this null and that component falls back to
+  // its own first question, same as an unrecognized question would.
   const [viewingQuestion, setViewingQuestion] = useState(null)
   const [questionDraft, setQuestionDraft] = useState(emptyQuestionDraft)
+  // Snapshot of `questionDraft` as it was when the Add/Edit Question screen
+  // opened (see `openAddQuestion`/`openEditQuestion`) — Save stays disabled
+  // until the draft actually diverges from this, same "nothing to save yet"
+  // reasoning as `isEditingFormName` above.
+  const [originalQuestionDraft, setOriginalQuestionDraft] = useState(emptyQuestionDraft)
   // Each question's editable draft (type/required/etc), keyed by question
   // text and then by form id — covers both a question this page created
   // from scratch (no real order data backs it) and an edited override of a
@@ -118,27 +155,33 @@ export default function EventSitePackagesListPage() {
   // null while adding a brand new question; the question's original text
   // while editing an existing one (its own or a real question's override).
   const [editingQuestionKey, setEditingQuestionKey] = useState(null)
+  // Question text deleted per form, keyed by form id — the only way to
+  // actually remove a *real*, order-derived question from the list (see
+  // `handleDeleteQuestion`/OrderFormOverviewDraft1.jsx's `deletedQuestions`
+  // prop), since there's no form-builder here to remove it from `orders`
+  // itself. A custom question this page created is already fully gone once
+  // its `customQuestionsByForm` override is deleted, so this only actually
+  // matters for real ones, but filtering by it either way is simplest.
+  const [deletedQuestionsByForm, setDeletedQuestionsByForm] = useState({})
 
   function openFormsPanel() {
-    setPanelScreen('forms')
+    navigate(FORMS_PATH)
   }
 
   function openAddForm() {
     setEditingFormId(null)
     setAddFormName('')
-    setPanelScreen('add-form')
+    setAddingForm(true)
   }
 
   function openEditForm() {
     setEditingFormId(formOverviewId)
     setAddFormName(formOverviewName)
-    setPanelScreen('add-form')
+    setAddingForm(true)
   }
 
   function openFormOverview(form) {
-    setFormOverviewId(form.id)
-    setFormNameDraft(form.name)
-    setPanelScreen('form-overview')
+    navigate(`${FORMS_PATH}/${form.id}`)
   }
 
   // Inline replacement for the old pencil-opens-AddFormFields rename flow
@@ -159,18 +202,25 @@ export default function EventSitePackagesListPage() {
   function openAddQuestion() {
     setEditingQuestionKey(null)
     setQuestionDraft(emptyQuestionDraft)
-    setPanelScreen('add-question')
+    setOriginalQuestionDraft(emptyQuestionDraft)
+    setAddingQuestion(true)
   }
 
   function openEditQuestion(draft) {
     setEditingQuestionKey(draft.question)
     setQuestionDraft(draft)
-    setPanelScreen('add-question')
+    setOriginalQuestionDraft(draft)
+    setAddingQuestion(true)
   }
 
+  // Reachable only via OrderFormOverviewDraft1's own Responses button, which
+  // is currently hidden there — kept wired (see that component) so
+  // restoring it is just uncommenting the button. Direct navigation to a
+  // form's /responses URL gets here too, just without a specific question
+  // (see `viewingQuestion` above).
   function openViewResponses(question) {
     setViewingQuestion(question)
-    setPanelScreen('view-responses')
+    navigate(`${FORMS_PATH}/${formOverviewId}/responses`)
   }
 
   // AllOrderResponsesForFormDraft1's "View Order"/"View Team"/"View Sponsor"
@@ -216,10 +266,20 @@ export default function EventSitePackagesListPage() {
   }
 
   function handlePanelBack() {
-    if (panelScreen === 'view-responses') setPanelScreen('form-overview')
-    else if (panelScreen === 'add-question') setPanelScreen('form-overview')
-    else if (panelScreen === 'add-form' && editingFormId) setPanelScreen('form-overview')
-    else setPanelScreen('forms')
+    if (addingQuestion) {
+      setAddingQuestion(false)
+      return
+    }
+    if (addingForm) {
+      if (editingFormId) setAddingForm(false)
+      else navigate(FORMS_PATH)
+      return
+    }
+    if (viewingResponses) {
+      navigate(`${FORMS_PATH}/${formOverviewId}`)
+      return
+    }
+    navigate(FORMS_PATH)
   }
 
   // The new form has no responses yet — OrderFormOverviewDraft1 just shows
@@ -237,18 +297,21 @@ export default function EventSitePackagesListPage() {
 
     if (editingFormId) {
       setFormsList(prev => prev.map(f => (f.id === editingFormId ? { ...f, name } : f)))
-      setPanelScreen('form-overview')
+      setAddingForm(false)
       return
     }
 
     const id = `form-${formsList.length + 1}`
-    setFormsList(prev => [
-      ...prev,
-      { id, name, createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
-    ])
-    setFormOverviewId(id)
-    setFormNameDraft(name)
-    setPanelScreen('form-overview')
+    setCreatingForm(true)
+    setTimeout(() => {
+      setFormsList(prev => [
+        ...prev,
+        { id, name, createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
+      ])
+      setAddingForm(false)
+      setCreatingForm(false)
+      navigate(`${FORMS_PATH}/${id}`)
+    }, 800)
   }
 
   function handleAddQuestionSave() {
@@ -260,16 +323,38 @@ export default function EventSitePackagesListPage() {
       existing[question] = { ...questionDraft, question }
       return { ...prev, [formOverviewId]: existing }
     })
-    setPanelScreen('form-overview')
+    setAddingQuestion(false)
   }
 
+  // Removes whichever question is currently open — nothing to delete yet
+  // while adding a brand new one (`editingQuestionKey` null), so this is a
+  // no-op then rather than deleting the wrong (or no) question. Clears any
+  // override on it (a custom question is now fully gone) and adds it to
+  // `deletedQuestionsByForm` (what actually hides a *real*, order-derived
+  // question — see that state's own comment above).
   function handleDeleteQuestion() {
+    if (!editingQuestionKey) {
+      setAddingQuestion(false)
+      return
+    }
     setCustomQuestionsByForm(prev => {
       const existing = { ...(prev[formOverviewId] ?? {}) }
       delete existing[editingQuestionKey]
       return { ...prev, [formOverviewId]: existing }
     })
-    setPanelScreen('form-overview')
+    setDeletedQuestionsByForm(prev => ({
+      ...prev,
+      [formOverviewId]: [...(prev[formOverviewId] ?? []), editingQuestionKey],
+    }))
+    setAddingQuestion(false)
+  }
+
+  // The form disappears from `formsList` (and can't be navigated back to);
+  // its real `orders` responses aren't touched — same "editing here never
+  // touches real order data" limitation as everything else on this screen.
+  function handleDeleteForm() {
+    setFormsList(prev => prev.filter(f => f.id !== formOverviewId))
+    navigate(FORMS_PATH)
   }
 
   const { visibleRowIds, visiblePackages } = useMemo(() => {
@@ -285,33 +370,55 @@ export default function EventSitePackagesListPage() {
   const isEmpty = visibleRowIds.size === 0 && visiblePackages.length === 0
 
   const panelTitle =
-    panelScreen === 'add-form'
+    addingForm
       ? 'Form Details'
-      : panelScreen === 'form-overview'
-      // Static, matching 'add-form' above, now that renaming happens inline
-      // on this same screen — revert: `formOverviewName ?? ''`.
-      ? 'Form Details'
-      : panelScreen === 'add-question'
+      : addingQuestion
       ? 'Question Details'
-      : panelScreen === 'view-responses'
-      ? viewingQuestion ?? ''
+      : formOverviewId
+      // Static, matching 'Add Form' above, now that renaming happens inline
+      // on the form-overview screen itself — same title whether that
+      // screen's showing the form or its responses.
+      ? 'Form Details'
       : 'Forms'
 
+  // Save stays disabled until there's actually something to save — a name
+  // that's still blank, or (when editing) hasn't changed from what's
+  // already on `formsList`. A brand new form's "original" is just '' so
+  // typing anything at all enables it.
+  const addFormOriginalName = editingFormId ? formOverviewName ?? '' : ''
+  const canSaveForm = addFormName.trim() !== '' && addFormName.trim() !== addFormOriginalName
+  // Same reasoning for the question draft — required text present, and the
+  // draft has actually diverged from `originalQuestionDraft` (seeded when
+  // the screen opened, see `openAddQuestion`/`openEditQuestion`).
+  const canSaveQuestion =
+    questionDraft.question.trim() !== '' && JSON.stringify(questionDraft) !== JSON.stringify(originalQuestionDraft)
+
   const panelActions =
-    panelScreen === 'add-form'
-      ? [
-          { name: editingFormId ? 'Save' : 'Save & Continue', type: 'black', action: handleAddFormSave },
-          { name: 'Cancel', type: 'light-grey', action: () => setPanelScreen(editingFormId ? 'form-overview' : 'forms') },
-        ]
-      : panelScreen === 'add-question'
-      ? [
-          { name: 'Save', type: 'black', action: handleAddQuestionSave },
-          { name: 'Cancel', type: 'light-grey', action: () => setPanelScreen('form-overview') },
-          { name: 'Delete Question', type: 'transparent red', action: handleDeleteQuestion },
-        ]
-      : panelScreen === 'view-responses'
+    // Buttons hidden during the simulated create — nothing to Save (already
+    // saving) or Cancel out of mid-"save".
+    creatingForm
       ? []
-      : panelScreen === 'form-overview'
+      : addingForm
+      ? [
+          {
+            name: editingFormId ? 'Save' : 'Save & Continue',
+            type: 'black',
+            action: handleAddFormSave,
+            isDisabled: !canSaveForm,
+          },
+          { name: 'Cancel', type: 'light-grey', action: () => (editingFormId ? setAddingForm(false) : navigate(FORMS_PATH)) },
+        ]
+      : addingQuestion
+      ? [
+          { name: 'Save', type: 'black', action: handleAddQuestionSave, isDisabled: !canSaveQuestion },
+          { name: 'Cancel', type: 'light-grey', action: () => setAddingQuestion(false) },
+          // Only once there's an actual question to delete — creating a
+          // brand new one (`editingQuestionKey` null) has nothing yet.
+          ...(editingQuestionKey ? [{ name: 'Delete Question', type: 'transparent red', action: handleDeleteQuestion }] : []),
+        ]
+      : viewingResponses
+      ? []
+      : formOverviewId
       // While the Form Name field's draft differs from the saved name,
       // Save/Cancel take over from Delete Form — revert: drop this
       // `isEditingFormName` branch back to just the Delete Form action.
@@ -320,7 +427,7 @@ export default function EventSitePackagesListPage() {
             { name: 'Save', type: 'black', action: handleSaveFormName },
             { name: 'Cancel', type: 'light-grey', action: handleCancelFormName },
           ]
-        : [{ name: 'Delete Form', type: 'transparent red', action: () => {} }]
+        : [{ name: 'Delete Form', type: 'transparent red', action: handleDeleteForm }]
       : undefined
 
   return (
@@ -361,22 +468,52 @@ export default function EventSitePackagesListPage() {
       </EntityListPage>
 
       <AppSidePanel
-        isOpen={!!panelScreen}
-        onClose={() => setPanelScreen(null)}
-        onBack={panelScreen === 'forms' || !panelScreen ? undefined : handlePanelBack}
+        isOpen={panelOpen}
+        // Both disabled during the simulated create — nothing to back out
+        // of or close mid-"save" (the timer in `handleAddFormSave` would
+        // still land on the new form afterward regardless, which would be a
+        // confusing jump back if the panel had already navigated away).
+        onClose={creatingForm ? undefined : () => navigate('/orders-forms/event-site-packages')}
+        onBack={creatingForm || !panelOpen || (showingFormsList && !addingForm && !addingQuestion) ? undefined : handlePanelBack}
         title={panelTitle}
         actions={panelActions}
       >
-        {panelScreen === 'forms' ? (
-          <FormsListContent forms={formsList} onAddForm={openAddForm} onSelectForm={openFormOverview} />
-        ) : panelScreen === 'add-form' ? (
+        {creatingForm ? (
+          <div className="efp-loading">
+            <FontAwesomeIcon icon={faCircleNotch} className="efp-spinner" />
+            <div className="efp-loading-text">
+              <div className="efp-loading-title">Loading...</div>
+              <div className="efp-loading-detail">This may take a moment.</div>
+            </div>
+          </div>
+        ) : addingQuestion ? (
+          <AddQuestionFields
+            draft={questionDraft}
+            onChange={patch => setQuestionDraft(prev => ({ ...prev, ...patch }))}
+            onSubmit={handleAddQuestionSave}
+            isEditing={editingQuestionKey != null}
+          />
+        ) : addingForm ? (
           <AddFormFields
             name={addFormName}
             onChangeName={setAddFormName}
             onSubmit={handleAddFormSave}
             isEditing={editingFormId != null}
           />
-        ) : panelScreen === 'form-overview' ? (
+        ) : viewingResponses ? (
+          formOverviewName && (
+            <AllOrderResponsesForFormDraft1
+              key={`${formOverviewId}-${viewingQuestion}`}
+              orders={orderList}
+              formName={formOverviewName}
+              formId={formOverviewId}
+              initialQuestion={viewingQuestion}
+              onViewOrder={viewOrder}
+              onViewEntity={viewEntity}
+              onSaveAnswer={saveResponseAnswer}
+            />
+          )
+        ) : formOverviewId ? (
           formOverviewName && (
             <OrderFormOverviewDraft1
               orders={orderList}
@@ -390,29 +527,11 @@ export default function EventSitePackagesListPage() {
               onChangeFormNameDraft={setFormNameDraft}
               onSubmitFormName={handleSaveFormName}
               extraQuestions={customQuestionsByForm[formOverviewId] ?? {}}
+              deletedQuestions={deletedQuestionsByForm[formOverviewId] ?? []}
             />
           )
-        ) : panelScreen === 'add-question' ? (
-          <AddQuestionFields
-            draft={questionDraft}
-            onChange={patch => setQuestionDraft(prev => ({ ...prev, ...patch }))}
-            onSubmit={handleAddQuestionSave}
-            isEditing={editingQuestionKey != null}
-          />
-        ) : panelScreen === 'view-responses' ? (
-          formOverviewName &&
-          viewingQuestion && (
-            <AllOrderResponsesForFormDraft1
-              key={`${formOverviewId}-${viewingQuestion}`}
-              orders={orderList}
-              formName={formOverviewName}
-              formId={formOverviewId}
-              initialQuestion={viewingQuestion}
-              onViewOrder={viewOrder}
-              onViewEntity={viewEntity}
-              onSaveAnswer={saveResponseAnswer}
-            />
-          )
+        ) : showingFormsList ? (
+          <FormsListContent forms={formsList} onAddForm={openAddForm} onSelectForm={openFormOverview} />
         ) : null}
       </AppSidePanel>
     </>

@@ -108,11 +108,6 @@ export default function OrderFormResponses({ responses, onEditResponses, onSaveA
               className={`ord-form-response-answer${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}`}
               key={j}
               ref={isEditing ? editingTileRef : null}
-              onClick={() =>
-                !isEditing &&
-                !isSaving &&
-                setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
-              }
             >
               <div className="ord-form-response-answer-name">{answer.respondent}</div>
               {isEditing && QUESTION_OPTIONS[entry.question] ? (
@@ -148,9 +143,24 @@ export default function OrderFormResponses({ responses, onEditResponses, onSaveA
                   {answer.value !== answer.respondent && (
                     <div className="ord-form-response-answer-value">{answer.value}</div>
                   )}
+                </div>
+              )}
+
+              {!isEditing && (
+                <div className="ordr1-answer-meta">
                   {answer.editedAt && (
-                    <div className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</div>
+                    <span className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</span>
                   )}
+                  <GSButton
+                    type="white icon ord-form-response-answer-edit-btn"
+                    size="primary"
+                    buttonIcon={faPen}
+                    isFocusable
+                    onClick={() =>
+                      !isSaving &&
+                      setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
+                    }
+                  />
                 </div>
               )}
             </div>

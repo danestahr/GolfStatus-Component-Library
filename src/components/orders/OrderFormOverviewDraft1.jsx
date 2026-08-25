@@ -71,6 +71,7 @@ export default function OrderFormOverviewDraft1({
   onChangeFormNameDraft,
   onSubmitFormName,
   extraQuestions = {},
+  deletedQuestions = [],
 }) {
   const orderQuestions = responsesForFormAcrossOrders(orders, formName, formId).map(q => {
     const override = extraQuestions[q.question]
@@ -93,7 +94,13 @@ export default function OrderFormOverviewDraft1({
       responseTypeLabel: draft.responseType?.label ?? 'Text',
       requiredLabel: draft.required ? 'Required' : 'Not Required',
     }))
-  const questions = [...orderQuestions, ...customQuestions]
+  // `handleDeleteQuestion` (EventSitePackagesListPage.jsx) is what actually
+  // populates this — there's no form-builder here to remove a question from
+  // `orders` itself, so a deleted real question just gets filtered out of
+  // the list instead (a custom question is already fully gone once its
+  // `extraQuestions` override is deleted, so this only does anything for a
+  // real one, but filtering both the same way is simplest).
+  const questions = [...orderQuestions, ...customQuestions].filter(q => !deletedQuestions.includes(q.question))
   const stats = computeFormStats(questions)
 
   // The edit pencil always has something to open: an existing draft if this
@@ -216,7 +223,11 @@ export default function OrderFormOverviewDraft1({
           value={
             questions.length === 0 ? (
               <div className="fov-questions-empty">
-                <GSEmptyList detail="This form does not have any questions." />
+                <GSEmptyList
+                  title="Form Questions"
+                  detail="This form does not have any questions."
+                  actions={[{ title: 'Add Question', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: onAddQuestion }]}
+                />
               </div>
             ) : (
               <div className="fov-questions">
@@ -236,13 +247,19 @@ export default function OrderFormOverviewDraft1({
                           buttonIcon={faPen}
                           onClick={() => onEditQuestion(draftForQuestion(q))}
                         />
-                        <GSButton
+                        {/* Hidden — responses still work, just reached by
+                            appending /responses to a form's own URL instead
+                            (see EventSitePackagesListPage's `openViewResponses`)
+                            while that screen's still being worked on.
+                            `onViewQuestion` is left wired in from the caller,
+                            so restoring this is just uncommenting it. */}
+                        {/* <GSButton
                           type="light-grey"
                           size="primary"
                           title={`Responses (${q.answers.length})`}
                           buttonIcon={faCommentAlt}
                           onClick={() => onViewQuestion(q.question)}
-                        />
+                        /> */}
                       </div>
                     </div>
                   </div>

@@ -7,3 +7,52 @@
   overflow-x: auto;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
+
+// Simulated create delay between Add Form's Save & Continue and landing on
+// the new form's overview (see `creatingForm` in EventSitePackagesListPage.jsx)
+// — matches Figma's "Loading Spinner Overlay" component (cl_loading,
+// node 179:37): xxl spinner, an 8px gap down to the title/detail text
+// block, and a 4px gap between the title and detail lines within it. Same
+// white panel background as the surrounding screens rather than that
+// component's own (backdrop-agnostic) transparent one.
+.efp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $medium-pad;
+  height: 100%;
+  min-height: 320px;
+  background: $white;
+  text-align: center;
+}
+
+.efp-spinner {
+  font-size: $xx-large-display-font;
+  color: $grey-800;
+  animation: efp-spin 0.9s linear infinite;
+}
+
+.efp-loading-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $small-pad;
+}
+
+.efp-loading-title {
+  @include gs-font($small-font, $regular-font-weight, inherit);
+  color: $grey-800;
+}
+
+.efp-loading-detail {
+  @include gs-font($x-small-font, $regular-font-weight, inherit);
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+@keyframes efp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

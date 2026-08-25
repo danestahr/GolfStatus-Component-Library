@@ -42,9 +42,10 @@ export default function FormsListContent({ forms, onAddForm, onSelectForm }) {
         header="Forms"
         pageActions={[
           { buttonTitle: 'Add Form', buttonIcon: faPlus, type: 'black', actionClick: onAddForm },
-          // Stubbed — no export exists for this prototype yet, same
-          // convention as ScorecardListPage's Upload/Download actions.
-          { actionIcon: faArrowCircleDown, type: 'light-grey icon', actionClick: () => {} },
+          // Hidden for now — stubbed (no export exists for this prototype
+          // yet, same convention as ScorecardListPage's Upload/Download
+          // actions); uncomment to bring it back.
+          // { actionIcon: faArrowCircleDown, type: 'light-grey icon', actionClick: () => {} },
         ]}
       />
 

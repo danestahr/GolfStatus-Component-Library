@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
+import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
 import {
@@ -212,17 +213,6 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
         className={`ord-form-response-answer${isAnswerMissing(answer) && !isEditing ? ' ordr1-answer-missing' : ''}${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}`}
         key={key}
         ref={isEditing ? editingTileRef : null}
-        onClick={() =>
-          !isEditing &&
-          !isSaving &&
-          setEditingAnswer({
-            orderId: answer.orderId,
-            responseIndex: answer.responseIndex,
-            answerIndex: answer.answerIndex,
-            draft: answer.value,
-            original: answer.value,
-          })
-        }
       >
         <div className="ord-form-response-answer-name">{answer.respondent}</div>
         {isEditing && isMultipleChoice ? (
@@ -260,6 +250,27 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
             ) : (
               answer.value !== answer.respondent && <div className="ord-form-response-answer-value">{answer.value}</div>
             )}
+          </div>
+        )}
+
+        {!isEditing && (
+          <div className="ordr1-answer-meta">
+            <GSButton
+              type="white icon ord-form-response-answer-edit-btn"
+              size="primary"
+              buttonIcon={faPen}
+              isFocusable
+              onClick={() =>
+                !isSaving &&
+                setEditingAnswer({
+                  orderId: answer.orderId,
+                  responseIndex: answer.responseIndex,
+                  answerIndex: answer.answerIndex,
+                  draft: answer.value,
+                  original: answer.value,
+                })
+              }
+            />
           </div>
         )}
       </div>

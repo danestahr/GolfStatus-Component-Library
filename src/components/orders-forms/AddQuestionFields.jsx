@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faTrash, faCheck, faPlus, faGripLines } from '@fortawesome/free-solid-svg-icons'
+import { faTrash, faCheck, faPlus, faGripLines, faPen } from '@fortawesome/free-solid-svg-icons'
 
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSFormSection from '../../gs-lib/components/gs-form-section'
@@ -33,17 +33,15 @@ export function findResponseTypeOption(label) {
   return RESPONSE_TYPE_OPTIONS.find(o => o.label === label) ?? RESPONSE_TYPE_OPTIONS.find(o => o.value === 'text') ?? null
 }
 
-// One dropdown option — click its label to edit it in place (same
-// tile-click-to-edit convention as OrderFormResponses.jsx's answer tiles:
-// click to turn it into an input, Enter or the input's own black save
-// button commits, Escape or a click outside the tile cancels), tap the
-// trash icon to remove it, or drag the grip handle to reorder (only shown
-// once there's more than one option — same convention as WaveCard/
-// SponsorRow). Both controls hide while editing so they don't compete with
-// Save. A brand new option (added via "Add Option" above) mounts already
-// in this edit state, empty, ready to type — there's no separate "new
-// option" text field; cancelling or committing empty discards it instead
-// of leaving a blank tile behind.
+// One dropdown option — tap the pencil icon to edit it in place (Enter or
+// the input's own black save button commits, Escape or a click outside the
+// tile cancels), tap the trash icon to remove it, or drag the grip handle
+// to reorder (only shown once there's more than one option — same
+// convention as WaveCard/SponsorRow). All three controls hide while
+// editing so they don't compete with Save. A brand new option (added via
+// "Add Option" above) mounts already in this edit state, empty, ready to
+// type — there's no separate "new option" text field; cancelling or
+// committing empty discards it instead of leaving a blank tile behind.
 //
 // Reordering itself is driven entirely by the parent (see AddQuestionFields'
 // pointer-based drag) — this component just renders whatever offsetY/
@@ -141,7 +139,8 @@ function DropdownOptionRow({
           />
         ) : (
           <>
-            <div className="aqf-option-label" onClick={startEditing}>{value}</div>
+            <div className="aqf-option-label">{value}</div>
+            <GSButton size="primary" isFocusable buttonIcon={faPen} onClick={startEditing} />
             <GSButton size="primary" isFocusable buttonIcon={faTrash} onClick={onRemove} />
           </>
         )}
@@ -436,7 +435,7 @@ export default function AddQuestionFields({ draft, onChange, onSubmit, isEditing
                     <div className="aqf-options-empty">
                       <GSEmptyList
                         title="Dropdown Options"
-                        detail="Add dropdown options below."
+                        detail="This dropdown does not have any options."
                         actions={[{ title: 'Add Option', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: addOption }]}
                       />
                     </div>

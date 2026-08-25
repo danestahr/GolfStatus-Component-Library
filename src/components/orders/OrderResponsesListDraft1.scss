@@ -197,10 +197,6 @@
 
     &:hover {
       background: $cyan-800;
-
-      .ordr1-answer-edit-icon {
-        opacity: 0.85;
-      }
     }
 
     // A respondent that hasn't answered yet — outlined instead of filled so
@@ -258,27 +254,6 @@
     &.is-flash {
       animation: ordr1-answer-flash 3s ease forwards;
     }
-  }
-
-  // Right-side meta group (edited-at + edit hint), centered on the tile's
-  // full height regardless of how tall the name/value stack on the left is.
-  .ordr1-answer-meta {
-    position: absolute;
-    top: 50%;
-    right: $large-pad;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    gap: $large-pad;
-  }
-
-  // Hints that the tile is clickable — otherwise nothing about the resting
-  // cyan-700 tile suggests it opens into an edit field.
-  .ordr1-answer-edit-icon {
-    color: $cyan-400;
-    opacity: 0.55;
-    font-size: $small-font;
-    transition: $fast;
   }
 
   .ord-form-response-answer-name,

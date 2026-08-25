@@ -132,10 +132,10 @@
 }
 
 .ord-form-response-answer {
+  position: relative;
   background: $cyan-100;
   border-radius: $medium-radius;
   padding: $large-pad;
-  cursor: pointer;
   transition: $fast;
 
   &:hover {
@@ -190,12 +190,33 @@
 }
 
 .ord-form-response-answer-edited {
-  margin-left: auto;
   flex-shrink: 0;
-  align-self: center;
   font-size: $x-small-font;
   color: $grey-800;
   opacity: 0.5;
   white-space: nowrap;
+}
+
+// Right-side meta group (edited-at + edit button), centered on the tile's
+// full height regardless of how tall the name/value stack on the left is —
+// shared by every "cyan tile" answer view (OrderFormResponses,
+// AllOrderResponsesForFormDraft1, OrderResponsesListDraft1, the latter two
+// via .ordr1-list's own recolor below).
+.ordr1-answer-meta {
+  position: absolute;
+  top: 50%;
+  right: $large-pad;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+}
+
+// Editing is now only reachable by tapping this button — the tile itself
+// no longer opens the inline editor on click — so it stays visible at rest
+// rather than only hinting at hover, same "always show what's clickable"
+// treatment as the trash/pencil buttons on a dropdown option row.
+.ord-form-response-answer-edit-btn {
+  transition: $fast;
 }
 

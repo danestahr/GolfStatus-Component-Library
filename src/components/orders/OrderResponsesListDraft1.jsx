@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
@@ -249,11 +248,6 @@ export default function OrderResponsesListDraft1({
               className={`ord-form-response-answer${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}${isFlashing ? ' is-flash' : ''}${isMissing ? ' ordr1-answer-missing' : ''}`}
               key={j}
               ref={isEditing ? editingTileRef : null}
-              onClick={() =>
-                !isEditing &&
-                !isSaving &&
-                setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
-              }
             >
               <div className="ord-form-response-answer-name">{answer.respondent}</div>
               {isEditing && QUESTION_OPTIONS[entry.question] ? (
@@ -300,7 +294,16 @@ export default function OrderResponsesListDraft1({
                   {answer.editedAt && (
                     <span className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</span>
                   )}
-                  <FontAwesomeIcon icon={faPen} className="ordr1-answer-edit-icon" />
+                  <GSButton
+                    type="white icon ord-form-response-answer-edit-btn"
+                    size="primary"
+                    buttonIcon={faPen}
+                    isFocusable
+                    onClick={() =>
+                      !isSaving &&
+                      setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
+                    }
+                  />
                 </div>
               )}
             </div>

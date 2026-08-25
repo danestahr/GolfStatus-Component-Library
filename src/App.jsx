@@ -88,6 +88,9 @@ export default function App() {
             <Route path="/orders-forms/sponsors" element={<SponsorsListPage />} />
             <Route path="/orders-forms/teams" element={<TeamsListPage />} />
             <Route path="/orders-forms/event-site-packages" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/forms" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/forms/:formId" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/forms/:formId/responses" element={<EventSitePackagesListPage />} />
             <Route path="/orders-draft-1" element={<OrdersDraft1Page />} />
             <Route path="/orders-draft-1/:id" element={<OrdersDraft1Page />} />
             <Route path="/orders-draft-1/:id/responses" element={<OrdersDraft1Page />} />
