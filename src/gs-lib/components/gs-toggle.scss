@@ -1,14 +1,18 @@
 @import '../styles/golfstatus.scss';
 
-$toggle-height: 20px;
-$track-height: 24px;
-$toggle-width: 40px;
+$toggle-border-width: 2px;
+$toggle-indicator-size: 20px;
+$toggle-height: $toggle-indicator-size + ($toggle-border-width * 2);
+$toggle-width: $toggle-indicator-size * 2 + ($toggle-border-width * 2);
 
 gs-toggle{
-  @include v-stack(unset, unset);
+  @include h-stack(unset, center);
   gap: $medium-pad;
   cursor: pointer;
   transition: $fast;
+  &.rowReverse{
+    flex-direction: row-reverse;
+  }
   &:hover{
     opacity: .8
   }
@@ -39,7 +43,7 @@ gs-toggle{
     @include h-stack(unset, unset);
     background: $grey-600;
     border: $light-border;
-    border-width: 2px;
+    border-width: $toggle-border-width;
     border-radius: $large-border-radius;
     overflow: hidden;
     cursor: pointer;
@@ -60,10 +64,10 @@ gs-toggle{
         transform: translateX(-50%);
       }
       .toggle-indicator{
-        height: $toggle-height;
-        width: $toggle-width / 2;
+        height: $toggle-indicator-size;
+        width: $toggle-indicator-size;
         background: $white;
-        border-radius: $large-border-radius;
+        border-radius: 50%;
       }
     }
   }

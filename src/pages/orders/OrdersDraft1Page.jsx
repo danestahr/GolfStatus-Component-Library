@@ -484,6 +484,7 @@ export default function OrdersDraft1Page() {
             initialQuestion={viewingFormQuestion.question}
             onViewOrder={viewOrderDetails}
             onViewEntity={viewEntityAcrossOrders}
+            onSaveAnswer={saveResponseAnswer}
           />
         ) : viewingFormName ? (
           <OrderFormOverviewDraft1

@@ -1,15 +1,13 @@
-import { useEffect, useState } from 'react'
-import { faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { useEffect, useRef, useState } from 'react'
+import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
-import GSButton from '../../gs-lib/components/gs-button'
+import GSField from '../../gs-lib/components/gs-field'
 import {
   responsesForFormAcrossOrders,
   isAnswerMissing,
-  responseTypeFor,
   occurrenceLabelFor,
   viewLinkLabelFor,
-  isQuestionRequired,
   QUESTION_OPTIONS,
   optionBreakdown,
   MISSING_OPTION_FILTER,
@@ -17,6 +15,17 @@ import {
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 import './AllOrderResponsesForFormDraft1.scss'
+
+const SAVE_DELAY_MS = 1000
+
+function saveButtonStyle(canSave) {
+  return {
+    background: '#232323',
+    color: '#fff',
+    opacity: canSave ? 1 : 0.4,
+    cursor: canSave ? 'pointer' : 'not-allowed',
+  }
+}
 
 function matchesQuery(answer, query) {
   if (!query) return true
@@ -72,12 +81,75 @@ function groupAnswersByOrder(answers) {
 // making them page over to it. The caller keys this component by
 // formName+initialQuestion (see OrdersDraft1Page.jsx) so a new question pick
 // remounts it instead of leaving a stale questionIndex from the last visit.
-export default function AllOrderResponsesForFormDraft1({ orders, formName, initialQuestion, onViewOrder, onViewEntity }) {
+// `formId`, when the caller has one, is what it actually queries `orders`
+// by instead of `formName` — same "stays linked across a rename" reasoning
+// as OrderFormOverviewDraft1.jsx; `formName` still does the on-screen
+// labeling either way (see the page header below).
+export default function AllOrderResponsesForFormDraft1({ orders, formName, formId, initialQuestion, onViewOrder, onViewEntity, onSaveAnswer }) {
   const [search, setSearch] = useState('')
-  const [answeredFilter, setAnsweredFilter] = useState('all')
   const [optionFilter, setOptionFilter] = useState('all')
+  // Identifies the answer being edited by its home order/entry/answer
+  // indices (see `responsesForFormAcrossOrders` in orderUtils.js) rather
+  // than its position in this rolled-up, filtered list — same tile-click-
+  // to-edit convention as OrderFormResponses.jsx (click to turn a tile into
+  // an input, Enter/the checkmark commits after a simulated save delay,
+  // Escape/a click outside cancels), just keyed for a cross-order list
+  // instead of a single order's own response array.
+  const [editingAnswer, setEditingAnswer] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const editingTileRef = useRef(null)
 
-  const allQuestions = responsesForFormAcrossOrders(orders, formName)
+  useEffect(() => {
+    if (!editingAnswer) return
+
+    function handleClickOutside(e) {
+      if (editingTileRef.current && !editingTileRef.current.contains(e.target)) {
+        cancelAnswerEdit()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  })
+
+  function isEditingAnswer(answer) {
+    return (
+      editingAnswer?.orderId === answer.orderId &&
+      editingAnswer?.responseIndex === answer.responseIndex &&
+      editingAnswer?.answerIndex === answer.answerIndex
+    )
+  }
+
+  function cancelAnswerEdit() {
+    if (isSaving) return
+    setEditingAnswer(null)
+  }
+
+  function saveAnswerEdit() {
+    const { orderId, responseIndex, answerIndex, draft } = editingAnswer
+    setIsSaving(true)
+    setTimeout(() => {
+      onSaveAnswer(orderId, responseIndex, answerIndex, draft)
+      setEditingAnswer(null)
+      setIsSaving(false)
+    }, SAVE_DELAY_MS)
+  }
+
+  // Selecting a dropdown option is already a complete, deliberate choice —
+  // unlike free text there's no "still typing" state to wait out — so it
+  // saves immediately instead of waiting on a separate confirm button.
+  function selectAnswerOption(answer, value) {
+    setEditingAnswer(prev => ({ ...prev, draft: value }))
+    setIsSaving(true)
+    setTimeout(() => {
+      onSaveAnswer(answer.orderId, answer.responseIndex, answer.answerIndex, value)
+      setEditingAnswer(null)
+      setIsSaving(false)
+    }, SAVE_DELAY_MS)
+  }
+
+  const allQuestions = responsesForFormAcrossOrders(orders, formName, formId)
   const [questionIndex, setQuestionIndex] = useState(() => {
     const idx = initialQuestion ? allQuestions.findIndex(q => q.question === initialQuestion) : 0
     return idx === -1 ? 0 : idx
@@ -94,14 +166,8 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
     setOptionFilter('all')
   }, [questionIndex])
 
-  const isRequired = currentQuestion ? isQuestionRequired(currentQuestion.question) : false
   const questionOptions = currentQuestion ? QUESTION_OPTIONS[currentQuestion.question] : null
   const isMultipleChoice = !!questionOptions
-  // A fixed-choice question is better sliced by which option was picked than
-  // by answered/unanswered, so the option-value tabs take over for it
-  // entirely — a required question is expected to end up fully answered
-  // anyway, so that filter is skipped there too regardless of question type.
-  const effectiveAnsweredFilter = isMultipleChoice || isRequired ? 'all' : answeredFilter
 
   // The "No Response" bar filters to just the missing answers via a sentinel
   // value (MISSING_OPTION_FILTER) that can't collide with a real option
@@ -112,25 +178,10 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
     return answer.value === optionFilter
   }
 
-  const answeredCount = currentQuestion ? currentQuestion.answers.filter(a => !isAnswerMissing(a)).length : 0
-  const unansweredCount = currentQuestion ? currentQuestion.answers.filter(isAnswerMissing).length : 0
-  const filteredCount = isMultipleChoice
-    ? currentQuestion.answers.filter(matchesOptionFilter).length
-    : effectiveAnsweredFilter === 'answered'
-    ? answeredCount
-    : effectiveAnsweredFilter === 'unanswered'
-    ? unansweredCount
-    : answeredCount + unansweredCount
-
   const visibleAnswers = currentQuestion
     ? currentQuestion.answers
         .filter(answer => matchesQuery(answer, query))
-        .filter(answer => {
-          if (isMultipleChoice) return matchesOptionFilter(answer)
-          if (effectiveAnsweredFilter === 'answered') return !isAnswerMissing(answer)
-          if (effectiveAnsweredFilter === 'unanswered') return isAnswerMissing(answer)
-          return true
-        })
+        .filter(answer => !isMultipleChoice || matchesOptionFilter(answer))
     : []
   const orderGroups = groupAnswersByOrder(visibleAnswers)
 
@@ -153,16 +204,64 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
   }
 
   function renderAnswerTile(answer, key) {
+    const isEditing = isEditingAnswer(answer)
+    const canSave = isEditing && !isSaving && editingAnswer.draft !== editingAnswer.original
+
     return (
-      <div className={`ord-form-response-answer${isAnswerMissing(answer) ? ' ordr1-answer-missing' : ''}`} key={key}>
+      <div
+        className={`ord-form-response-answer${isAnswerMissing(answer) && !isEditing ? ' ordr1-answer-missing' : ''}${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}`}
+        key={key}
+        ref={isEditing ? editingTileRef : null}
+        onClick={() =>
+          !isEditing &&
+          !isSaving &&
+          setEditingAnswer({
+            orderId: answer.orderId,
+            responseIndex: answer.responseIndex,
+            answerIndex: answer.answerIndex,
+            draft: answer.value,
+            original: answer.value,
+          })
+        }
+      >
         <div className="ord-form-response-answer-name">{answer.respondent}</div>
-        <div className="ord-form-response-answer-row">
-          {isAnswerMissing(answer) ? (
-            <div className="ordr1-answer-placeholder">No response yet</div>
-          ) : (
-            answer.value !== answer.respondent && <div className="ord-form-response-answer-value">{answer.value}</div>
-          )}
-        </div>
+        {isEditing && isMultipleChoice ? (
+          <GSField
+            label={currentQuestion.question}
+            isEditable
+            type="select"
+            options={questionOptions}
+            selectedOption={questionOptions.find(o => o.value === editingAnswer.draft) ?? null}
+            onChange={option => selectAnswerOption(answer, option?.value ?? '')}
+            isSearchable={false}
+            isDisabled={isSaving}
+            menuPortalTarget={document.body}
+            menuPosition="fixed"
+            disabled={isSaving}
+          />
+        ) : isEditing ? (
+          <GSField
+            label={currentQuestion.question}
+            isEditable
+            value={editingAnswer.draft}
+            onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
+            onSubmit={canSave ? saveAnswerEdit : undefined}
+            onKeyDown={e => e.key === 'Escape' && cancelAnswerEdit()}
+            rightIcon={faCheck}
+            rightIconClick={canSave ? saveAnswerEdit : undefined}
+            buttonStyle={saveButtonStyle(canSave)}
+            disabled={isSaving}
+            autoFocus
+          />
+        ) : (
+          <div className="ord-form-response-answer-row">
+            {isAnswerMissing(answer) ? (
+              <div className="ordr1-answer-placeholder">No response yet</div>
+            ) : (
+              answer.value !== answer.respondent && <div className="ord-form-response-answer-value">{answer.value}</div>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -175,74 +274,68 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
     setQuestionIndex(i => Math.min(allQuestions.length - 1, i + 1))
   }
 
+  // The filter tile only ever shows for a multiple-choice question — a free-
+  // text/number question has no fixed value set to break down this way, so
+  // it skips straight to the search bar and response list with nothing to
+  // filter by.
   const breakdown = currentQuestion ? optionBreakdown(currentQuestion.question, currentQuestion.answers) : null
+
+  // Each bar's fill sits at its own slice of the whole 0-100% range, one
+  // after another in bar order, rather than every fill starting back at the
+  // track's left edge — so the run of bars reads as one distribution added
+  // up across rows (Figma "Answer Breakdown" component,
+  // node 2450:51922) instead of a set of independent 0-N gauges.
+  let cumulativePct = 0
+  const barsWithOffset = breakdown
+    ? breakdown.bars.map(bar => {
+        const pct = breakdown.total ? (bar.count / breakdown.total) * 100 : 0
+        const offsetPct = cumulativePct
+        cumulativePct += pct
+        return { ...bar, pct, offsetPct }
+      })
+    : []
 
   return (
     <div className="ordr1-list aof-list">
       <GSActionBar
         type="x-large-pad H3"
         header={
-          <>
-            {`${formName} Responses`}
-            {currentQuestion && (
+          currentQuestion && (
+            <>
+              {currentQuestion.question}
               <div className="aof-answer-summary">
-                {filteredCount} {filteredCount === 1 ? 'Response' : 'Responses'}
+                {hasMultipleQuestions ? `${questionIndex + 1} of ${allQuestions.length} Questions | ${formName}` : formName}
               </div>
-            )}
-          </>
+            </>
+          )
+        }
+        pageActions={
+          hasMultipleQuestions
+            ? [
+                {
+                  actionIcon: faChevronLeft,
+                  actionClick: goToPrevQuestion,
+                  type: 'light-grey icon',
+                  isDisabled: questionIndex === 0,
+                },
+                {
+                  actionIcon: faChevronRight,
+                  actionClick: goToNextQuestion,
+                  type: 'light-grey icon',
+                  isDisabled: questionIndex === allQuestions.length - 1,
+                },
+              ]
+            : []
         }
       />
-
-      <div className="ordr1-list-search">
-        <GSinput
-          leftIcon={faMagnifyingGlass}
-          rightIcon={search ? faXmark : null}
-          rightIconClick={() => setSearch('')}
-          placeholder="Search by respondent, buyer, or response..."
-          textValue={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
 
       <div className="ordr1-list-body">
         <div className="ordr1-list-groups">
           <div className="ordr1-package">
-            <GSActionBar
-              type="aof-question-nav"
-              header={
-                currentQuestion && (
-                  <>
-                    {currentQuestion.question}
-                    <div className="aof-question-type">
-                      {responseTypeFor(currentQuestion.question)} ({isRequired ? 'Required' : 'Optional'})
-                    </div>
-                  </>
-                )
-              }
-              pageActions={
-                hasMultipleQuestions
-                  ? [
-                      {
-                        actionIcon: faChevronLeft,
-                        actionClick: goToPrevQuestion,
-                        type: 'light-grey icon',
-                        isDisabled: questionIndex === 0,
-                      },
-                      {
-                        actionIcon: faChevronRight,
-                        actionClick: goToNextQuestion,
-                        type: 'light-grey icon',
-                        isDisabled: questionIndex === allQuestions.length - 1,
-                      },
-                    ]
-                  : []
-              }
-            />
-
             {breakdown && (
               <div className="ordr1-question-tile aof-option-bars-tile">
                 <div className="aof-option-bars">
-                  {breakdown.bars.map(bar => {
+                  {barsWithOffset.map(bar => {
                     const isActive = optionFilter === bar.value
                     return (
                       <button
@@ -251,14 +344,16 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
                         key={bar.label}
                         onClick={() => setOptionFilter(isActive ? 'all' : bar.value)}
                       >
-                        <div className="aof-option-bar-label">{bar.label}</div>
+                        <div className="aof-option-bar-header">
+                          <div className="aof-option-bar-label">{bar.label}</div>
+                          <div className="aof-option-bar-count">{bar.count}</div>
+                        </div>
                         <div className="aof-option-bar-track">
                           <div
                             className="aof-option-bar-fill"
-                            style={{ width: `${breakdown.total ? (bar.count / breakdown.total) * 100 : 0}%` }}
+                            style={{ left: `${bar.offsetPct}%`, width: `${bar.pct}%` }}
                           />
                         </div>
-                        <div className="aof-option-bar-count">{bar.count}</div>
                       </button>
                     )
                   })}
@@ -266,34 +361,20 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, initi
               </div>
             )}
 
+            <div className="ordr1-list-search">
+              <GSinput
+                leftIcon={faMagnifyingGlass}
+                rightIcon={search ? faXmark : null}
+                rightIconClick={() => setSearch('')}
+                placeholder="Search by respondent, buyer, or response..."
+                textValue={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+
             {currentQuestion && (
               <div className="ordr1-forms">
                 <div className="ordr1-form-section">
-                  {!isMultipleChoice && !isRequired && (
-                    <div className="aof-answer-meta">
-                      <div className="aof-answer-filter-tabs">
-                        <GSButton
-                          type={answeredFilter === 'all' ? 'black' : 'light-grey'}
-                          isFocusable
-                          title="All"
-                          onClick={() => setAnsweredFilter('all')}
-                        />
-                        <GSButton
-                          type={answeredFilter === 'answered' ? 'black' : 'light-grey'}
-                          isFocusable
-                          title="Answered"
-                          onClick={() => setAnsweredFilter('answered')}
-                        />
-                        <GSButton
-                          type={answeredFilter === 'unanswered' ? 'black' : 'light-grey'}
-                          isFocusable
-                          title="Unanswered"
-                          onClick={() => setAnsweredFilter('unanswered')}
-                        />
-                      </div>
-                    </div>
-                  )}
-
                   {orderGroups.length === 0 ? (
                     <div className="ordr1-question-tile">
                       <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>

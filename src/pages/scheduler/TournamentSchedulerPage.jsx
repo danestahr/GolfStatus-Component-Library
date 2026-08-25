@@ -2351,7 +2351,7 @@ export default function TournamentSchedulerPage() {
                         <div className="sched-round-group-header-desc">
                           {section.rounds.length === 1
                             ? `All teams can play in Round ${roundNumberOf(section.rounds[0])}`
-                            : `Teams can play once in Round ${roundNumberOf(section.rounds[0])} (${formatOxfordList(section.rounds.map(roundGroupLetter))})`}
+                            : `Teams can play in either Round ${formatOxfordList(section.rounds.map(roundGroupLetter))}`}
                         </div>
                       </div>
                     }

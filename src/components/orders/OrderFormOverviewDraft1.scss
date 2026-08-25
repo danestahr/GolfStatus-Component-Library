@@ -58,6 +58,24 @@
   display: flex;
   flex-direction: column;
   gap: $medium-large-pad;
+  // Explicit, since this now sits as a GSField's customView value — that
+  // chain (gs-field/.field/.field-value) is inline-flex (shrink-to-fit), so
+  // without this the column narrows to its widest tile instead of filling
+  // the section like it did as OrderFormSection's direct (flex, non-inline)
+  // child.
+  width: 100%;
+}
+
+.fov-questions-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 230px;
+  background: $grey-100;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
+  text-align: center;
+  width: 100%;
 }
 
 .fov-question-header {

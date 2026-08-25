@@ -1,21 +1,9 @@
 @import '../../gs-lib/styles/golfstatus.scss';
 
-// All/Answered/Unanswered filter tabs plus the response count for whichever
-// of those is selected — sits directly in the grey form-section, above the
-// white question tile, rather than inside it.
-.aof-answer-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: $medium-large-pad;
-}
-
-// e.g. "20 Responses" — reflects whichever of All/Answered/Unanswered is
-// currently selected (see `filteredCount` in AllOrderResponsesForFormDraft1.jsx).
-// Sits directly under the page's "{Form Name} Responses" header rather than
-// down by the filter tabs, so the total reads as a page-level stat rather
-// than something scoped to the answered/unanswered toggle next to it.
+// e.g. "1/2 Questions | Player Details" — sits under the page header's
+// question title (see AllOrderResponsesForFormDraft1.jsx), giving the
+// position-in-form and form name their own de-emphasized line rather than
+// competing with the question text above them.
 .aof-answer-summary {
   margin-top: $x-small-pad;
   font-size: $small-font;
@@ -24,33 +12,17 @@
   opacity: 0.7;
 }
 
-.aof-answer-filter-tabs {
-  display: flex;
-  align-items: center;
-  gap: $medium-pad;
-}
-
-// Question-nav bar (see AllOrderResponsesForFormDraft1.jsx) — no pad-class
-// passed in `type`, so this bar has zero built-in padding; a fixed 24px gap
-// to the grey section below stands in for it instead of relying on padding.
-.aof-question-nav {
-  margin-bottom: $x-large-pad;
-
-  // GSActionBar's built-in H-classes set an inline font-size via
-  // defaultTypography, so this skips those and sets its own class instead.
-  .head {
-    font-size: 16px;
-  }
-}
-
-// "Text Response" / "Number Response" / "Multiple Choice" — the question's
-// answer-type label under its text (see responseTypeFor in orderUtils.js).
-.aof-question-type {
-  margin-top: $x-small-pad;
-  font-size: $small-font;
-  font-weight: $regular-font-weight;
-  color: $grey-800;
-  opacity: 0.7;
+// The search bar sits below the graphs (see AllOrderResponsesForFormDraft1.jsx)
+// inside .ordr1-package instead of OrderResponsesListDraft1's usual spot
+// above it — .ordr1-package already insets 24px, so pull this back out to
+// the panel's true edge with a negative margin; its own horizontal padding
+// (from the shared .ordr1-list-search rule) re-creates the same 24px inset
+// for the input itself, keeping it aligned with the bars/tiles around it.
+// It already carries its own bottom border (see .ordr1-list-search), which
+// doubles as the divider between it and the response list below.
+.ordr1-package > .ordr1-list-search {
+  margin-left: (-$x-large-pad);
+  margin-right: (-$x-large-pad);
 }
 
 // The currently-viewed question's answer breakdown, one bar per fixed
@@ -58,8 +30,14 @@
 // questions (see `optionBreakdown` in orderUtils.js); a text/number question
 // has no fixed value set to break down this way. Sits in its own white tile
 // (reusing .ordr1-question-tile) same as the per-order answer tiles below it.
+// No padding of its own — the bar rows provide their own — but a bottom
+// border/gap caps it off as its own section, same divider convention as
+// .ordr1-package, ahead of the search bar below it.
 .aof-option-bars-tile {
+  padding: 0;
+  padding-bottom: $x-large-pad;
   margin-bottom: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .aof-option-bars {
@@ -69,12 +47,16 @@
 }
 
 // Each bar row doubles as a filter control (see `setOptionFilter` in
-// AllOrderResponsesForFormDraft1.jsx) — a plain <button> reset back to the
-// grid layout, with a highlight for whichever option is currently filtered.
+// AllOrderResponsesForFormDraft1.jsx) — a plain <button> reset back to a
+// plain column layout (label+count row, track row below it), with a
+// highlight for whichever option is currently filtered. Matches the Figma
+// "Answer Breakdown" component (node 2450:51922): the fill's `left` comes
+// from the bar's own cumulative offset (see `barsWithOffset` in the JSX),
+// not a fixed 0 — so each bar's segment picks up right where the previous
+// one's left off instead of every bar re-starting from the track's left edge.
 .aof-option-bar-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 32px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   gap: $medium-pad;
   width: 100%;
   appearance: none;
@@ -85,13 +67,25 @@
   margin: (-$x-small-pad) (-$small-pad);
   font-family: $font-family;
   cursor: pointer;
-  transition: $fast;
+  // Only color/background fade — NOT padding/margin (the is-active state
+  // below changes those to grow its highlight). `$fast`'s all-properties
+  // shorthand used to animate that size change too, visibly growing the row
+  // and shoving its siblings down the flex column as it did; snapping the
+  // size change instantly while still fading the highlight in reads as a
+  // deliberate selection instead of a layout hiccup.
+  transition: background-color 0.15s ease;
 
   &:hover {
     background: $grey-100;
   }
 
+  // The currently-selected filter option (see `optionFilter` in
+  // AllOrderResponsesForFormDraft1.jsx) gets extra breathing room around its
+  // highlight — 24px vs. the other rows' plain hover inset — so it reads as
+  // the one option the list is filtered down to.
   &.is-active {
+    padding: $x-large-pad;
+    margin: (-$x-large-pad);
     background: rgba($cyan-700, 0.1);
 
     .aof-option-bar-label,
@@ -105,33 +99,48 @@
   }
 }
 
+.aof-option-bar-header {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  width: 100%;
+}
+
 .aof-option-bar-label {
+  flex: 1;
+  min-width: 0;
   font-size: $small-font;
+  font-weight: $bold-font-weight;
   color: $grey-800;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.aof-option-bar-count {
+  flex-shrink: 0;
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
 .aof-option-bar-track {
-  height: 8px;
-  border-radius: $small-radius;
+  position: relative;
+  height: 16px;
+  border-radius: $huge-radius;
   background: $grey-100;
-  overflow: hidden;
+  width: 100%;
 }
 
 .aof-option-bar-fill {
-  height: 100%;
-  border-radius: $small-radius;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: $huge-radius;
   background: $cyan-700;
-  transition: width 0.3s ease;
-}
-
-.aof-option-bar-count {
-  font-size: $small-font;
-  font-weight: $bold-font-weight;
-  color: $grey-800;
-  text-align: right;
+  transition: left 0.3s ease, width 0.3s ease;
 }
 
 // The "No Response" bar reads as an absence, not just another option — grey

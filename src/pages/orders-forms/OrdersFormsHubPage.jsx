@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUserTie, faPeopleGroup, faHandHoldingDollar } from '@fortawesome/free-solid-svg-icons'
+import { faUserTie, faPeopleGroup, faHandHoldingDollar, faGlobe } from '@fortawesome/free-solid-svg-icons'
 
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import './OrdersFormsHubPage.scss'
@@ -8,7 +8,7 @@ import './OrdersFormsHubPage.scss'
 const TILES = [
   { to: '/orders-forms/sponsors', icon: faUserTie, name: 'Sponsors', description: 'Everyone who purchased a sponsorship package.' },
   { to: '/orders-forms/teams', icon: faPeopleGroup, name: 'Teams', description: 'Everyone who registered a team.' },
-  // Event Site & Packages tile hidden for now — will reveal later.
+  { to: '/orders-forms/event-site-packages', icon: faGlobe, name: 'Event Site & Packages', description: 'Manage the event site, registration packages, and related pages.' },
   { to: '/orders-draft-1', icon: faHandHoldingDollar, name: 'Orders & Payouts', description: 'Every order placed, and the funds available to pay out.' },
 ]
 

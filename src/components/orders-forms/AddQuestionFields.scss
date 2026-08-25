@@ -1,0 +1,84 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.aqf-options-box {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+
+  // Dragging an option selects text on the page otherwise, since pointer-
+  // event dragging (see AddQuestionFields.jsx) has no native browser-level
+  // equivalent of drag-and-drop's automatic selection suppression.
+  &--reordering {
+    user-select: none;
+  }
+}
+
+.aqf-options-empty {
+  padding: 120px $x-large-pad;
+  text-align: center;
+  color: $grey-800;
+  font-size: $small-font;
+  background: $grey-50;
+  border-radius: $medium-radius;
+}
+
+// The translateY (see offsetY in AddQuestionFields.jsx) is applied HERE, to
+// the item, rather than to the tile alone — so the grabber travels with its
+// tile instead of being left behind, stranded on top of whatever swapped
+// into its old slot. Every item, including the one being dragged, moves the
+// same way (a plain translateY within the list, clamped to the list's own
+// slot positions), so one transition rule covers all of them.
+.aqf-option-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.aqf-option-row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  padding: $x-large-pad;
+  background: $grey-50;
+  border-radius: $medium-radius;
+
+  gs-input {
+    flex: 1;
+  }
+}
+
+.aqf-option-label {
+  flex: 1;
+  min-width: 0;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  cursor: pointer;
+  padding: $small-pad 0;
+}
+
+.aqf-option-drag-handle {
+  display: flex;
+  align-items: center;
+}
+
+// The "Active" toggle's own label ("Active") on the Add/Edit Question
+// header — scoped to this specific action bar (not gs-toggle.scss's shared
+// default) since other toggles elsewhere in the app aren't asking for this.
+.aqf-question-header .toggle-label {
+  font-size: $small-font;
+}
+
+// Form section action bar titles on the form slideouts (e.g. "Response
+// Details", "Dropdown Responses") — bumped up from gs-action-bar's shared
+// default to 16px, scoped to .ordr1-list so it only affects these form
+// slideouts, not every other action bar in the app. Button text (e.g. "Add
+// Option") is left untouched.
+.ordr1-list gs-form-section > gs-action-bar {
+  .head {
+    font-size: $medium-font;
+  }
+}

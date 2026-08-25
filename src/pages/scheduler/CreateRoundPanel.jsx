@@ -373,6 +373,7 @@ export default function CreateRoundPanel({
           // to an existing one to link it there instead.
           {
             label: 'Round Number',
+            description: 'A shared round number splits into A/B/C, etc. Players and teams can only play once per round number.',
             required: true,
             isEditable: true,
             customView: true,

@@ -22,7 +22,7 @@ import { handleEnterKey } from "../helpers/Utilities";
  * 
  * @property {Boolean} disabled disable toggle
  * 
- * @property {boolean} rowReverse reverse the layout so the label is left of the toggl
+ * @property {boolean} rowReverse mirror the layout: moves the label to the other side of the toggle, and swaps the order of the switch and its description
  * 
  * @property {object} style styling fo rthe component
 
@@ -60,6 +60,7 @@ export default class GStoggle extends Component {
     return (
       <gs-toggle
         tabindex={0}
+        className={rowReverse ? "rowReverse" : ""}
         onClick={disabled ? null : onClick}
         onKeyPress={e => {
           if(!disabled) {

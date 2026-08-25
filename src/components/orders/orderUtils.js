@@ -77,11 +77,11 @@ export function viewLinkLabelFor(fillLevel) {
 // Label shown under a question's text wherever it's displayed on its own
 // (see the question-nav bar in AllOrderResponsesForFormDraft1.jsx) — a
 // question with a fixed answer set (QUESTION_OPTIONS) renders as a select
-// everywhere it's edited, so it reads as "Multiple Choice"; anything else is
+// everywhere it's edited, so it reads as "Dropdown"; anything else is
 // free text, i.e. "Text Response". Numeric-only questions would read as
 // "Number Response" the same way once one exists in the data.
 export function responseTypeFor(question) {
-  return QUESTION_OPTIONS[question] ? 'Multiple Choice' : 'Text Response'
+  return QUESTION_OPTIONS[question] ? 'Dropdown' : 'Text Response'
 }
 
 // Which questions a respondent must answer before their registration/order
@@ -96,34 +96,49 @@ export function isQuestionRequired(question) {
   return REQUIRED_QUESTIONS.has(question)
 }
 
-// Every response recorded for a given form name, gathered across every
-// order rather than just one — powers the "view all orders' responses to
-// this form" panel opened from a form section's arrow button (see
+// Every response recorded for a given form, gathered across every order
+// rather than just one — powers the "view all orders' responses to this
+// form" panel opened from a form section's arrow button (see
 // OrderResponsesListDraft1.jsx / AllOrderResponsesForFormDraft1.jsx). Groups
 // by question (a form can carry more than one) and tags each answer with
-// the order it came from so the cross-order list can still show whose
-// response it is.
-export function responsesForFormAcrossOrders(orders, formName) {
+// the order it came from, plus its `responseIndex`/`answerIndex` within that
+// order's own `formResponses`/`answers` arrays (indices into the UNFILTERED
+// arrays, not this question's position in the list) — so an edit made from
+// the cross-order view can still be written back with the same
+// (orderId, responseIndex, answerIndex) shape `saveResponseAnswer` expects.
+//
+// Matches by `formId` when the caller has one (mockOrders.js stamps every
+// formResponses entry with the stable id of the form it belongs to, from
+// mockForms.js) — that id never changes even if the form's display name
+// does, unlike `formName` alone, so a caller that can rename its forms
+// (EventSitePackagesListPage) stays linked to the right responses across a
+// rename. Callers that only ever have the name (reached via "View Form" on
+// an order that already carries that exact name — OrdersDraft1Page/Teams/
+// SponsorsListPage, none of which offer renaming) just omit `formId` and
+// match by name as before.
+export function responsesForFormAcrossOrders(orders, formName, formId) {
   const questions = []
   orders.forEach(order => {
-    order.formResponses
-      .filter(entry => entry.formName === formName)
-      .forEach(entry => {
-        let question = questions.find(q => q.question === entry.question)
-        if (!question) {
-          question = { question: entry.question, fillLevel: entry.fillLevel, answers: [] }
-          questions.push(question)
-        }
-        entry.answers.forEach(answer => {
-          question.answers.push({
-            ...answer,
-            orderId: order.id,
-            buyerName: order.buyerName,
-            businessName: order.businessName,
-            packageName: entry.packageName,
-          })
+    order.formResponses.forEach((entry, responseIndex) => {
+      const matchesForm = formId != null ? entry.formId === formId : entry.formName === formName
+      if (!matchesForm) return
+      let question = questions.find(q => q.question === entry.question)
+      if (!question) {
+        question = { question: entry.question, fillLevel: entry.fillLevel, answers: [] }
+        questions.push(question)
+      }
+      entry.answers.forEach((answer, answerIndex) => {
+        question.answers.push({
+          ...answer,
+          orderId: order.id,
+          responseIndex,
+          answerIndex,
+          buyerName: order.buyerName,
+          businessName: order.businessName,
+          packageName: entry.packageName,
         })
       })
+    })
   })
   return questions
 }

@@ -1,0 +1,62 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.fp-list {
+  display: flex;
+  flex-direction: column;
+
+  > gs-action-bar {
+    border-bottom: $light-border;
+  }
+}
+
+.fp-list-search {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: $white;
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  gs-input {
+    width: 100%;
+  }
+}
+
+.fp-list-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.fp-row {
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: $fast;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: $grey-50;
+  }
+}
+
+.fp-row-name {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.fp-row-sub {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+}
+
+.fp-list-empty {
+  padding: $xx-large-pad;
+  text-align: center;
+  color: $grey-500;
+  font-size: $small-font;
+}

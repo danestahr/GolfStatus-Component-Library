@@ -11,6 +11,7 @@ import { orderActionsFor } from '../../components/orders/OrderDetailPanel.jsx'
 import OrderDetailPanelDraft1 from '../../components/orders/OrderDetailPanelDraft1.jsx'
 import OrderResponsesListDraft1 from '../../components/orders/OrderResponsesListDraft1.jsx'
 import OrderFormOverviewDraft1 from '../../components/orders/OrderFormOverviewDraft1.jsx'
+import AddQuestionFields, { emptyQuestionDraft } from '../../components/orders-forms/AddQuestionFields.jsx'
 import AllOrderResponsesForFormDraft1 from '../../components/orders/AllOrderResponsesForFormDraft1.jsx'
 import OrderFormResponseEditFieldsDraft1 from '../../components/orders/OrderFormResponseEditFieldsDraft1.jsx'
 import { unassignedPlayers, waitlistEntries, registeredTeams } from '../../data/mockTeams.js'
@@ -44,6 +45,17 @@ export default function TeamsListPage() {
   const [editingResponse, setEditingResponse] = useState(null)
   const [viewingFormName, setViewingFormName] = useState(null)
   const [viewingFormQuestion, setViewingFormQuestion] = useState(null)
+  const [addingQuestion, setAddingQuestion] = useState(false)
+  const [questionDraft, setQuestionDraft] = useState(emptyQuestionDraft)
+  // Each question's editable draft (type/required/etc), keyed by question
+  // text and then by form name — covers both a question this page created
+  // from scratch (no real order data backs it) and an edited override of a
+  // real question's metadata (OrderFormOverviewDraft1 merges the override
+  // in; the real answers/respondent counts always still come from `orders`).
+  const [customQuestionsByForm, setCustomQuestionsByForm] = useState({})
+  // null while adding a brand new question; the question's original text
+  // while editing an existing one (its own or a real question's override).
+  const [editingQuestionKey, setEditingQuestionKey] = useState(null)
   const [showTeamOverview, setShowTeamOverview] = useState(false)
 
   // Scroll position of the AppSidePanel body, kept per "screen" so a forward
@@ -59,6 +71,7 @@ export default function TeamsListPage() {
   function currentScreenKey() {
     if (showTeamOverview) return `team-overlay:${selectedTeam?.id}`
     if (editingResponse) return `edit:${editingResponse.orderId}`
+    if (addingQuestion) return `addQuestion:${viewingFormName}`
     if (viewingFormQuestion) return `formQuestion:${viewingFormQuestion.formName}:${viewingFormQuestion.question}`
     if (viewingFormName) return `form:${viewingFormName}`
     if (viewingOrderResponses) return `responses:${viewingOrderId}`
@@ -125,6 +138,7 @@ export default function TeamsListPage() {
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
+    setAddingQuestion(false)
     setShowTeamOverview(false)
   }
 
@@ -188,6 +202,7 @@ export default function TeamsListPage() {
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
+    setAddingQuestion(false)
     setShowTeamOverview(false)
     setViewingOrderId(orderId)
     setViewingOrderResponses(false)
@@ -207,6 +222,7 @@ export default function TeamsListPage() {
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
+    setAddingQuestion(false)
     setShowTeamOverview(false)
     setViewingOrderId(orderId)
     setViewingOrderResponses(true)
@@ -229,6 +245,47 @@ export default function TeamsListPage() {
     openOrderResponses(selectedTeam.orderId, { direct: true, playerName: player.name })
   }
 
+  // The Form Overview's "Add Question" button — opens as another screen in
+  // this same panel rather than a panel of its own (see AddQuestionFields).
+  function openAddQuestion() {
+    saveCurrentScroll()
+    setEditingQuestionKey(null)
+    setQuestionDraft(emptyQuestionDraft)
+    setAddingQuestion(true)
+  }
+
+  function openEditQuestion(draft) {
+    saveCurrentScroll()
+    setEditingQuestionKey(draft.question)
+    setQuestionDraft(draft)
+    setAddingQuestion(true)
+  }
+
+  function saveQuestion() {
+    const question = questionDraft.question.trim()
+    if (!question) return
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
+    setCustomQuestionsByForm(prev => {
+      const existing = { ...(prev[viewingFormName] ?? {}) }
+      if (editingQuestionKey && editingQuestionKey !== question) delete existing[editingQuestionKey]
+      existing[question] = { ...questionDraft, question }
+      return { ...prev, [viewingFormName]: existing }
+    })
+    setAddingQuestion(false)
+  }
+
+  function deleteQuestion() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
+    setCustomQuestionsByForm(prev => {
+      const existing = { ...(prev[viewingFormName] ?? {}) }
+      delete existing[editingQuestionKey]
+      return { ...prev, [viewingFormName]: existing }
+    })
+    setAddingQuestion(false)
+  }
+
   function handlePanelBack() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
@@ -236,6 +293,8 @@ export default function TeamsListPage() {
       setShowTeamOverview(false)
     } else if (editingResponse) {
       setEditingResponse(null)
+    } else if (addingQuestion) {
+      setAddingQuestion(false)
     } else if (viewingFormQuestion) {
       setViewingFormQuestion(null)
     } else if (viewingFormName) {
@@ -333,6 +392,8 @@ export default function TeamsListPage() {
     ? 'Team Overview'
     : editingResponse
     ? `Edit ${editingResponse.groups[0]?.formName ?? ''}`
+    : addingQuestion
+    ? 'Question Details'
     : viewingFormQuestion
     ? viewingFormQuestion.question
     : viewingFormName
@@ -350,7 +411,15 @@ export default function TeamsListPage() {
         { name: 'Save', type: 'black', action: saveEditingResponse },
         { name: 'Cancel', type: 'light-grey', action: cancelEditingResponse },
       ]
-    : viewingFormQuestion || viewingFormName || viewingOrderResponses
+    : addingQuestion
+    ? [
+        { name: 'Save', type: 'black', action: saveQuestion },
+        { name: 'Cancel', type: 'light-grey', action: () => setAddingQuestion(false) },
+        { name: 'Delete Question', type: 'transparent red', action: deleteQuestion },
+      ]
+    : viewingFormName
+    ? [{ name: 'Delete Form', type: 'transparent red', action: () => {} }]
+    : viewingFormQuestion || viewingOrderResponses
     ? []
     : viewingOrder
     ? orderActionsFor(viewingOrder, {
@@ -424,7 +493,7 @@ export default function TeamsListPage() {
         isOpen={!!selectedTeam}
         onClose={closeTeamPanel}
         onBack={
-          showTeamOverview || viewingOrderId || editingResponse || viewingFormQuestion || viewingFormName
+          showTeamOverview || viewingOrderId || editingResponse || addingQuestion || viewingFormQuestion || viewingFormName
             ? handlePanelBack
             : undefined
         }
@@ -447,6 +516,13 @@ export default function TeamsListPage() {
             onChangeAnswer={updateEditingAnswer}
             onSubmit={saveEditingResponse}
           />
+        ) : addingQuestion ? (
+          <AddQuestionFields
+            draft={questionDraft}
+            onChange={patch => setQuestionDraft(prev => ({ ...prev, ...patch }))}
+            onSubmit={saveQuestion}
+            isEditing={editingQuestionKey != null}
+          />
         ) : viewingFormQuestion ? (
           <AllOrderResponsesForFormDraft1
             key={`${viewingFormQuestion.formName}-${viewingFormQuestion.question}`}
@@ -455,6 +531,7 @@ export default function TeamsListPage() {
             initialQuestion={viewingFormQuestion.question}
             onViewOrder={openOrderDetails}
             onViewEntity={viewEntityAcrossOrders}
+            onSaveAnswer={saveResponseAnswer}
           />
         ) : viewingFormName ? (
           <OrderFormOverviewDraft1
@@ -464,6 +541,9 @@ export default function TeamsListPage() {
               saveCurrentScroll()
               setViewingFormQuestion({ formName: viewingFormName, question })
             }}
+            onAddQuestion={openAddQuestion}
+            onEditQuestion={openEditQuestion}
+            extraQuestions={customQuestionsByForm[viewingFormName] ?? {}}
           />
         ) : viewingOrderResponses ? (
           viewingOrder && (
