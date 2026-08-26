@@ -7,7 +7,7 @@ import './TeamRosterSection.scss'
 // header-plus-horizontal-strip shape in the Figma file, just with different
 // header copy and card content (Info Group Variants) — one component
 // covers both.
-export default function TeamRosterSection({ title, addLabel, onAdd, onRemoveSelected, people, onAddTeam, onMessage }) {
+export default function TeamRosterSection({ title, addLabel, onAdd, onRemoveSelected, people, onAddTeam, onMessage, onFormResponses, onViewOrder, onEditPlayer, iconOnlyAddTeam }) {
   return (
     <div className="tmr-section">
       <div className="tmr-section-header">
@@ -30,6 +30,10 @@ export default function TeamRosterSection({ title, addLabel, onAdd, onRemoveSele
             person={person}
             onAddTeam={() => onAddTeam(person)}
             onMessage={() => onMessage(person)}
+            onFormResponses={() => onFormResponses?.(person)}
+            onViewOrder={() => onViewOrder?.(person)}
+            onEditPlayer={onEditPlayer ? () => onEditPlayer(person) : undefined}
+            iconOnlyAddTeam={iconOnlyAddTeam}
           />
         ))}
       </div>

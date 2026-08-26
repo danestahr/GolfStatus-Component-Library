@@ -8,7 +8,8 @@ import './OrdersFormsHubPage.scss'
 const TILES = [
   { to: '/orders-forms/sponsors', icon: faUserTie, name: 'Sponsors', description: 'Everyone who purchased a sponsorship package.' },
   { to: '/orders-forms/teams', icon: faPeopleGroup, name: 'Teams', description: 'Everyone who registered a team.' },
-  { to: '/orders-forms/event-site-packages', icon: faGlobe, name: 'Event Site & Packages', description: 'Manage the event site, registration packages, and related pages.' },
+  // Temporarily hidden — see conversation on 2026-08-25.
+  // { to: '/orders-forms/event-site-packages', icon: faGlobe, name: 'Event Site & Packages', description: 'Manage the event site, registration packages, and related pages.' },
   { to: '/orders-draft-1', icon: faHandHoldingDollar, name: 'Orders & Payouts', description: 'Every order placed, and the funds available to pay out.' },
 ]
 

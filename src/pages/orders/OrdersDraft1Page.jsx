@@ -17,6 +17,7 @@ import AllOrderResponsesForFormDraft1 from '../../components/orders/AllOrderResp
 import OrderFormResponseEditFieldsDraft1 from '../../components/orders/OrderFormResponseEditFieldsDraft1.jsx'
 import SponsorOverviewPanel from '../../components/orders-forms/SponsorOverviewPanel.jsx'
 import TeamOverviewPanel from '../../components/orders-forms/TeamOverviewPanel.jsx'
+import TeamOrderPicker from '../../components/orders-forms/TeamOrderPicker.jsx'
 import { availableFunds, orderStats, orders as initialOrders } from '../../data/mockOrders.js'
 import { sponsors } from '../../data/mockSponsors.js'
 import { registeredTeams } from '../../data/mockTeams.js'
@@ -39,7 +40,13 @@ export default function OrdersDraft1Page() {
   const [viewingFormQuestion, setViewingFormQuestion] = useState(null)
   const [viewingSponsor, setViewingSponsor] = useState(null)
   const [viewingTeam, setViewingTeam] = useState(null)
-  const [responsesPlayerFilter, setResponsesPlayerFilter] = useState(null)
+  // Set to a team (rather than just a boolean) whenever that team's own
+  // "Order Details" row can't jump straight to a single order — it has its
+  // own bulk Team Registration order plus at least one player's separate
+  // order (see the Fairway Fanatics comment in mockTeams.js) — so the user
+  // needs to pick which one they mean first (see TeamOrderPicker.jsx).
+  const [pickingOrderForTeam, setPickingOrderForTeam] = useState(null)
+  const [responsesNameFilter, setResponsesNameFilter] = useState(null)
   const [responsesCategory, setResponsesCategory] = useState(null)
 
   const selectedOrder = orderList.find(o => o.id === id) ?? null
@@ -55,7 +62,17 @@ export default function OrdersDraft1Page() {
   const scrollPositions = useRef({})
   const pendingScrollAction = useRef(null)
 
+  // Every order actually tied to this team — its own, plus any distinct
+  // order each individual player carries (see the Fairway Fanatics comment
+  // in mockTeams.js) — deduped since a player's own orderId can happen to
+  // equal the team's (the common case: registered as part of it).
+  function associatedOrdersFor(team) {
+    const ids = new Set([team.orderId, ...team.players.map(p => p.orderId).filter(Boolean)])
+    return orderList.filter(o => ids.has(o.id))
+  }
+
   function currentScreenKey() {
+    if (pickingOrderForTeam) return `pickOrder:${pickingOrderForTeam.id}`
     if (viewingSponsor) return `sponsor:${viewingSponsor.id}`
     if (viewingTeam) return `team:${viewingTeam.id}`
     if (editingResponse) return `edit:${editingResponse.orderId}`
@@ -110,14 +127,15 @@ export default function OrdersDraft1Page() {
     setViewingFormQuestion(null)
     setViewingSponsor(null)
     setViewingTeam(null)
-    setResponsesPlayerFilter(null)
+    setPickingOrderForTeam(null)
+    setResponsesNameFilter(null)
     setResponsesCategory(null)
     navigate('/orders-draft-1')
   }
 
   function openAllResponses() {
     saveCurrentScroll()
-    setResponsesPlayerFilter(null)
+    setResponsesNameFilter(null)
     setResponsesCategory(null)
     navigate(`/orders-draft-1/${id}/responses`)
   }
@@ -144,12 +162,16 @@ export default function OrdersDraft1Page() {
   // leaving the page. If somehow no matching entity exists, it falls back to
   // that page's bare list; any other fillLevel still falls back to the
   // cross-order breakdown. `packageName` disambiguates the rare order that
-  // bundles two separate teams (see the ord-1005 comment in mockTeams.js) —
+  // bundles two separate teams (see the ord-1005 comment in mockTeams.js)
+  // or two separate sponsors (see the ord-1006 comment in mockOrders.js) —
   // falls back to matching by orderId alone whenever a caller doesn't have
-  // a packageName to pass, or the order only has the one team anyway.
+  // a packageName to pass, or the order only has the one team/sponsor
+  // anyway.
   function viewEntityAcrossOrders(orderId, fillLevel, packageName) {
     if (fillLevel === 'sponsor') {
-      const sponsor = sponsors.find(s => s.orderId === orderId)
+      const sponsor =
+        sponsors.find(s => s.orderId === orderId && s.package === packageName) ??
+        sponsors.find(s => s.orderId === orderId)
       if (sponsor) {
         saveCurrentScroll()
         setViewingSponsor(sponsor)
@@ -193,7 +215,8 @@ export default function OrdersDraft1Page() {
     setViewingFormQuestion(null)
     setViewingSponsor(null)
     setViewingTeam(null)
-    setResponsesPlayerFilter(null)
+    setPickingOrderForTeam(null)
+    setResponsesNameFilter(null)
     setResponsesCategory(null)
     navigate(`/orders-draft-1/${orderId}`)
   }
@@ -202,10 +225,11 @@ export default function OrdersDraft1Page() {
   // into this same order's own Order Details / Form Responses screens
   // rather than anywhere else, since the sponsor/team is always the one
   // attached to the order already open underneath. The "Form Responses"
-  // rows land pre-filtered to that entity's own category (see
-  // OrderResponsesFilterNav.jsx's Team/Sponsor/Players tabs) so an order
-  // that bundles more than one occurrence type doesn't show, say, a
-  // sponsor's answers mixed in when you got here from the team.
+  // rows land pre-filtered to that entity's own category AND, when the order
+  // bundles more than one team or sponsor, to that specific one (matched by
+  // its contact's name — see OrderResponsesFilterNav.jsx's Team/Sponsor/
+  // Players tabs) so an order with e.g. two sponsors doesn't show the other
+  // sponsor's answers mixed in when you got here from one of them.
   function viewSponsorOrderDetails() {
     saveCurrentScroll()
     setViewingSponsor(null)
@@ -214,22 +238,39 @@ export default function OrdersDraft1Page() {
 
   function viewSponsorFormResponses() {
     saveCurrentScroll()
+    const contactName = viewingSponsor?.contactName ?? null
     setViewingSponsor(null)
-    setResponsesPlayerFilter(null)
+    setResponsesNameFilter(contactName)
     setResponsesCategory('sponsor')
     if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
   }
 
+  // Most teams have exactly one associated order, so this jumps straight
+  // there same as always; a team with more than one (see associatedOrdersFor
+  // above) opens the picker instead so the user can say which order they
+  // actually mean.
   function viewTeamOrderDetails() {
+    const orders = viewingTeam ? associatedOrdersFor(viewingTeam) : []
+    if (orders.length > 1) {
+      saveCurrentScroll()
+      setPickingOrderForTeam(viewingTeam)
+      return
+    }
     saveCurrentScroll()
     setViewingTeam(null)
     if (viewingAllResponses) navigate(`/orders-draft-1/${id}`)
   }
 
+  function selectTeamOrder(orderId) {
+    setPickingOrderForTeam(null)
+    viewOrderDetails(orderId)
+  }
+
   function viewTeamFormResponses() {
     saveCurrentScroll()
+    const contactName = viewingTeam?.contactName ?? null
     setViewingTeam(null)
-    setResponsesPlayerFilter(null)
+    setResponsesNameFilter(contactName)
     setResponsesCategory('team')
     if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
   }
@@ -237,18 +278,29 @@ export default function OrdersDraft1Page() {
   // The Team Overview player card's "Form Responses" button — same
   // overlay-closing pattern as viewTeamOrderDetails/viewSponsorFormResponses
   // above, but lands on Form Responses pre-filtered to just this player.
+  // Most players' answers live under the team's own order (the one already
+  // open underneath), but a player carrying their own separate `orderId`
+  // (added in from Unassigned Players — see the Fairway Fanatics comment in
+  // mockTeams.js) answered under that order instead, so this jumps there.
   function viewTeamPlayerResponses(player) {
     saveCurrentScroll()
     setViewingTeam(null)
-    setResponsesPlayerFilter(player.name)
+    setResponsesNameFilter(player.name)
     setResponsesCategory(null)
-    if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
+    const targetOrderId = player.orderId ?? id
+    if (targetOrderId !== id) {
+      navigate(`/orders-draft-1/${targetOrderId}/responses`)
+    } else if (!viewingAllResponses) {
+      navigate(`/orders-draft-1/${id}/responses`)
+    }
   }
 
   function handlePanelBack() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
-    if (viewingSponsor) {
+    if (pickingOrderForTeam) {
+      setPickingOrderForTeam(null)
+    } else if (viewingSponsor) {
       setViewingSponsor(null)
     } else if (viewingTeam) {
       setViewingTeam(null)
@@ -414,13 +466,15 @@ export default function OrdersDraft1Page() {
         isOpen={!!selectedOrder}
         onClose={closeDetailPanel}
         onBack={
-          viewingSponsor || viewingTeam || editingResponse || viewingFormQuestion || viewingFormName || viewingAllResponses
+          pickingOrderForTeam || viewingSponsor || viewingTeam || editingResponse || viewingFormQuestion || viewingFormName || viewingAllResponses
             ? handlePanelBack
             : undefined
         }
         bodyRef={panelBodyRef}
         title={
-          viewingSponsor
+          pickingOrderForTeam
+            ? 'Order Details'
+            : viewingSponsor
             ? 'Sponsor Overview'
             : viewingTeam
             ? 'Team Overview'
@@ -435,7 +489,9 @@ export default function OrdersDraft1Page() {
             : 'Order Details'
         }
         actions={
-          viewingSponsor || viewingTeam
+          pickingOrderForTeam
+            ? []
+            : viewingSponsor || viewingTeam
             ? [{ name: 'Delete', type: 'red', action: () => {} }]
             : editingResponse
             ? [
@@ -457,7 +513,9 @@ export default function OrdersDraft1Page() {
             : []
         }
       >
-        {viewingSponsor ? (
+        {pickingOrderForTeam ? (
+          <TeamOrderPicker orders={associatedOrdersFor(pickingOrderForTeam)} onSelect={selectTeamOrder} />
+        ) : viewingSponsor ? (
           <SponsorOverviewPanel
             sponsor={viewingSponsor}
             onViewOrderDetails={viewSponsorOrderDetails}
@@ -501,7 +559,7 @@ export default function OrdersDraft1Page() {
                 saveResponseAnswer(selectedOrder.id, responseIndex, answerIndex, value)
               }
               onViewFormAcrossOrders={viewFormAcrossOrders}
-              initialSelectedName={responsesPlayerFilter}
+              initialSelectedName={responsesNameFilter}
               initialCategory={responsesCategory}
             />
           )

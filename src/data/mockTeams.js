@@ -3,18 +3,26 @@
 // players waiting on a team, entries waiting on an open slot, and teams
 // that are fully registered for the tournament.
 
+// Derek Holloway (see his own comment on Fairway Fanatics below) has already
+// been manually added to a team's open slot, so he's no longer waiting here.
 export const unassignedPlayers = [
-  {
-    id: 'up-2001',
-    name: 'Derek Holloway',
-    email: 'derek.holloway@email.com',
-    phone: '(555) 214-7783',
-  },
   {
     id: 'up-2002',
     name: 'Priya Anand',
     email: 'priya.anand@email.com',
     phone: '(555) 908-3341',
+  },
+  // Still waiting on a team, unlike Derek — carries the same shape his own
+  // unassigned entry used to (own `orderId`/`packageName`, see ord-1025 in
+  // mockOrders.js), so the Order Details icon on his card has an order to
+  // link to (see TeamRosterCard.jsx's `person.orderId` check).
+  {
+    id: 'up-2003',
+    name: 'Miles Chandler',
+    email: 'miles.chandler@email.com',
+    phone: '(555) 902-4471',
+    orderId: 'ord-1025',
+    packageName: 'Individual Registration',
   },
 ]
 
@@ -69,6 +77,13 @@ export const registeredTeams = [
       { id: 'pl-30014', name: 'Tomas Alvarez', email: 'tomas.alvarez@email.com', handicap: 10.2 },
     ],
   },
+  // Wes Callahan's old slot was manually filled by Derek Holloway, who'd
+  // bought his own Individual Registration (ord-1024, see mockOrders.js)
+  // rather than paying into this team's own Team Registration order
+  // (ord-1015 above) — the two orders stay entirely separate even though
+  // he's now on the roster, which is exactly the case the Team Overview
+  // player card's Order Details icon (and its "pick which order" list, once
+  // a team carries more than one) exists to handle.
   {
     id: 'tm-2002',
     orderId: 'ord-1015',
@@ -84,7 +99,7 @@ export const registeredTeams = [
     players: [
       { id: 'pl-30021', name: 'Marcus Bell', email: 'marcus.bell@bellmfg.com', handicap: 6.9, note: 'Walking, no cart needed' },
       { id: 'pl-30022', name: 'Julia Ferreira', email: 'julia.ferreira@email.com', handicap: 14.3 },
-      { id: 'pl-30023', name: 'Wes Callahan', email: 'wes.callahan@email.com', handicap: 9.8 },
+      { id: 'pl-30023', name: 'Derek Holloway', email: 'derek.holloway@email.com', handicap: 13.4, orderId: 'ord-1024' },
       { id: 'pl-30024', name: 'Nora Kim', email: 'nora.kim@email.com', handicap: 11.5 },
     ],
   },
@@ -334,6 +349,51 @@ export const registeredTeams = [
       { id: 'pl-30142', name: 'Owen Fitzgerald', email: 'owen.fitzgerald@email.com', handicap: 16.9, note: 'Vegan at the turn stand' },
       { id: 'pl-30143', name: 'Maritza Lopez', email: 'maritza.lopez@email.com', handicap: 10.8 },
       { id: 'pl-30144', name: 'Caleb Dunn', email: 'caleb.dunn@email.com', handicap: 14.5 },
+    ],
+  },
+  // ord-1023 bundles two separate teams in one order, same as ord-1005
+  // above — Team Registration (Nathan Cole's own foursome) plus a second
+  // team included with the Premium Hole Sponsor package (captained by Priya
+  // Sharma). This order also carries two sponsors (see the ord-1006/ord-1023
+  // comment in mockOrders.js) — teams and sponsors are tracked in separate
+  // files/lists, so each just needs its own packageName-disambiguated record
+  // here, independent of how many sponsors share the same order.
+  {
+    id: 'tm-2015',
+    orderId: 'ord-1023',
+    packageName: 'Team Registration',
+    teamName: 'Cole Crew',
+    code: 'NT8FJQ52',
+    round: 'Round 1',
+    checkedIn: false,
+    disqualified: false,
+    contactName: 'Nathan Cole',
+    email: 'nathan.cole@coleassociates.com',
+    phone: '(555) 227-6640',
+    players: [
+      { id: 'pl-30151', name: 'Nathan Cole', email: 'nathan.cole@coleassociates.com', handicap: 10.6 },
+      { id: 'pl-30152', name: 'Wendy Cole', email: 'wendy.cole@email.com', handicap: 15.8, note: 'Vegetarian at the turn stand' },
+      { id: 'pl-30153', name: 'Bruce Lam', email: 'bruce.lam@email.com', handicap: 8.7 },
+      { id: 'pl-30154', name: 'Sofia Vance', email: 'sofia.vance@email.com', handicap: 12.9 },
+    ],
+  },
+  {
+    id: 'tm-2016',
+    orderId: 'ord-1023',
+    packageName: 'Premium Hole Sponsor (Includes a Team)',
+    teamName: 'Sharma Squad',
+    code: 'PS3WGK84',
+    round: 'Round 2',
+    checkedIn: false,
+    disqualified: false,
+    contactName: 'Priya Sharma',
+    email: 'priya.sharma@email.com',
+    phone: '(555) 227-6651',
+    players: [
+      { id: 'pl-30161', name: 'Priya Sharma', email: 'priya.sharma@email.com', handicap: 9.5 },
+      { id: 'pl-30162', name: 'Marcus Diehl', email: 'marcus.diehl@email.com', handicap: 13.7, note: 'Gluten-free at the turn stand' },
+      { id: 'pl-30163', name: 'Tara Whitmore', email: 'tara.whitmore@email.com', handicap: 16.1 },
+      { id: 'pl-30164', name: 'Leo Bianchi', email: 'leo.bianchi@email.com', handicap: 7.2, note: 'Vegan at the turn stand' },
     ],
   },
 ]

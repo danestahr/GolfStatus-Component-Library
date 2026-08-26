@@ -26,7 +26,7 @@ export const CATEGORY_DESCRIPTIONS = {
 // respondent category has nothing left to narrow, so it applies directly
 // and collapses the nav — same as a one-round wave jumping straight to its
 // round instead of stopping on a one-item list.
-export default function OrderResponsesFilterNav({ isOpen, categories, category, onSelectCategory, namesByCategory, selectedName, onSelectName }) {
+export default function OrderResponsesFilterNav({ isOpen, categories, category, onSelectCategory, namesByCategory, nameLabelsByCategory, selectedName, onSelectName }) {
   const [viewingNames, setViewingNames] = useState(false)
 
   // Re-drills into the active category's own names every time the nav
@@ -41,6 +41,11 @@ export default function OrderResponsesFilterNav({ isOpen, categories, category, 
   const names = namesByCategory[category] ?? []
   const showNames = viewingNames && names.length > 1
   const tabsKey = showNames ? `names-${category}` : 'categories'
+  // A Team/Sponsor respondent's own name isn't what identifies them here —
+  // their team/sponsor name is (see entityNameFor in orderUtils.js) — so
+  // every name shown below is run through this before it hits the screen.
+  const nameLabels = nameLabelsByCategory?.[category] ?? {}
+  const labelFor = name => nameLabels[name] ?? name
 
   return (
     <div className={`ordr1-filter-nav-collapse${isOpen ? ' ordr1-filter-nav-collapse--open' : ''}`}>
@@ -48,7 +53,9 @@ export default function OrderResponsesFilterNav({ isOpen, categories, category, 
         <div className="ordr1-filter-nav">
           <div className="ordr1-filter-nav-label">
             {showNames
-              ? [RESPONSE_CATEGORIES.find(c => c.value === category)?.label, selectedName].filter(Boolean).join(' / ')
+              ? [RESPONSE_CATEGORIES.find(c => c.value === category)?.label, selectedName && labelFor(selectedName)]
+                  .filter(Boolean)
+                  .join(' / ')
               : 'Response Type'}
           </div>
           <div className="ordr1-filter-nav-tabs" key={tabsKey}>
@@ -65,7 +72,7 @@ export default function OrderResponsesFilterNav({ isOpen, categories, category, 
                     <GSButton
                       type={name === selectedName ? 'black' : 'light-grey'}
                       isFocusable
-                      title={name}
+                      title={labelFor(name)}
                       onClick={() => onSelectName(name === selectedName ? null : name)}
                     />
                   </div>

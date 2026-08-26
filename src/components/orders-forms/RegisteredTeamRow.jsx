@@ -1,5 +1,5 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCommentAlt } from '@fortawesome/free-solid-svg-icons'
+import GSButton from '../../gs-lib/components/gs-button.jsx'
 import userRoundImg from '../../assets/user_round.png'
 import './RegisteredTeamRow.scss'
 
@@ -26,15 +26,12 @@ export default function RegisteredTeamRow({ team, onSelectTeam, onMessagePlayer 
                 {player.name} <span className="rtm-player-handicap">({player.handicap})</span>
               </span>
               {player.note && (
-                <button
-                  type="button"
-                  className="rtm-player-note"
+                <GSButton
+                  size="secondary"
+                  buttonIcon={faCommentAlt}
                   onClick={e => { e.stopPropagation(); onMessagePlayer(player) }}
-                  aria-label={`Note from ${player.name}`}
-                  title={player.note}
-                >
-                  <FontAwesomeIcon icon={faCommentAlt} />
-                </button>
+                  isFocusable
+                />
               )}
             </div>
           ))}

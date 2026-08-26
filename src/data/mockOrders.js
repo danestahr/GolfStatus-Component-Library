@@ -328,6 +328,16 @@ export const orders = [
     ],
   },
   {
+    // ord-1006 bundles two separate sponsorships in one order — the Basic
+    // Hole Sponsor add-on (its own contact, Chloe Bennett, filled that
+    // smaller form) plus the Premium Hole Sponsor package's own Sponsor
+    // Details (still Michael Torres, the buyer). Each entry's own
+    // `packageName` is what lets "View Sponsor" tell them apart (see
+    // viewEntityAcrossOrders in TeamsListPage.jsx/SponsorsListPage.jsx/
+    // OrdersDraft1Page.jsx/EventSitePackagesListPage.jsx, which fall back to
+    // matching by orderId alone for any single-sponsor order that doesn't
+    // pass a packageName through) — same convention as the ord-1005 dual-
+    // team comment in mockTeams.js.
     id: 'ord-1006',
     buyerName: 'Michael Torres',
     businessName: 'Torres Auto Body',
@@ -352,7 +362,7 @@ export const orders = [
         packageName: 'Basic Hole Sponsor',
         question: 'Are you planning on coming to the Sponsor Happy Hour?',
         fillLevel: 'sponsor',
-        answers: [{ respondent: 'Michael Torres', value: 'Yes' }],
+        answers: [{ respondent: 'Chloe Bennett', value: 'Yes' }],
       },
       {
         formId: 'form-2',
@@ -1063,6 +1073,199 @@ export const orders = [
           { respondent: 'Grace Kim', value: 'None' },
           { respondent: 'Ivan Petrov', value: 'None' },
         ],
+      },
+    ],
+  },
+  // ord-1023 stacks all three packages in one order — Team Registration
+  // (Nathan Cole's own foursome) plus a Premium Hole Sponsor (a second team,
+  // captained by Priya Sharma, and its own Sponsor Details) plus a Basic
+  // Hole Sponsor add-on (Monica Reyes' Sponsor Details) — two teams AND two
+  // sponsors sharing one orderId, each told apart by its own `packageName`
+  // the same way ord-1005 (two teams) and ord-1006 (two sponsors) already
+  // are individually.
+  {
+    id: 'ord-1023',
+    buyerName: 'Nathan Cole',
+    businessName: 'Cole & Associates',
+    email: 'nathan.cole@coleassociates.com',
+    phone: '(555) 227-6640',
+    paymentType: 'Credit Card',
+    date: '2026-08-13',
+    dateTime: '9:05 AM on Aug 13, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration', 'Premium Hole Sponsor (Includes a Team)', 'Basic Hole Sponsor'],
+    lineItems: [
+      { name: 'Team Registration', unitPrice: 800.0, quantity: 1 },
+      { name: 'Premium Hole Sponsor (Includes a Team)', unitPrice: 1200.0, quantity: 1 },
+      { name: 'Basic Hole Sponsor', unitPrice: 500.0, quantity: 1 },
+    ],
+    fee: 60.0,
+    amount: 2560.0,
+    status: 'paid',
+    formResponses: [
+      {
+        formId: 'form-2',
+        formName: 'Course Selection',
+        packageName: 'Team Registration',
+        question: 'Which course do you want to play?',
+        fillLevel: 'team',
+        answers: [{ respondent: 'Nathan Cole', value: 'Course 2' }],
+      },
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Nathan Cole', value: 'L' },
+          { respondent: 'Wendy Cole', value: 'S' },
+          { respondent: 'Bruce Lam', value: 'XL' },
+          { respondent: 'Sofia Vance', value: 'M' },
+        ],
+      },
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Team Registration',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Nathan Cole', value: 'None' },
+          { respondent: 'Wendy Cole', value: 'Vegetarian' },
+          { respondent: 'Bruce Lam', value: 'None' },
+          { respondent: 'Sofia Vance', value: 'None' },
+        ],
+      },
+      {
+        formId: 'form-2',
+        formName: 'Course Selection',
+        packageName: 'Premium Hole Sponsor (Includes a Team)',
+        question: 'Which course do you want to play?',
+        fillLevel: 'team',
+        answers: [{ respondent: 'Priya Sharma', value: 'Course 1' }],
+      },
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Premium Hole Sponsor (Includes a Team)',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Priya Sharma', value: 'M' },
+          { respondent: 'Marcus Diehl', value: 'L' },
+          { respondent: 'Tara Whitmore', value: 'S' },
+          { respondent: 'Leo Bianchi', value: 'XL' },
+        ],
+      },
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Premium Hole Sponsor (Includes a Team)',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [
+          { respondent: 'Priya Sharma', value: 'None' },
+          { respondent: 'Marcus Diehl', value: 'Gluten-Free' },
+          { respondent: 'Tara Whitmore', value: 'None' },
+          { respondent: 'Leo Bianchi', value: 'Vegan' },
+        ],
+      },
+      {
+        formId: 'form-3',
+        formName: 'Sponsor Details',
+        packageName: 'Premium Hole Sponsor (Includes a Team)',
+        question: 'Are you planning on coming to the Sponsor Happy Hour?',
+        fillLevel: 'sponsor',
+        answers: [{ respondent: 'Nathan Cole', value: 'Yes' }],
+      },
+      {
+        formId: 'form-3',
+        formName: 'Sponsor Details',
+        packageName: 'Basic Hole Sponsor',
+        question: 'Are you planning on coming to the Sponsor Happy Hour?',
+        fillLevel: 'sponsor',
+        answers: [{ respondent: 'Monica Reyes', value: 'No' }],
+      },
+    ],
+  },
+  // Derek Holloway bought a solo Individual Registration package rather than
+  // a full Team Registration — no `team` fillLevel form at all, since there
+  // was no team to fill out Course Selection for at the time, just his own
+  // Player Details. He's since been manually added to Fairway Fanatics'
+  // roster (see that team's own comment in mockTeams.js) to fill an open
+  // slot, but this order itself never changes to reflect that.
+  {
+    id: 'ord-1024',
+    buyerName: 'Derek Holloway',
+    email: 'derek.holloway@email.com',
+    phone: '(555) 214-7783',
+    paymentType: 'Credit Card',
+    date: '2026-08-13',
+    dateTime: '11:20 AM on Aug 13, 2026',
+    orderType: 'Online Order',
+    packages: ['Individual Registration'],
+    lineItems: [
+      { name: 'Individual Registration', unitPrice: 225.0, quantity: 1 },
+    ],
+    fee: 15.0,
+    amount: 240.0,
+    status: 'paid',
+    formResponses: [
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Individual Registration',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [{ respondent: 'Derek Holloway', value: 'L' }],
+      },
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Individual Registration',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [{ respondent: 'Derek Holloway', value: 'None' }],
+      },
+    ],
+  },
+  // Miles Chandler (see mockTeams.js's `unassignedPlayers`) bought the same
+  // kind of solo Individual Registration package Derek Holloway did — still
+  // waiting on an open team slot, so his own order icon on the Unassigned
+  // Players card has something to link to (see TeamRosterCard.jsx).
+  {
+    id: 'ord-1025',
+    buyerName: 'Miles Chandler',
+    email: 'miles.chandler@email.com',
+    phone: '(555) 902-4471',
+    paymentType: 'Credit Card',
+    date: '2026-08-13',
+    dateTime: '1:35 PM on Aug 13, 2026',
+    orderType: 'Online Order',
+    packages: ['Individual Registration'],
+    lineItems: [
+      { name: 'Individual Registration', unitPrice: 225.0, quantity: 1 },
+    ],
+    fee: 15.0,
+    amount: 240.0,
+    status: 'paid',
+    formResponses: [
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Individual Registration',
+        question: 'What is your shirt size?',
+        fillLevel: 'player',
+        answers: [{ respondent: 'Miles Chandler', value: 'M' }],
+      },
+      {
+        formId: 'form-1',
+        formName: 'Player Details',
+        packageName: 'Individual Registration',
+        question: 'Do you have any dietary restrictions?',
+        fillLevel: 'player',
+        answers: [{ respondent: 'Miles Chandler', value: 'Vegetarian' }],
       },
     ],
   },

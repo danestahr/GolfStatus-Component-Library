@@ -231,9 +231,16 @@ export default function EventSitePackagesListPage() {
     navigate(`/orders-draft-1/${orderId}`)
   }
 
+  // `packageName` disambiguates the rare order that bundles two separate
+  // teams (see the ord-1005 comment in mockTeams.js) or two separate
+  // sponsors (see the ord-1006 comment in mockOrders.js) — falls back to
+  // matching by orderId alone whenever the order only has the one
+  // team/sponsor anyway.
   function viewEntity(orderId, fillLevel, packageName) {
     if (fillLevel === 'sponsor') {
-      const sponsor = sponsors.find(s => s.orderId === orderId)
+      const sponsor =
+        sponsors.find(s => s.orderId === orderId && s.package === packageName) ??
+        sponsors.find(s => s.orderId === orderId)
       navigate('/orders-forms/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
       return
     }

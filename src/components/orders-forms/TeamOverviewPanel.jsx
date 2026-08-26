@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPen, faQrcode } from '@fortawesome/free-solid-svg-icons'
+import { faPen, faQrcode, faFileLines } from '@fortawesome/free-solid-svg-icons'
 import GSButton from '../../gs-lib/components/gs-button'
 import NavRow from './NavRow.jsx'
 import userRoundImg from '../../assets/user_round.png'
@@ -9,11 +9,18 @@ import './TeamOverviewPanel.scss'
 // (Figma "Team Overview") — team details and roster up top, then the same
 // settings-style nav rows pattern as SponsorOverviewPanel/NavRow. Order
 // Details and Form Responses open this team's linked order (see the
-// SponsorsListPage.jsx comment this mirrors); a player card's own "Form
-// Responses" button jumps to that same order's responses pre-filtered to
-// just them. The rest (Hole Assignments, Handicaps, Tees, Scorecards,
-// Player Notes) don't exist in this prototype yet, so they stay decorative.
-export default function TeamOverviewPanel({ team, onViewOrderDetails, onViewFormResponses, onViewPlayerResponses }) {
+// SponsorsListPage.jsx comment this mirrors) — a player carrying their own
+// separate `orderId` (added in from Unassigned Players rather than
+// registered as part of this team's own bulk order — see the Fairway
+// Fanatics comment in mockTeams.js) is only reachable through that team-
+// level Order Details row's picker (see TeamOrderPicker.jsx), not from the
+// player card itself. A player card's own Form Responses button matches
+// TeamRosterCard's Unassigned Players text-button style (`.tmr-card-add-
+// team`) and always jumps to that player's own answers. Tapping the rest of
+// the card (Figma "Player Details") opens that player in the Edit Player
+// screen. The rest (Hole Assignments, Handicaps, Tees, Scorecards, Player
+// Notes nav row) don't exist in this prototype yet, so they stay decorative.
+export default function TeamOverviewPanel({ team, onViewOrderDetails, onViewFormResponses, onViewPlayerResponses, onEditPlayer }) {
   return (
     <div className="tmo-overview">
       <div className="tmo-hero">
@@ -41,21 +48,22 @@ export default function TeamOverviewPanel({ team, onViewOrderDetails, onViewForm
       <div className="tmo-player-strip">
         {team.players.map(player => (
           <div key={player.id} className="tmo-player-card">
-            <img className="tmo-player-avatar" src={player.avatar ?? userRoundImg} alt="" />
-            <div className="tmo-player-info">
-              <div className="tmo-player-name-line">
-                <span className="tmo-player-name">{player.name}</span>
-                <span className="tmo-player-handicap">({player.handicap})</span>
+            <button type="button" className="tmo-player-main" onClick={() => onEditPlayer(player)}>
+              <img className="tmo-player-avatar" src={player.avatar ?? userRoundImg} alt="" />
+              <div className="tmo-player-info">
+                <div className="tmo-player-name-line">
+                  <span className="tmo-player-name">{player.name}</span>
+                  <span className="tmo-player-handicap">({player.handicap})</span>
+                </div>
+                <div className="tmo-player-email">{player.email}</div>
               </div>
-              <div className="tmo-player-email">{player.email}</div>
+            </button>
+            <div className="tmo-player-actions">
+              <button type="button" className="tmo-player-btn" onClick={() => onViewPlayerResponses(player)}>
+                <FontAwesomeIcon icon={faFileLines} />
+                Form Responses
+              </button>
             </div>
-            <GSButton
-              title="Form Responses"
-              type="light-grey"
-              size="secondary"
-              isFocusable
-              onClick={() => onViewPlayerResponses(player)}
-            />
           </div>
         ))}
       </div>

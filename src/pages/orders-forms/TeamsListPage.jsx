@@ -1,20 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { faPlus, faCircleArrowUp, faFolderOpen } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faCircleArrowUp, faFolderOpen, faBan } from '@fortawesome/free-solid-svg-icons'
 
 import AppSidePanel from '../../components/AppSidePanel.jsx'
 import EntityListPage from '../../components/orders-forms/EntityListPage.jsx'
 import TeamRosterSection from '../../components/orders-forms/TeamRosterSection.jsx'
 import RegisteredTeamsSection from '../../components/orders-forms/RegisteredTeamsSection.jsx'
 import TeamOverviewPanel from '../../components/orders-forms/TeamOverviewPanel.jsx'
+import TeamOrderPicker from '../../components/orders-forms/TeamOrderPicker.jsx'
 import { orderActionsFor } from '../../components/orders/OrderDetailPanel.jsx'
 import OrderDetailPanelDraft1 from '../../components/orders/OrderDetailPanelDraft1.jsx'
 import OrderResponsesListDraft1 from '../../components/orders/OrderResponsesListDraft1.jsx'
 import OrderFormOverviewDraft1 from '../../components/orders/OrderFormOverviewDraft1.jsx'
 import AddQuestionFields, { emptyQuestionDraft } from '../../components/orders-forms/AddQuestionFields.jsx'
+import EditPlayerFields from '../../components/orders-forms/EditPlayerFields.jsx'
 import AllOrderResponsesForFormDraft1 from '../../components/orders/AllOrderResponsesForFormDraft1.jsx'
 import OrderFormResponseEditFieldsDraft1 from '../../components/orders/OrderFormResponseEditFieldsDraft1.jsx'
-import { unassignedPlayers, waitlistEntries, registeredTeams } from '../../data/mockTeams.js'
+import {
+  unassignedPlayers as initialUnassignedPlayers,
+  waitlistEntries,
+  registeredTeams as initialRegisteredTeams,
+} from '../../data/mockTeams.js'
 import { sponsors } from '../../data/mockSponsors.js'
 import { orders as initialOrders } from '../../data/mockOrders.js'
 import './TeamsListPage.scss'
@@ -34,9 +40,15 @@ export default function TeamsListPage() {
   // that team's overview panel instead of the bare list.
   const [selectedTeam, setSelectedTeam] = useState(() => {
     const teamId = location.state?.teamId
-    return teamId ? registeredTeams.find(t => t.id === teamId) ?? null : null
+    return teamId ? initialRegisteredTeams.find(t => t.id === teamId) ?? null : null
   })
   const [orderList, setOrderList] = useState(initialOrders)
+  // Lifted into state (rather than read straight off the mockTeams.js
+  // imports, like waitlistEntries still is) so an Edit Player save is
+  // actually visible afterward — the roster row's mini player list, the
+  // player tile's own name/handicap, etc.
+  const [teamsData, setTeamsData] = useState(initialRegisteredTeams)
+  const [unassignedList, setUnassignedList] = useState(initialUnassignedPlayers)
   const [viewingOrderId, setViewingOrderId] = useState(null)
   const [viewingOrderResponses, setViewingOrderResponses] = useState(false)
   const [responsesOpenedDirectly, setResponsesOpenedDirectly] = useState(false)
@@ -57,6 +69,19 @@ export default function TeamsListPage() {
   // while editing an existing one (its own or a real question's override).
   const [editingQuestionKey, setEditingQuestionKey] = useState(null)
   const [showTeamOverview, setShowTeamOverview] = useState(false)
+  // Set to a team (rather than just a boolean) whenever that team's own
+  // "Order Details" row can't jump straight to a single order — it has its
+  // own bulk Team Registration order plus at least one player's separate
+  // order (see the Fairway Fanatics comment in mockTeams.js) — so the user
+  // needs to pick which one they mean first (see TeamOrderPicker.jsx).
+  const [pickingOrderForTeam, setPickingOrderForTeam] = useState(null)
+  // The Edit Player screen (Figma "Player Details"), opened from an
+  // unassigned player's card or a Team Overview player tile — an overlay
+  // on top of whichever of those is currently showing, same "opened
+  // directly" convention as viewPlayerResponses below. `teamId` is null
+  // for an unassigned player, so saveEditingPlayer knows which list to
+  // write the edit back into.
+  const [editingPlayer, setEditingPlayer] = useState(null)
 
   // Scroll position of the AppSidePanel body, kept per "screen" so a forward
   // navigation always opens at the top, while stepping back with the panel's
@@ -68,7 +93,18 @@ export default function TeamsListPage() {
   const scrollPositions = useRef({})
   const pendingScrollAction = useRef(null)
 
+  // Every order actually tied to this team — its own, plus any distinct
+  // order each individual player carries (see the Fairway Fanatics comment
+  // in mockTeams.js) — deduped since a player's own orderId can happen to
+  // equal the team's (the common case: registered as part of it).
+  function associatedOrdersFor(team) {
+    const ids = new Set([team.orderId, ...team.players.map(p => p.orderId).filter(Boolean)])
+    return orderList.filter(o => ids.has(o.id))
+  }
+
   function currentScreenKey() {
+    if (pickingOrderForTeam) return `pickOrder:${pickingOrderForTeam.id}`
+    if (editingPlayer) return `editPlayer:${editingPlayer.personId}`
     if (showTeamOverview) return `team-overlay:${selectedTeam?.id}`
     if (editingResponse) return `edit:${editingResponse.orderId}`
     if (addingQuestion) return `addQuestion:${viewingFormName}`
@@ -113,20 +149,20 @@ export default function TeamsListPage() {
     team.players.some(player => player.name.toLowerCase().includes(query))
 
   const visibleUnassigned = useMemo(
-    () => unassignedPlayers.filter(matchesPerson),
-    [query]
+    () => unassignedList.filter(matchesPerson),
+    [query, unassignedList]
   )
   const visibleWaitlist = useMemo(
     () => waitlistEntries.filter(matchesPerson),
     [query]
   )
   const visibleTeams = useMemo(
-    () => registeredTeams.filter(matchesTeam),
-    [query]
+    () => teamsData.filter(matchesTeam),
+    [query, teamsData]
   )
 
-  const checkedInCount = registeredTeams.filter(team => team.checkedIn).length
-  const disqualifiedCount = registeredTeams.filter(team => team.disqualified).length
+  const checkedInCount = teamsData.filter(team => team.checkedIn).length
+  const disqualifiedCount = teamsData.filter(team => team.disqualified).length
 
   const noResults = visibleUnassigned.length === 0 && visibleWaitlist.length === 0 && visibleTeams.length === 0
 
@@ -140,6 +176,8 @@ export default function TeamsListPage() {
     setViewingFormQuestion(null)
     setAddingQuestion(false)
     setShowTeamOverview(false)
+    setPickingOrderForTeam(null)
+    setEditingPlayer(null)
   }
 
   function closeTeamPanel() {
@@ -164,18 +202,21 @@ export default function TeamsListPage() {
   // that sponsor's overview, mirroring how arriving here via a sponsor's
   // own orderId opens straight to this panel. `packageName` disambiguates
   // the rare order that bundles two separate teams (see the ord-1005
-  // comment in mockTeams.js) — falls back to matching by orderId alone
+  // comment in mockTeams.js) or two separate sponsors (see the ord-1006
+  // comment in mockOrders.js) — falls back to matching by orderId alone
   // whenever a caller doesn't have a packageName to pass, or the order only
-  // has the one team anyway.
+  // has the one team/sponsor anyway.
   function viewEntityAcrossOrders(orderId, fillLevel, packageName) {
     if (fillLevel === 'sponsor') {
-      const sponsor = sponsors.find(s => s.orderId === orderId)
+      const sponsor =
+        sponsors.find(s => s.orderId === orderId && s.package === packageName) ??
+        sponsors.find(s => s.orderId === orderId)
       navigate('/orders-forms/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
       return
     }
     const team =
-      registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName) ??
-      registeredTeams.find(t => t.orderId === orderId)
+      teamsData.find(t => t.orderId === orderId && t.packageName === packageName) ??
+      teamsData.find(t => t.orderId === orderId)
     if (!team) {
       openOrderDetails(orderId)
       return
@@ -204,10 +245,27 @@ export default function TeamsListPage() {
     setViewingFormQuestion(null)
     setAddingQuestion(false)
     setShowTeamOverview(false)
+    setPickingOrderForTeam(null)
+    setEditingPlayer(null)
     setViewingOrderId(orderId)
     setViewingOrderResponses(false)
     setResponsesPlayerFilter(null)
     setResponsesCategory(null)
+  }
+
+  // The Team Overview's own "Order Details" row — most teams have exactly
+  // one associated order, so this jumps straight there same as always; a
+  // team with more than one (see associatedOrdersFor above) opens the
+  // picker instead so the user can say which order they actually mean.
+  function viewTeamOrderDetails() {
+    if (!selectedTeam) return
+    const orders = associatedOrdersFor(selectedTeam)
+    if (orders.length > 1) {
+      saveCurrentScroll()
+      setPickingOrderForTeam(selectedTeam)
+    } else {
+      openOrderDetails(selectedTeam.orderId)
+    }
   }
 
   // `direct` — reached straight from the Team Overview's "Order Details"
@@ -224,6 +282,8 @@ export default function TeamsListPage() {
     setViewingFormQuestion(null)
     setAddingQuestion(false)
     setShowTeamOverview(false)
+    setPickingOrderForTeam(null)
+    setEditingPlayer(null)
     setViewingOrderId(orderId)
     setViewingOrderResponses(true)
     setResponsesOpenedDirectly(direct)
@@ -232,17 +292,99 @@ export default function TeamsListPage() {
   }
 
   // The Team Overview's own "Form Responses" row — pre-filtered to this
-  // team's category (not a specific player).
+  // team's category AND, when the order bundles more than one team (see the
+  // ord-1005 comment in mockTeams.js), to this specific team's own contact
+  // so the other team's answers don't show up mixed in.
   function viewTeamFormResponses() {
-    openOrderResponses(selectedTeam.orderId, { direct: true, category: 'team' })
+    openOrderResponses(selectedTeam.orderId, { direct: true, category: 'team', playerName: selectedTeam.contactName })
   }
 
   // The Team Overview player card's "Form Responses" button — jumps
-  // straight to that team's order's Form Responses, pre-filtered to just
-  // this player, same "opened directly" back-chevron behavior as the
-  // overview's "Order Details" row above.
+  // straight to that player's own Form Responses, same "opened directly"
+  // back-chevron behavior as the overview's "Order Details" row above. Most
+  // players' answers live under the team's own order, but a player carrying
+  // their own separate `orderId` (added in from Unassigned Players — see the
+  // Fairway Fanatics comment in mockTeams.js) answered under that order
+  // instead, so that's the one to open for them.
   function viewPlayerResponses(player) {
-    openOrderResponses(selectedTeam.orderId, { direct: true, playerName: player.name })
+    openOrderResponses(player.orderId ?? selectedTeam.orderId, { direct: true, playerName: player.name })
+  }
+
+  // Splits a "First Last" name into best-effort parts for Edit Player's
+  // separate First/Last Name fields — every mock record only stores one
+  // combined name.
+  function splitPlayerName(name) {
+    const trimmed = (name ?? '').trim()
+    const spaceIndex = trimmed.indexOf(' ')
+    if (spaceIndex === -1) return { firstName: trimmed, lastName: '' }
+    return { firstName: trimmed.slice(0, spaceIndex), lastName: trimmed.slice(spaceIndex + 1) }
+  }
+
+  // Opens the Edit Player screen (Figma "Player Details") as an overlay on
+  // top of wherever the user currently is — an unassigned player's own card
+  // (no `team`), or a player tile inside the currently open Team Overview.
+  function openEditPlayer(person, team) {
+    saveCurrentScroll()
+    const { firstName, lastName } = splitPlayerName(person.name)
+    setEditingPlayer({
+      personId: person.id,
+      teamId: team?.id ?? null,
+      firstName,
+      lastName,
+      email: person.email ?? '',
+      phone: person.phone ?? '',
+      handicap: person.handicap != null ? String(person.handicap) : '',
+      ghin: person.ghin ?? '',
+      notes: person.note ?? '',
+    })
+  }
+
+  function updateEditingPlayer(patch) {
+    setEditingPlayer(prev => ({ ...prev, ...patch }))
+  }
+
+  function cancelEditingPlayer() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
+    setEditingPlayer(null)
+  }
+
+  // Saves the draft back into whichever list this player actually came
+  // from, so the edit is visible once the panel steps back — the roster
+  // row's mini player list, the player tile's own name/handicap, etc.
+  // `selectedTeam` is kept in sync too since TeamOverviewPanel is handed
+  // that object directly rather than looking itself up in `teamsData`.
+  function saveEditingPlayer() {
+    saveCurrentScroll()
+    pendingScrollAction.current = 'restore'
+    const { personId, teamId, firstName, lastName, email, phone, handicap, ghin, notes } = editingPlayer
+    const patch = {
+      name: `${firstName} ${lastName}`.trim(),
+      email,
+      phone,
+      handicap: handicap === '' ? 0 : Number(handicap),
+      ghin,
+      note: notes,
+    }
+
+    if (teamId) {
+      setTeamsData(prev =>
+        prev.map(team =>
+          team.id !== teamId
+            ? team
+            : { ...team, players: team.players.map(p => (p.id === personId ? { ...p, ...patch } : p)) }
+        )
+      )
+      setSelectedTeam(prev =>
+        prev && prev.id === teamId
+          ? { ...prev, players: prev.players.map(p => (p.id === personId ? { ...p, ...patch } : p)) }
+          : prev
+      )
+    } else {
+      setUnassignedList(prev => prev.map(p => (p.id === personId ? { ...p, ...patch } : p)))
+    }
+
+    setEditingPlayer(null)
   }
 
   // The Form Overview's "Add Question" button — opens as another screen in
@@ -289,7 +431,11 @@ export default function TeamsListPage() {
   function handlePanelBack() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
-    if (showTeamOverview) {
+    if (pickingOrderForTeam) {
+      setPickingOrderForTeam(null)
+    } else if (editingPlayer) {
+      setEditingPlayer(null)
+    } else if (showTeamOverview) {
       setShowTeamOverview(false)
     } else if (editingResponse) {
       setEditingResponse(null)
@@ -388,7 +534,11 @@ export default function TeamsListPage() {
     setEditingResponse(null)
   }
 
-  const screenTitle = showTeamOverview
+  const screenTitle = pickingOrderForTeam
+    ? 'Order Details'
+    : editingPlayer
+    ? 'Player Details'
+    : showTeamOverview
     ? 'Team Overview'
     : editingResponse
     ? `Edit ${editingResponse.groups[0]?.formName ?? ''}`
@@ -404,8 +554,19 @@ export default function TeamsListPage() {
     ? 'Order Details'
     : 'Team Overview'
 
-  const screenActions = showTeamOverview
-    ? [{ name: 'Delete', type: 'red', action: () => {} }]
+  const screenActions = pickingOrderForTeam
+    ? []
+    : editingPlayer
+    ? [
+        { name: 'Save', type: 'black', action: saveEditingPlayer },
+        { name: 'Cancel', type: 'light-grey', action: cancelEditingPlayer },
+        { name: 'Remove Player', type: 'transparent red', action: () => {} },
+      ]
+    : showTeamOverview
+    ? [
+        { name: 'Disqualify Team', type: 'light-grey', buttonIcon: faBan, action: () => {} },
+        { name: 'Delete Team', type: 'transparent red', action: () => {} },
+      ]
     : editingResponse
     ? [
         { name: 'Save', type: 'black', action: saveEditingResponse },
@@ -427,7 +588,10 @@ export default function TeamsListPage() {
         onVoid: () => setOrderStatus(viewingOrder.id, 'void'),
         onRefund: () => setOrderStatus(viewingOrder.id, 'refunded'),
       })
-    : [{ name: 'Delete', type: 'red', action: () => {} }]
+    : [
+        { name: 'Disqualify Team', type: 'light-grey', buttonIcon: faBan, action: () => {} },
+        { name: 'Delete Team', type: 'transparent red', action: () => {} },
+      ]
 
   return (
     <>
@@ -457,6 +621,10 @@ export default function TeamsListPage() {
                 onRemoveSelected={() => {}}
                 onAddTeam={() => {}}
                 onMessage={() => {}}
+                onFormResponses={person => openOrderResponses(person.orderId, { direct: true })}
+                onViewOrder={person => openOrderDetails(person.orderId)}
+                onEditPlayer={person => openEditPlayer(person)}
+                iconOnlyAddTeam
               />
             )}
 
@@ -475,7 +643,7 @@ export default function TeamsListPage() {
             {visibleTeams.length > 0 && (
               <RegisteredTeamsSection
                 teams={visibleTeams}
-                totalCount={registeredTeams.length}
+                totalCount={teamsData.length}
                 checkedInCount={checkedInCount}
                 disqualifiedCount={disqualifiedCount}
                 onTeamCheckIn={() => {}}
@@ -490,10 +658,10 @@ export default function TeamsListPage() {
       </EntityListPage>
 
       <AppSidePanel
-        isOpen={!!selectedTeam}
+        isOpen={!!selectedTeam || !!viewingOrderId || !!editingPlayer}
         onClose={closeTeamPanel}
         onBack={
-          showTeamOverview || viewingOrderId || editingResponse || addingQuestion || viewingFormQuestion || viewingFormName
+          pickingOrderForTeam || editingPlayer || showTeamOverview || viewingOrderId || editingResponse || addingQuestion || viewingFormQuestion || viewingFormName
             ? handlePanelBack
             : undefined
         }
@@ -501,13 +669,18 @@ export default function TeamsListPage() {
         title={screenTitle}
         actions={screenActions}
       >
-        {showTeamOverview ? (
+        {pickingOrderForTeam ? (
+          <TeamOrderPicker orders={associatedOrdersFor(pickingOrderForTeam)} onSelect={openOrderDetails} />
+        ) : editingPlayer ? (
+          <EditPlayerFields draft={editingPlayer} onChange={updateEditingPlayer} onSubmit={saveEditingPlayer} />
+        ) : showTeamOverview ? (
           selectedTeam && (
             <TeamOverviewPanel
               team={selectedTeam}
-              onViewOrderDetails={() => openOrderDetails(selectedTeam.orderId)}
+              onViewOrderDetails={viewTeamOrderDetails}
               onViewFormResponses={viewTeamFormResponses}
               onViewPlayerResponses={viewPlayerResponses}
+              onEditPlayer={player => openEditPlayer(player, selectedTeam)}
             />
           )
         ) : editingResponse ? (
@@ -564,9 +737,10 @@ export default function TeamsListPage() {
           selectedTeam && (
             <TeamOverviewPanel
               team={selectedTeam}
-              onViewOrderDetails={() => openOrderDetails(selectedTeam.orderId)}
+              onViewOrderDetails={viewTeamOrderDetails}
               onViewFormResponses={viewTeamFormResponses}
               onViewPlayerResponses={viewPlayerResponses}
+              onEditPlayer={player => openEditPlayer(player, selectedTeam)}
             />
           )
         )}

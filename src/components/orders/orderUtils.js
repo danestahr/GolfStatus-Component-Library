@@ -1,5 +1,25 @@
+import { registeredTeams } from '../../data/mockTeams.js'
+import { sponsors } from '../../data/mockSponsors.js'
+
 export function formatMoney(amount) {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+// A team/sponsor response's respondent is whoever filled it out (the team
+// captain, the sponsor's contact) — not the team/sponsor's own name. Looks
+// that up instead, so a filter button or response tile can read "Cole Crew"
+// or "Cole & Associates" rather than just the contact's own name, which is
+// what actually disambiguates an order with more than one team or sponsor.
+// Falls back to the contact name for any other fillLevel, or if no matching
+// team/sponsor record exists.
+export function entityNameFor(orderId, fillLevel, packageName, contactName) {
+  if (fillLevel === 'team') {
+    return registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName)?.teamName ?? contactName
+  }
+  if (fillLevel === 'sponsor') {
+    return sponsors.find(s => s.orderId === orderId && s.package === packageName)?.sponsorName ?? contactName
+  }
+  return contactName
 }
 
 export const STATUS_META = {

@@ -38,13 +38,13 @@
 .ordr1-summary-forms {
   display: flex;
   flex-direction: column;
-  gap: $large-pad;
+  gap: 24px;
 }
 
 .ordr1-summary-form {
   display: flex;
   align-items: stretch;
-  gap: $medium-large-pad;
+  gap: 24px;
   font-size: $small-font;
   color: $grey-800;
 }
@@ -58,15 +58,23 @@
   font-weight: $bold-font-weight;
 }
 
+// Only shown when this form's name also appears under a different package
+// on the same order (see `formNameCounts` in OrderFormResponsesSummaryDraft1.jsx)
+// — tells apart, e.g., two teams' "Player Details" rows.
+.ordr1-summary-form-package {
+  font-weight: $regular-font-weight;
+  color: rgba($grey-800, 0.6);
+}
+
 .ordr1-summary-form-status-wrap {
   display: flex;
   align-items: center;
-  padding-right: $medium-large-pad;
+  padding-right: 24px;
   border-right: 1px solid $grey-300;
 }
 
 .ordr1-summary-form-status {
-  font-size: $medium-font;
+  font-size: 20px;
 
   &.is-complete {
     color: $cyan-700;

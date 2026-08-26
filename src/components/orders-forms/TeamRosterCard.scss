@@ -23,6 +23,18 @@
 .tmr-card-info {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+
+  &:where(button) {
+    cursor: pointer;
+  }
 }
 
 .tmr-card-name {
@@ -37,41 +49,60 @@
   opacity: 0.7;
 }
 
-.tmr-card-add-team {
-  align-self: flex-start;
+.tmr-card-actions {
   display: flex;
   align-items: center;
   gap: $medium-pad;
+}
+
+.tmr-card-add-team {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $medium-pad;
+  height: 40px;
   padding: $medium-pad $medium-large-pad;
   border: none;
-  border-radius: $small-medium-radius;
+  border-radius: $medium-radius;
   background: $grey-100;
   color: $grey-800;
-  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  @include gs-font($x-small-font, $bold-font-weight, $medium-letter-spacing);
   text-transform: uppercase;
+  white-space: nowrap;
   cursor: pointer;
   transition: $fast;
+
+  svg {
+    font-size: $medium-font;
+  }
 
   &:hover {
     background: $grey-200;
   }
 }
 
-.tmr-card-message {
+.tmr-card-add-team--icon-only,
+.tmr-card-icon-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
+  padding: 0;
   border: none;
-  border-radius: $small-medium-radius;
-  background: none;
+  border-radius: $medium-radius;
+  background: $grey-100;
   color: $grey-800;
   cursor: pointer;
   transition: $fast;
 
+  svg {
+    font-size: $medium-font;
+  }
+
   &:hover {
-    background: $grey-100;
+    background: $grey-200;
   }
 }

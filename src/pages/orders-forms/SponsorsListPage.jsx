@@ -52,6 +52,7 @@ export default function SponsorsListPage() {
   const [viewingOrderResponses, setViewingOrderResponses] = useState(false)
   const [responsesOpenedDirectly, setResponsesOpenedDirectly] = useState(false)
   const [responsesCategory, setResponsesCategory] = useState(null)
+  const [responsesNameFilter, setResponsesNameFilter] = useState(null)
   const [editingResponse, setEditingResponse] = useState(null)
   const [viewingFormName, setViewingFormName] = useState(null)
   const [viewingFormQuestion, setViewingFormQuestion] = useState(null)
@@ -127,12 +128,17 @@ export default function SponsorsListPage() {
     sponsors: tierOrder[tier].map(id => sponsorsById[id]).filter(matchesSearch),
   })).filter(group => group.sponsors.length > 0)
 
-  function reorderWithinTier(tier, fromIndex, toIndex) {
+  // `newOrder` is the reordered id list for whatever sponsors were visible
+  // to the drag (see SponsorTierSection) — usually the whole tier, but only
+  // the search-matched subset while a filter is active. Ids outside that
+  // subset keep their existing slots, with the reordered ids dropped in
+  // wherever their old ones were.
+  function reorderWithinTier(tier, newOrder) {
     setTierOrder(prev => {
-      const ids = [...prev[tier]]
-      const [movedId] = ids.splice(fromIndex, 1)
-      ids.splice(toIndex, 0, movedId)
-      return { ...prev, [tier]: ids }
+      const visible = new Set(newOrder)
+      let i = 0
+      const merged = prev[tier].map(id => (visible.has(id) ? newOrder[i++] : id))
+      return { ...prev, [tier]: merged }
     })
   }
 
@@ -141,6 +147,7 @@ export default function SponsorsListPage() {
     setViewingOrderResponses(false)
     setResponsesOpenedDirectly(false)
     setResponsesCategory(null)
+    setResponsesNameFilter(null)
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
@@ -171,9 +178,10 @@ export default function SponsorsListPage() {
   // opens straight to that team's overview, mirroring how arriving here via
   // a sponsor's own orderId opens straight to this panel. `packageName`
   // disambiguates the rare order that bundles two separate teams (see the
-  // ord-1005 comment in mockTeams.js) — falls back to matching by orderId
+  // ord-1005 comment in mockTeams.js) or two separate sponsors (see the
+  // ord-1006 comment in mockOrders.js) — falls back to matching by orderId
   // alone whenever a caller doesn't have a packageName to pass, or the
-  // order only has the one team anyway.
+  // order only has the one team/sponsor anyway.
   function viewEntityAcrossOrders(orderId, fillLevel, packageName) {
     if (fillLevel === 'team' || fillLevel === 'player') {
       const team =
@@ -182,7 +190,9 @@ export default function SponsorsListPage() {
       navigate('/orders-forms/teams', team ? { state: { teamId: team.id } } : undefined)
       return
     }
-    const sponsor = initialSponsors.find(s => s.orderId === orderId)
+    const sponsor =
+      initialSponsors.find(s => s.orderId === orderId && s.package === packageName) ??
+      initialSponsors.find(s => s.orderId === orderId)
     if (!sponsor) {
       openOrderDetails(orderId)
       return
@@ -214,6 +224,7 @@ export default function SponsorsListPage() {
     setViewingOrderId(orderId)
     setViewingOrderResponses(false)
     setResponsesCategory(null)
+    setResponsesNameFilter(null)
   }
 
   // `direct` — reached straight from the Sponsor Overview's "Form Responses"
@@ -222,8 +233,12 @@ export default function SponsorsListPage() {
   // screen the user never actually saw. `category` pre-filters Form
   // Responses to just this sponsor so an order that also bundles a team
   // registration doesn't show that team's forms mixed in too (see
-  // OrderResponsesFilterNav.jsx's Team/Sponsor/Players tabs).
-  function openOrderResponses(orderId, { direct = false, category = null } = {}) {
+  // OrderResponsesFilterNav.jsx's Team/Sponsor/Players tabs); `name` narrows
+  // further to this specific sponsor's own contact whenever the order
+  // bundles more than one sponsor (see the ord-1006 comment in
+  // mockOrders.js), so a multi-sponsor order doesn't show another sponsor's
+  // answers mixed in.
+  function openOrderResponses(orderId, { direct = false, category = null, name = null } = {}) {
     saveCurrentScroll()
     setEditingResponse(null)
     setViewingFormName(null)
@@ -234,6 +249,7 @@ export default function SponsorsListPage() {
     setViewingOrderResponses(true)
     setResponsesOpenedDirectly(direct)
     setResponsesCategory(category)
+    setResponsesNameFilter(name)
   }
 
   // The Form Overview's "Add Question" button — opens as another screen in
@@ -443,7 +459,7 @@ export default function SponsorsListPage() {
               key={tier}
               tierName={tier}
               sponsors={sponsors}
-              onReorder={(fromIndex, toIndex) => reorderWithinTier(tier, fromIndex, toIndex)}
+              onReorder={newOrder => reorderWithinTier(tier, newOrder)}
               onEditTier={() => {}}
               onSelectSponsor={setSelectedSponsor}
             />
@@ -469,7 +485,7 @@ export default function SponsorsListPage() {
             <SponsorOverviewPanel
               sponsor={selectedSponsor}
               onViewOrderDetails={() => openOrderDetails(selectedSponsor.orderId)}
-              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor' })}
+              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor', name: selectedSponsor.contactName })}
             />
           )
         ) : editingResponse ? (
@@ -517,6 +533,7 @@ export default function SponsorsListPage() {
               }
               onViewFormAcrossOrders={viewFormEntity}
               initialCategory={responsesCategory}
+              initialSelectedName={responsesNameFilter}
             />
           )
         ) : viewingOrder ? (
@@ -526,7 +543,7 @@ export default function SponsorsListPage() {
             <SponsorOverviewPanel
               sponsor={selectedSponsor}
               onViewOrderDetails={() => openOrderDetails(selectedSponsor.orderId)}
-              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor' })}
+              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor', name: selectedSponsor.contactName })}
             />
           )
         )}

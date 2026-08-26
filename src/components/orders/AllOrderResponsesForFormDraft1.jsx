@@ -191,17 +191,25 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
   // a team-level group reads as "{captain}'s Team", a sponsor-level group
   // leads with the business name, and anything else (player-level) keeps
   // the plain "{buyer}'s Order" label used everywhere else in this view.
+  // The name used is the group's OWN respondent (its first answer), not the
+  // order's `buyerName` — `buyerName` is one value per order, so two teams
+  // or two sponsors sharing an order (see the ord-1005/ord-1006 comments in
+  // mockTeams.js/mockOrders.js) would otherwise render identical, unlabeled
+  // headers back to back. The first respondent is always that group's own
+  // captain/contact (every mock roster lists them first).
   function renderGroupName(group, fillLevel) {
+    const contactName = group.answers[0]?.respondent ?? group.buyerName
+
     if (fillLevel === 'sponsor') {
       return (
         <>
           <span className="aof-order-group-name">{group.businessName ?? group.buyerName}</span>
-          <div className="aof-order-group-contact">{group.buyerName}</div>
+          <div className="aof-order-group-contact">{contactName}</div>
         </>
       )
     }
 
-    return <span className="aof-order-group-name">{group.buyerName}'s {fillLevel === 'team' ? 'Team' : 'Order'}</span>
+    return <span className="aof-order-group-name">{contactName}'s {fillLevel === 'team' ? 'Team' : 'Order'}</span>
   }
 
   function renderAnswerTile(answer, key) {

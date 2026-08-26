@@ -235,4 +235,61 @@ export const sponsors = [
     amount: 1200.0,
     status: 'active',
   },
+  // spn-1017: the Basic Hole Sponsor add-on ord-1006 also bundles alongside
+  // its Premium package above — a separate business (Chloe's own bakery,
+  // not Torres Auto Body) that Michael Torres's order happened to sponsor
+  // on its behalf, with its own contact (Chloe Bennett) and `package`, so
+  // "View Sponsor" on that group resolves here instead of falling back to
+  // spn-1016 (see the ord-1006 comment in mockOrders.js) — and reads as an
+  // obviously different sponsor at a glance, not just a different contact
+  // at the same company.
+  {
+    id: 'spn-1017',
+    orderId: 'ord-1006',
+    sponsorName: "Chloe's Bakery",
+    contactName: 'Chloe Bennett',
+    email: 'chloe.bennett@chloesbakery.com',
+    phone: '(555) 488-2231',
+    tier: 'Bronze Tier',
+    package: 'Basic Hole Sponsor',
+    hole: 'Hole 6',
+    dateTime: '2:55 PM on Aug 8, 2026',
+    amount: 150.0,
+    status: 'active',
+  },
+  // spn-1018/spn-1019: ord-1023's two sponsorships (see that order's own
+  // comment in mockOrders.js) — Premium Hole Sponsor is Nathan Cole's own
+  // business, Basic Hole Sponsor is a separate business (Monica's) that his
+  // order also picked up, each with its own distinct contact for the
+  // response filter to pick between and its own distinct business name so
+  // "View Sponsor" clearly opens two different sponsors, not the same one
+  // twice.
+  {
+    id: 'spn-1018',
+    orderId: 'ord-1023',
+    sponsorName: 'Cole & Associates',
+    contactName: 'Nathan Cole',
+    email: 'nathan.cole@coleassociates.com',
+    phone: '(555) 227-6640',
+    tier: 'Gold Tier',
+    package: 'Premium Hole Sponsor (Includes a Team)',
+    hole: 'Hole 16',
+    dateTime: '9:05 AM on Aug 13, 2026',
+    amount: 1200.0,
+    status: 'active',
+  },
+  {
+    id: 'spn-1019',
+    orderId: 'ord-1023',
+    sponsorName: "Monica's Nails & Spa",
+    contactName: 'Monica Reyes',
+    email: 'monica.reyes@monicasnailsandspa.com',
+    phone: '(555) 227-6662',
+    tier: 'Silver Tier',
+    package: 'Basic Hole Sponsor',
+    hole: 'Hole 17',
+    dateTime: '9:08 AM on Aug 13, 2026',
+    amount: 500.0,
+    status: 'active',
+  },
 ]

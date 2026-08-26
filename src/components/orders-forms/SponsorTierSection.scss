@@ -23,6 +23,15 @@
   color: $grey-800;
 }
 
+.spn-tier-rows {
+  // Dragging a row selects page text otherwise, since pointer-event
+  // dragging (see SponsorTierSection.jsx) has no native browser-level
+  // equivalent of drag-and-drop's automatic selection suppression.
+  &--reordering {
+    user-select: none;
+  }
+}
+
 .spn-tier-edit {
   flex-shrink: 0;
   width: 40px;

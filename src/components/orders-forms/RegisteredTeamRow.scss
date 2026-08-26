@@ -88,21 +88,3 @@
   white-space: nowrap;
 }
 
-.rtm-player-note {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: $small-medium-radius;
-  background: none;
-  color: $grey-800;
-  cursor: pointer;
-  transition: $fast;
-
-  &:hover {
-    background: $grey-100;
-  }
-}

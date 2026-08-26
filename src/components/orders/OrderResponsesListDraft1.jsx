@@ -5,18 +5,21 @@ import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
 import GSButton from '../../gs-lib/components/gs-button'
 import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } from './OrderResponsesFilterNav.jsx'
-import { QUESTION_OPTIONS, isAnswerMissing, occurrenceLabelFor } from './orderUtils'
+import { QUESTION_OPTIONS, isAnswerMissing, occurrenceLabelFor, entityNameFor } from './orderUtils'
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 
 // Label for the "| View ___" link next to a form section's response-type
-// subtitle — players roll up under their team the same way a team-level
-// question does, so both read as "View Team"; there's nothing to view for a
-// plain "Order Response" (no fillLevel), so it's left out of this map.
-const VIEW_LINK_LABEL = {
-  team: 'View Team',
-  player: 'View Team',
-  sponsor: 'View Sponsor',
+// subtitle — a player rolls up under their team the same way a team-level
+// question does, so it reads "View Team"; a solo player on a package with no
+// team component at all (e.g. Individual Registration) has no team to roll
+// up under, so it reads "View Player" instead — there's nothing to view for
+// a plain "Order Response" (no fillLevel), so that's left out entirely.
+function viewLinkLabelFor(fillLevel, hasTeam) {
+  if (fillLevel === 'player') return hasTeam ? 'View Team' : 'View Player'
+  if (fillLevel === 'team') return 'View Team'
+  if (fillLevel === 'sponsor') return 'View Sponsor'
+  return null
 }
 
 const SAVE_DELAY_MS = 1000
@@ -108,7 +111,12 @@ export default function OrderResponsesListDraft1({
   initialCategory = null,
 }) {
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState(initialSelectedName ? 'player' : initialCategory ?? 'all')
+  // A caller that already knows the category (e.g. landing here from a
+  // specific sponsor/team's own overview) passes it explicitly — only fall
+  // back to inferring 'player' from a bare name when it doesn't, which is
+  // the case for a player-only deep link (see viewTeamPlayerResponses in
+  // OrdersDraft1Page.jsx).
+  const [category, setCategory] = useState(initialCategory ?? (initialSelectedName ? 'player' : 'all'))
   const [selectedName, setSelectedName] = useState(initialSelectedName)
   const [filterNavOpen, setFilterNavOpen] = useState(false)
   const [editingAnswer, setEditingAnswer] = useState(null)
@@ -148,6 +156,12 @@ export default function OrderResponsesListDraft1({
   const filteredResponses = fullResponses.filter(entry => matchesQuery(entry, query) && matchesCategory(entry, category))
   const packages = groupResponses(filteredResponses)
 
+  // Whether each package has a team-level form at all — checked against
+  // every response the order has, not the filtered/visible set, since a
+  // name filter (e.g. picking one player) hides the other forms entirely
+  // and would otherwise make a real team package look team-less.
+  const packageHasTeam = new Set(fullResponses.filter(entry => entry.fillLevel === 'team').map(entry => entry.packageName))
+
   // A name filter can leave a form with no visible answers at all (e.g.
   // picking a player from one team hides the other team's Player Details
   // entirely) — drop those empty forms, and the whole package if every one
@@ -169,13 +183,19 @@ export default function OrderResponsesListDraft1({
   // Every respondent seen at each occurrence type, so the filter nav can
   // offer a second, "similar to players" pick whenever a Team or Sponsor
   // category actually has more than one to choose from (multiple teams or
-  // multiple sponsors in the same order).
+  // multiple sponsors in the same order). The filter still keys off the
+  // respondent's own name (that's who a Team/Sponsor answer's `answer`
+  // actually belongs to), but nameLabelsByCategory maps that same name to
+  // the team/sponsor's own name for anywhere it's displayed — see
+  // entityNameFor in orderUtils.js.
   const namesByCategory = { team: [], sponsor: [], player: [] }
+  const nameLabelsByCategory = { team: {}, sponsor: {}, player: {} }
   fullResponses.forEach(entry => {
     const names = namesByCategory[entry.fillLevel]
     if (!names) return
     entry.answers.forEach(a => {
       if (!names.includes(a.respondent)) names.push(a.respondent)
+      nameLabelsByCategory[entry.fillLevel][a.respondent] = entityNameFor(order.id, entry.fillLevel, entry.packageName, a.respondent)
     })
   })
 
@@ -187,7 +207,9 @@ export default function OrderResponsesListDraft1({
   const availableCategories = RESPONSE_CATEGORIES.filter(c => c.value === 'all' || presentFillLevels.has(c.value))
   const showFilter = presentFillLevels.size > 1
 
-  const filterDescription = selectedName ? `${selectedName}'s Responses` : CATEGORY_DESCRIPTIONS[category]
+  const filterDescription = selectedName
+    ? `${nameLabelsByCategory[category]?.[selectedName] ?? selectedName} Responses`
+    : CATEGORY_DESCRIPTIONS[category]
 
   function cancelAnswerEdit() {
     if (isSaving) return
@@ -249,7 +271,9 @@ export default function OrderResponsesListDraft1({
               key={j}
               ref={isEditing ? editingTileRef : null}
             >
-              <div className="ord-form-response-answer-name">{answer.respondent}</div>
+              <div className="ord-form-response-answer-name">
+                {entityNameFor(order.id, entry.fillLevel, entry.packageName, answer.respondent)}
+              </div>
               {isEditing && QUESTION_OPTIONS[entry.question] ? (
                 <GSField
                   label={entry.question}
@@ -346,6 +370,7 @@ export default function OrderResponsesListDraft1({
           category={category}
           onSelectCategory={selectCategory}
           namesByCategory={namesByCategory}
+          nameLabelsByCategory={nameLabelsByCategory}
           selectedName={selectedName}
           onSelectName={selectName}
         />
@@ -367,7 +392,9 @@ export default function OrderResponsesListDraft1({
           <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
         ) : (
           <div className="ordr1-list-groups">
-            {visiblePackages.map(pkg => (
+            {visiblePackages.map(pkg => {
+              const hasTeam = packageHasTeam.has(pkg.packageName)
+              return (
               <div className="ordr1-package" key={pkg.packageName}>
                 <div className="ordr1-package-label">{pkg.packageName}</div>
 
@@ -381,7 +408,7 @@ export default function OrderResponsesListDraft1({
                             <span className="ordr1-form-section-subtitle-text">
                               {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
                             </span>
-                            {VIEW_LINK_LABEL[form.questions[0]?.fillLevel] && (
+                            {viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam) && (
                               <>
                                 <span className="ordr1-filter-switch-sep">|</span>
                                 <button
@@ -389,7 +416,7 @@ export default function OrderResponsesListDraft1({
                                   className="ordr1-filter-switch-link"
                                   onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
                                 >
-                                  {VIEW_LINK_LABEL[form.questions[0]?.fillLevel]}
+                                  {viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam)}
                                 </button>
                               </>
                             )}
@@ -409,7 +436,8 @@ export default function OrderResponsesListDraft1({
                   ))}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

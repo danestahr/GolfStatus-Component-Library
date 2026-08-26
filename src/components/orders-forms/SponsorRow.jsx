@@ -13,25 +13,26 @@ const STATUS_META = {
 // so that row shows its status pill instead (matches the Figma "Sponsors"
 // file, where the single-sponsor Technology Sponsor tier shows a status
 // pill while the multi-sponsor tiers show a grip handle).
-export default function SponsorRow({ sponsor, draggable, onDragStart, onDragOver, onDrop, onDragEnd, onClick }) {
+//
+// Reordering itself is driven entirely by the parent (see
+// SponsorTierSection's pointer-based drag) — this component just renders
+// whatever offsetY/isDragging it's given and forwards the grabber's
+// pointerdown upward, same split as AddQuestionFields' DropdownOptionRow.
+export default function SponsorRow({ sponsor, showGrabber, isDragging, offsetY, onGrabberPointerDown, onRowRef, onClick }) {
   const status = STATUS_META[sponsor.status]
 
-  function handleDragStart(e) {
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', sponsor.id)
-    onDragStart(e)
+  const style = {
+    transform: offsetY ? `translateY(${offsetY}px)` : undefined,
+    zIndex: isDragging ? 2 : undefined,
   }
 
   return (
     <div
-      className="spn-row"
+      className={`spn-row${isDragging ? ' spn-row--dragging' : ''}`}
       role="button"
       tabIndex={0}
-      draggable={draggable}
-      onDragStart={handleDragStart}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      onDragEnd={onDragEnd}
+      ref={onRowRef}
+      style={style}
       onClick={onClick}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onClick()}
     >
@@ -42,8 +43,13 @@ export default function SponsorRow({ sponsor, draggable, onDragStart, onDragOver
       </div>
 
       <div className="spn-row-side">
-        {draggable ? (
-          <span className="spn-drag-handle" aria-label="Drag to reorder">
+        {showGrabber ? (
+          <span
+            className="spn-drag-handle"
+            aria-label="Drag to reorder"
+            onPointerDown={onGrabberPointerDown}
+            onClick={e => e.stopPropagation()}
+          >
             <FontAwesomeIcon icon={faGripLines} />
           </span>
         ) : (
