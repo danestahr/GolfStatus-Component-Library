@@ -67,6 +67,22 @@ export const QUESTION_OPTIONS = {
   'Are you planning on coming to the Sponsor Happy Hour?': YES_NO_OPTIONS,
 }
 
+// Questions that only take a numeric answer — same "fixed vocabulary" shape
+// as QUESTION_OPTIONS' dropdowns, just without a dropdown UI: responseTypeFor
+// below reads this to label the question "Number Response" wherever that's
+// shown, and the single-answer/bulk edit fields (OrderResponsesListDraft1,
+// AllOrderResponsesForFormDraft1, OrderFormResponseEditFieldsDraft1) pass
+// type="number" through to GSField/GSInput for these so the input only
+// accepts digits.
+export const NUMBER_QUESTIONS = new Set([
+  'What is your member number?',
+  'How many guests will you be bringing?',
+])
+
+export function isNumberQuestion(question) {
+  return NUMBER_QUESTIONS.has(question)
+}
+
 export function isAnswerMissing(answer) {
   return !answer.value || answer.value.trim() === ''
 }
@@ -97,11 +113,13 @@ export function viewLinkLabelFor(fillLevel) {
 // Label shown under a question's text wherever it's displayed on its own
 // (see the question-nav bar in AllOrderResponsesForFormDraft1.jsx) — a
 // question with a fixed answer set (QUESTION_OPTIONS) renders as a select
-// everywhere it's edited, so it reads as "Dropdown"; anything else is
-// free text, i.e. "Text Response". Numeric-only questions would read as
-// "Number Response" the same way once one exists in the data.
+// everywhere it's edited, so it reads as "Dropdown"; a numeric-only
+// question (NUMBER_QUESTIONS) reads as "Number Response"; anything else is
+// free text, i.e. "Text Response".
 export function responseTypeFor(question) {
-  return QUESTION_OPTIONS[question] ? 'Dropdown' : 'Text Response'
+  if (QUESTION_OPTIONS[question]) return 'Dropdown'
+  if (isNumberQuestion(question)) return 'Number Response'
+  return 'Text Response'
 }
 
 // Which questions a respondent must answer before their registration/order

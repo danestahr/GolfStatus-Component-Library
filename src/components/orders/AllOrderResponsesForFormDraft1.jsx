@@ -7,6 +7,7 @@ import GSField from '../../gs-lib/components/gs-field'
 import {
   responsesForFormAcrossOrders,
   isAnswerMissing,
+  isNumberQuestion,
   occurrenceLabelFor,
   viewLinkLabelFor,
   QUESTION_OPTIONS,
@@ -241,6 +242,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
           <GSField
             label={currentQuestion.question}
             isEditable
+            type={isNumberQuestion(currentQuestion.question) ? 'number' : undefined}
             value={editingAnswer.draft}
             onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
             onSubmit={canSave ? saveAnswerEdit : undefined}

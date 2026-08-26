@@ -2,7 +2,7 @@ import GSinput from '../../gs-lib/components/gs-input'
 import GSSelect from '../../gs-lib/components/gs-select'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import OrderFormSection from './OrderFormSection.jsx'
-import { QUESTION_OPTIONS } from './orderUtils'
+import { QUESTION_OPTIONS, isNumberQuestion } from './orderUtils'
 import './OrderFormResponseEditFields.scss'
 
 // Draft 1 fork of OrderFormResponseEditFields.jsx — adds a page header
@@ -33,6 +33,7 @@ export default function OrderFormResponseEditFieldsDraft1({ groups, onChangeAnsw
                     />
                   ) : (
                     <GSinput
+                      type={isNumberQuestion(group.question) ? 'number' : undefined}
                       textValue={answer.value}
                       onChange={e => onChangeAnswer(groupIndex, answerIndex, e.target.value)}
                       onSubmit={onSubmit}

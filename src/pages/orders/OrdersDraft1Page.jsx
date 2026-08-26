@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBars, faFolderOpen, faHandHoldingDollar, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faBan, faBars, faFolderOpen, faHandHoldingDollar, faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons'
 
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
@@ -491,8 +491,13 @@ export default function OrdersDraft1Page() {
         actions={
           pickingOrderForTeam
             ? []
-            : viewingSponsor || viewingTeam
+            : viewingSponsor
             ? [{ name: 'Delete', type: 'red', action: () => {} }]
+            : viewingTeam
+            ? [
+                { name: 'Disqualify Team', type: 'light-grey', buttonIcon: faBan, action: () => {} },
+                { name: 'Delete Team', type: 'transparent red', action: () => {} },
+              ]
             : editingResponse
             ? [
                 { name: 'Save', type: 'black', action: saveEditingResponse },

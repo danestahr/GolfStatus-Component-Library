@@ -26,11 +26,18 @@ export const emptyQuestionDraft = {
 }
 
 // Best-effort reverse of orderUtils.responseTypeFor's "Dropdown"/"Text
-// Response" vocabulary — used to pre-fill a draft for a question that only
-// has that label (a real order-derived question being edited for the first
-// time, with no draft of its own yet).
+// Response"/"Number Response" vocabulary — used to pre-fill a draft for a
+// question that only has that label (a real order-derived question being
+// edited for the first time, with no draft of its own yet). Matched by
+// prefix rather than exact equality since responseTypeFor's labels ("Text
+// Response", "Number Response") carry a "Response" suffix these options'
+// own labels ("Text", "Number") don't.
 export function findResponseTypeOption(label) {
-  return RESPONSE_TYPE_OPTIONS.find(o => o.label === label) ?? RESPONSE_TYPE_OPTIONS.find(o => o.value === 'text') ?? null
+  return (
+    RESPONSE_TYPE_OPTIONS.find(o => label?.startsWith(o.label)) ??
+    RESPONSE_TYPE_OPTIONS.find(o => o.value === 'text') ??
+    null
+  )
 }
 
 // One dropdown option — tap the pencil icon to edit it in place (Enter or

@@ -5,7 +5,7 @@ import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
 import GSButton from '../../gs-lib/components/gs-button'
 import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } from './OrderResponsesFilterNav.jsx'
-import { QUESTION_OPTIONS, isAnswerMissing, occurrenceLabelFor, entityNameFor } from './orderUtils'
+import { QUESTION_OPTIONS, isAnswerMissing, isNumberQuestion, occurrenceLabelFor, entityNameFor } from './orderUtils'
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 
@@ -292,6 +292,7 @@ export default function OrderResponsesListDraft1({
                 <GSField
                   label={entry.question}
                   isEditable
+                  type={isNumberQuestion(entry.question) ? 'number' : undefined}
                   value={editingAnswer.draft}
                   onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
                   onSubmit={canSave ? saveAnswerEdit : undefined}
