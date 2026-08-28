@@ -4,6 +4,7 @@ import AsyncSelect from 'react-select/async'
 import './gs-select.scss';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimesCircle, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { grey50 } from '../helpers/Theme';
 
 
 /**
@@ -90,6 +91,19 @@ export default class GSSelect extends Component {
             menuPortal: base => ({ ...base, zIndex: 9999 }),
             ...(this.props.styles || {}),
             singleValue: base => ({}),
+            // The menu renders in a portal on document.body (menuPortalTarget,
+            // used by every caller here), which escapes gs-select.scss's
+            // `gs-select .gs-select__option--is-focused` scoping — without an
+            // ancestor <gs-select> to match, those rules never apply and
+            // react-select falls back to its own default blue "click state"
+            // theme colors instead. Setting the option's background directly
+            // here works regardless of where the menu portals to.
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isFocused || state.isSelected ? grey50 : 'transparent',
+              color: 'inherit',
+              ':active': { backgroundColor: grey50 },
+            }),
           }}
           components={{ Input, MultiValueLabel, MultiValueRemove, ClearIndicator, DropdownIndicator }} 
           style={style}/>

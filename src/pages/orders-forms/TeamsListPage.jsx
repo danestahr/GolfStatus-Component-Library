@@ -49,11 +49,26 @@ export default function TeamsListPage() {
   // player tile's own name/handicap, etc.
   const [teamsData, setTeamsData] = useState(initialRegisteredTeams)
   const [unassignedList, setUnassignedList] = useState(initialUnassignedPlayers)
-  const [viewingOrderId, setViewingOrderId] = useState(null)
-  const [viewingOrderResponses, setViewingOrderResponses] = useState(false)
-  const [responsesOpenedDirectly, setResponsesOpenedDirectly] = useState(false)
-  const [responsesPlayerFilter, setResponsesPlayerFilter] = useState(null)
-  const [responsesCategory, setResponsesCategory] = useState(null)
+  // Coming back from a real page navigation away from this panel (its own
+  // "View All Responses" jumps to OrdersDraft1Page — see
+  // `viewAllOrderResponses` below) — real browser back restores this route,
+  // but this page fully unmounts in between, so nothing about which screen
+  // was showing survives on its own the way it would for a same-page state
+  // change. `viewAllOrderResponses` stamps the full scope onto this route's
+  // own history entry before it navigates away — not just `teamId` (an
+  // unassigned player's own Form Responses has no team at all) — so a real
+  // back (the browser's own button, or another page's chevron doing the
+  // same thing — see OrdersDraft1Page.jsx's base Order Details `onBack`)
+  // lands back on the exact same scoped Form Responses screen (a team's own,
+  // one player's, or an unassigned player's) instead of resetting to the
+  // bare list.
+  const reopenFormResponses = location.state?.reopenFormResponses ?? false
+  const [viewingOrderId, setViewingOrderId] = useState(() => (reopenFormResponses ? location.state?.orderId ?? null : null))
+  const [viewingOrderResponses, setViewingOrderResponses] = useState(reopenFormResponses)
+  const [responsesOpenedDirectly, setResponsesOpenedDirectly] = useState(reopenFormResponses)
+  const [responsesPlayerFilter, setResponsesPlayerFilter] = useState(() => (reopenFormResponses ? location.state?.playerName ?? null : null))
+  const [responsesCategory, setResponsesCategory] = useState(() => (reopenFormResponses ? location.state?.category ?? null : null))
+  const [responsesPackageName, setResponsesPackageName] = useState(() => (reopenFormResponses ? location.state?.packageName ?? null : null))
   const [editingResponse, setEditingResponse] = useState(null)
   const [viewingFormName, setViewingFormName] = useState(null)
   const [viewingFormQuestion, setViewingFormQuestion] = useState(null)
@@ -171,6 +186,8 @@ export default function TeamsListPage() {
     setViewingOrderResponses(false)
     setResponsesOpenedDirectly(false)
     setResponsesPlayerFilter(null)
+    setResponsesCategory(null)
+    setResponsesPackageName(null)
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
@@ -251,6 +268,7 @@ export default function TeamsListPage() {
     setViewingOrderResponses(false)
     setResponsesPlayerFilter(null)
     setResponsesCategory(null)
+    setResponsesPackageName(null)
   }
 
   // The Team Overview's own "Order Details" row — most teams have exactly
@@ -272,10 +290,13 @@ export default function TeamsListPage() {
   // row rather than drilling in through Order Details — so the back chevron
   // should return straight to the overview instead of stopping at a details
   // screen the user never actually saw. `category`/`playerName` pre-filter
-  // Form Responses to just this team, or just one of its players, so an
-  // order that also bundles a sponsor form doesn't show that mixed in too
-  // (see OrderResponsesFilterNav.jsx's Team/Sponsor/Players tabs).
-  function openOrderResponses(orderId, { direct = false, playerName = null, category = null } = {}) {
+  // Form Responses to just this team, or just one of its players;
+  // `packageName` locks it there permanently (see `initialPackageName` in
+  // OrderResponsesListDraft1.jsx) so an order that also bundles a sponsor
+  // form doesn't show that mixed in, and hides the filter switcher — the
+  // page header's "View All Responses" action is the way back out to the
+  // unscoped view (see the render call below).
+  function openOrderResponses(orderId, { direct = false, playerName = null, category = null, packageName = null } = {}) {
     saveCurrentScroll()
     setEditingResponse(null)
     setViewingFormName(null)
@@ -289,14 +310,44 @@ export default function TeamsListPage() {
     setResponsesOpenedDirectly(direct)
     setResponsesPlayerFilter(playerName)
     setResponsesCategory(category)
+    setResponsesPackageName(packageName)
   }
 
-  // The Team Overview's own "Form Responses" row — pre-filtered to this
-  // team's category AND, when the order bundles more than one team (see the
-  // ord-1005 comment in mockTeams.js), to this specific team's own contact
-  // so the other team's answers don't show up mixed in.
+  // The team's own scoped Form Responses screen's "View All Responses"
+  // action — jumps out to that order's unscoped Form Responses on
+  // OrdersDraft1Page, a real route change that fully unmounts this page. A
+  // plain `navigate` for that alone would leave this route's own history
+  // entry exactly as bare as a fresh visit, so a real back from over there
+  // would land back on the teams list instead of this Form Responses
+  // screen — `replace`-stamping this entry with enough state to reopen it
+  // (read by `reopenFormResponses` above) first fixes that, the same way
+  // `teamId` already does for reopening straight to the team overview.
+  function viewAllOrderResponses(orderId) {
+    navigate(location.pathname, {
+      replace: true,
+      state: {
+        teamId: selectedTeam?.id ?? null,
+        reopenFormResponses: true,
+        orderId,
+        category: responsesCategory,
+        packageName: responsesPackageName,
+        playerName: responsesPlayerFilter,
+      },
+    })
+    navigate(`/orders-draft-1/${orderId}/responses`)
+  }
+
+  // The Team Overview's own "Form Responses" row — locked to ['team',
+  // 'player'] (the team's own answers AND its players', not team-level
+  // questions alone) and to this team's own `packageName`, so an order that
+  // bundles more than one team (see the ord-1005 comment in mockTeams.js) or
+  // a sponsor form never shows either mixed in.
   function viewTeamFormResponses() {
-    openOrderResponses(selectedTeam.orderId, { direct: true, category: 'team', playerName: selectedTeam.contactName })
+    openOrderResponses(selectedTeam.orderId, {
+      direct: true,
+      category: ['team', 'player'],
+      packageName: selectedTeam.packageName,
+    })
   }
 
   // The Team Overview player card's "Form Responses" button — jumps
@@ -621,7 +672,7 @@ export default function TeamsListPage() {
                 onRemoveSelected={() => {}}
                 onAddTeam={() => {}}
                 onMessage={() => {}}
-                onFormResponses={person => openOrderResponses(person.orderId, { direct: true })}
+                onFormResponses={person => openOrderResponses(person.orderId, { direct: true, playerName: person.name })}
                 onViewOrder={person => openOrderDetails(person.orderId)}
                 onEditPlayer={person => openEditPlayer(person)}
                 iconOnlyAddTeam
@@ -721,14 +772,23 @@ export default function TeamsListPage() {
         ) : viewingOrderResponses ? (
           viewingOrder && (
             <OrderResponsesListDraft1
+              // Remounts whenever the scope actually changes (a different
+              // team/player, or a fresh visit) — `category`/`selectedName`
+              // are local state seeded from these same init props, but only
+              // on mount, so without this key they'd go stale instead of
+              // following a prop change on an already-mounted instance.
+              key={`${viewingOrder.id}:${responsesPackageName ?? 'all'}:${responsesCategory ?? ''}:${responsesPlayerFilter ?? ''}`}
               order={viewingOrder}
               onEditResponses={entries => startEditingResponse(viewingOrder.id, entries)}
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(viewingOrder.id, responseIndex, answerIndex, value)
               }
-              onViewFormAcrossOrders={viewFormEntity}
+              onViewFormAcrossOrders={responsesOpenedDirectly ? null : viewFormEntity}
               initialSelectedName={responsesPlayerFilter}
               initialCategory={responsesCategory}
+              initialPackageName={responsesPackageName}
+              locked={responsesOpenedDirectly}
+              onViewAllResponses={responsesOpenedDirectly ? () => viewAllOrderResponses(viewingOrder.id) : null}
             />
           )
         ) : viewingOrder ? (

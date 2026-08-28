@@ -12,228 +12,103 @@
   opacity: 0.7;
 }
 
-// The search bar sits below the graphs (see AllOrderResponsesForFormDraft1.jsx)
-// inside .ordr1-package instead of OrderResponsesListDraft1's usual spot
-// above it — .ordr1-package already insets 24px, so pull this back out to
-// the panel's true edge with a negative margin; its own horizontal padding
-// (from the shared .ordr1-list-search rule) re-creates the same 24px inset
-// for the input itself, keeping it aligned with the bars/tiles around it.
-// It already carries its own bottom border (see .ordr1-list-search), which
-// doubles as the divider between it and the response list below.
-.ordr1-package > .ordr1-list-search {
-  margin-left: (-$x-large-pad);
-  margin-right: (-$x-large-pad);
+// The quick filter (answer breakdown) and response list each get their own
+// independent inset instead of sharing one from a wrapping .ordr1-package —
+// .ordr1-package is Form Responses' per-package grouping (see
+// OrderResponsesListDraft1.scss), not a generic padding utility, so this
+// page no longer borrows it for that. The search bar between them stays
+// un-wrapped — it already carries its own inset and sticky/bordered styling
+// via the shared .ordr1-list-search rule.
+.aof-response-list-wrap {
+  padding: $x-large-pad;
 }
 
-// The currently-viewed question's answer breakdown, one bar per fixed
-// option (plus a "No Response" bar) — only rendered for multiple-choice
+// Taller top/bottom breathing room than the response list below it, plus its
+// own bottom border, so the quick filter reads as its own distinct section
+// of the page rather than blurring into the search bar right after it.
+.aof-quick-filter-wrap {
+  padding: $small-layout-pad $x-large-pad;
+  border-bottom: $light-border;
+}
+
+// The currently-viewed question's answer breakdown, one card per fixed
+// option (plus a "No Response" card) — only rendered for multiple-choice
 // questions (see `optionBreakdown` in orderUtils.js); a text/number question
-// has no fixed value set to break down this way. Sits in its own white tile
-// (reusing .ordr1-question-tile) same as the per-order answer tiles below it.
-// No padding of its own — the bar rows provide their own — but a bottom
-// border/gap caps it off as its own section, same divider convention as
-// .ordr1-package, ahead of the search bar below it.
-.aof-option-bars-tile {
-  padding: 0;
-  padding-bottom: $x-large-pad;
-  margin-bottom: $x-large-pad;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.aof-option-bars {
-  display: flex;
-  flex-direction: column;
-  gap: $medium-pad;
-}
-
-// Each bar row doubles as a filter control (see `setOptionFilter` in
-// AllOrderResponsesForFormDraft1.jsx) — a plain <button> reset back to a
-// plain column layout (label+count row, track row below it), with a
-// highlight for whichever option is currently filtered. Matches the Figma
-// "Answer Breakdown" component (node 2450:51922): the fill's `left` comes
-// from the bar's own cumulative offset (see `barsWithOffset` in the JSX),
-// not a fixed 0 — so each bar's segment picks up right where the previous
-// one's left off instead of every bar re-starting from the track's left edge.
-.aof-option-bar-row {
+// has no fixed value set to break down this way, so it has nothing to chart
+// and this whole section (and its .aof-quick-filter-wrap) is skipped for
+// those. Matches the Figma "Quick Select List" component (node 2465:45853):
+// a plain stack of bordered white cards, not the proportional bar chart this
+// used to be.
+.aof-quick-filter-list {
   display: flex;
   flex-direction: column;
   gap: $medium-pad;
   width: 100%;
+}
+
+// Each card doubles as a filter control (see `setOptionFilter` in
+// AllOrderResponsesForFormDraft1.jsx) — a plain <button> for an unselected
+// option, swapping to the grey "selected" look (and losing its own border,
+// per the Figma "Selected" variant) for whichever option is currently
+// filtered.
+.aof-quick-filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+  width: 100%;
   appearance: none;
-  background: none;
-  border: none;
-  border-radius: $small-medium-radius;
-  padding: $x-small-pad $small-pad;
-  margin: (-$x-small-pad) (-$small-pad);
+  background: $white;
+  border: $light-border;
+  border-radius: $medium-radius;
+  padding: $x-large-pad;
   font-family: $font-family;
   cursor: pointer;
-  // Only color/background fade — NOT padding/margin (the is-active state
-  // below changes those to grow its highlight). `$fast`'s all-properties
-  // shorthand used to animate that size change too, visibly growing the row
-  // and shoving its siblings down the flex column as it did; snapping the
-  // size change instantly while still fading the highlight in reads as a
-  // deliberate selection instead of a layout hiccup.
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 
   &:hover {
-    background: $grey-100;
+    background: $grey-50;
   }
 
   // The currently-selected filter option (see `optionFilter` in
-  // AllOrderResponsesForFormDraft1.jsx) gets extra breathing room around its
-  // highlight — 24px vs. the other rows' plain hover inset — so it reads as
-  // the one option the list is filtered down to.
+  // AllOrderResponsesForFormDraft1.jsx) — a plain div rather than a button
+  // (see the JSX) — it closes via its own X now instead of being a
+  // click-anywhere target, so no pointer cursor either.
   &.is-active {
-    padding: $x-large-pad;
-    margin: (-$x-large-pad);
-    background: rgba($cyan-700, 0.1);
-
-    .aof-option-bar-label,
-    .aof-option-bar-count {
-      color: $cyan-800;
-    }
-
-    .aof-option-bar-fill {
-      background: $cyan-800;
-    }
+    background: rgba($grey-200, 0.2);
+    border-color: transparent;
+    cursor: default;
   }
 }
 
-.aof-option-bar-header {
-  display: flex;
-  align-items: center;
-  gap: $x-large-pad;
-  width: 100%;
+// Clears the active filter back to "all" (see `setOptionFilter` in
+// AllOrderResponsesForFormDraft1.jsx) — sits at the card's trailing edge,
+// opposite the label/count column.
+.aof-quick-filter-item gs-button {
+  flex-shrink: 0;
 }
 
-.aof-option-bar-label {
-  flex: 1;
+.aof-quick-filter-item-text {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.aof-quick-filter-item-label {
   font-size: $small-font;
   font-weight: $bold-font-weight;
   color: $grey-800;
-  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.aof-option-bar-count {
-  flex-shrink: 0;
+.aof-quick-filter-item-count {
   font-size: $small-font;
   font-weight: $regular-font-weight;
   color: $grey-800;
   opacity: 0.7;
 }
 
-.aof-option-bar-track {
-  position: relative;
-  height: 16px;
-  border-radius: $huge-radius;
-  background: $grey-100;
-  width: 100%;
-}
-
-.aof-option-bar-fill {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: $huge-radius;
-  background: $cyan-700;
-  transition: left 0.3s ease, width 0.3s ease;
-}
-
-// The "No Response" bar reads as an absence, not just another option — grey
-// fill instead of cyan, muted label/count to match.
-.aof-option-bar-row.is-missing {
-  .aof-option-bar-fill {
-    background: $grey-400;
-  }
-
-  .aof-option-bar-label,
-  .aof-option-bar-count {
-    opacity: 0.6;
-  }
-}
-
-// One white tile per order, every question's answers are grouped back into
-// their per-order unit (see `groupAnswersByOrder` in
-// AllOrderResponsesForFormDraft1.jsx) — a single-respondent team/sponsor
-// question gets one order per tile same as a multi-respondent player one.
-.aof-order-groups {
-  display: flex;
-  flex-direction: column;
-  gap: $medium-large-pad;
-}
-
-.aof-order-group-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $medium-large-pad;
-  margin-bottom: $medium-large-pad;
-}
-
-// "View Order | View Team" (or "View Sponsor") sitting on the right of the
-// header, opposite the name/type column — same text-plus-link pattern as
-// OrderResponsesListDraft1.scss's .ordr1-filter-switch-*, just with two
-// links instead of one.
-.aof-order-group-links {
-  display: flex;
-  align-items: center;
-  gap: $medium-pad;
-  flex-shrink: 0;
-}
-
-.aof-order-group-name {
-  font-size: $small-font;
-  font-weight: $bold-font-weight;
-  color: $grey-800;
-}
-
-.aof-order-group-sep {
-  font-size: $small-font;
-  color: $grey-400;
-}
-
-// Jumps back to that order's own Order Details screen (see `onViewOrder` in
-// AllOrderResponsesForFormDraft1.jsx / `viewOrderDetails` in OrdersDraft1Page.jsx).
-.aof-order-group-link {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-family: $font-family;
-  font-size: $small-font;
-  font-weight: $regular-font-weight;
-  color: $cyan-700;
-  transition: color 0.15s;
-
-  &:hover {
-    color: $cyan-800;
-    text-decoration: underline;
-  }
-}
-
-.aof-order-group-type {
-  font-size: $small-font;
-  font-weight: $regular-font-weight;
-  color: $grey-800;
-  opacity: 0.7;
-}
-
-// Left side of the header: name/business (+ the sponsor contact underneath,
-// for a sponsor-level group) with the occurrence-type label stacked below
-// that (see `renderGroupName` in AllOrderResponsesForFormDraft1.jsx).
-.aof-order-group-name-col {
-  display: flex;
-  flex-direction: column;
-  gap: $x-small-pad;
-}
-
-.aof-order-group-contact {
-  font-size: $small-font;
-  font-weight: $regular-font-weight;
-  color: $grey-800;
-  opacity: 0.7;
-}

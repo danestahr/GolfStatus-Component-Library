@@ -48,11 +48,23 @@ export default function SponsorsListPage() {
     return sponsorId ? initialSponsors.find(s => s.id === sponsorId) ?? null : null
   })
   const [orderList, setOrderList] = useState(initialOrders)
-  const [viewingOrderId, setViewingOrderId] = useState(null)
-  const [viewingOrderResponses, setViewingOrderResponses] = useState(false)
-  const [responsesOpenedDirectly, setResponsesOpenedDirectly] = useState(false)
-  const [responsesCategory, setResponsesCategory] = useState(null)
+  // Coming back from a real page navigation away from this panel (its own
+  // "View All Responses" jumps to OrdersDraft1Page — see
+  // `viewAllOrderResponses` below) — real browser back restores this route,
+  // but this page fully unmounts in between, so nothing about which screen
+  // was showing survives on its own the way it would for a same-page state
+  // change. `viewAllOrderResponses` stamps that onto this route's own
+  // history entry before it navigates away specifically so a real back (the
+  // browser's own button, or another page's chevron doing the same thing —
+  // see OrdersDraft1Page.jsx's base Order Details `onBack`) lands back on
+  // this exact Form Responses screen instead of resetting to the bare list.
+  const reopenFormResponses = location.state?.reopenFormResponses ?? false
+  const [viewingOrderId, setViewingOrderId] = useState(() => (reopenFormResponses ? selectedSponsor?.orderId ?? null : null))
+  const [viewingOrderResponses, setViewingOrderResponses] = useState(reopenFormResponses)
+  const [responsesOpenedDirectly, setResponsesOpenedDirectly] = useState(reopenFormResponses)
+  const [responsesCategory, setResponsesCategory] = useState(reopenFormResponses ? 'sponsor' : null)
   const [responsesNameFilter, setResponsesNameFilter] = useState(null)
+  const [responsesPackageName, setResponsesPackageName] = useState(() => (reopenFormResponses ? location.state?.packageName ?? null : null))
   const [editingResponse, setEditingResponse] = useState(null)
   const [viewingFormName, setViewingFormName] = useState(null)
   const [viewingFormQuestion, setViewingFormQuestion] = useState(null)
@@ -148,6 +160,7 @@ export default function SponsorsListPage() {
     setResponsesOpenedDirectly(false)
     setResponsesCategory(null)
     setResponsesNameFilter(null)
+    setResponsesPackageName(null)
     setEditingResponse(null)
     setViewingFormName(null)
     setViewingFormQuestion(null)
@@ -225,20 +238,21 @@ export default function SponsorsListPage() {
     setViewingOrderResponses(false)
     setResponsesCategory(null)
     setResponsesNameFilter(null)
+    setResponsesPackageName(null)
   }
 
   // `direct` — reached straight from the Sponsor Overview's "Form Responses"
   // row rather than drilling in through Order Details — so the back chevron
   // should return straight to the overview instead of stopping at a details
-  // screen the user never actually saw. `category` pre-filters Form
-  // Responses to just this sponsor so an order that also bundles a team
-  // registration doesn't show that team's forms mixed in too (see
-  // OrderResponsesFilterNav.jsx's Team/Sponsor/Players tabs); `name` narrows
-  // further to this specific sponsor's own contact whenever the order
-  // bundles more than one sponsor (see the ord-1006 comment in
-  // mockOrders.js), so a multi-sponsor order doesn't show another sponsor's
-  // answers mixed in.
-  function openOrderResponses(orderId, { direct = false, category = null, name = null } = {}) {
+  // screen the user never actually saw. `category`/`packageName` lock Form
+  // Responses to just this sponsor's own package (matched by `packageName` —
+  // see `initialPackageName` in OrderResponsesListDraft1.jsx) so an order
+  // that also bundles a team registration, or more than one sponsor (see the
+  // ord-1006 comment in mockOrders.js), never shows either mixed in — and
+  // hides the filter switcher, since there's nothing left to change away
+  // from. The page header's "View All Responses" action is the way back out
+  // to the unscoped view (see the render call below).
+  function openOrderResponses(orderId, { direct = false, category = null, name = null, packageName = null } = {}) {
     saveCurrentScroll()
     setEditingResponse(null)
     setViewingFormName(null)
@@ -250,6 +264,24 @@ export default function SponsorsListPage() {
     setResponsesOpenedDirectly(direct)
     setResponsesCategory(category)
     setResponsesNameFilter(name)
+    setResponsesPackageName(packageName)
+  }
+
+  // The sponsor's own scoped Form Responses screen's "View All Responses"
+  // action — jumps out to that order's unscoped Form Responses on
+  // OrdersDraft1Page, a real route change that fully unmounts this page. A
+  // plain `navigate` for that alone would leave this route's own history
+  // entry exactly as bare as a fresh visit, so a real back from over there
+  // would land back on the sponsor list instead of this Form Responses
+  // screen — `replace`-stamping this entry with enough state to reopen it
+  // (read by `reopenFormResponses` above) first fixes that, the same way
+  // `sponsorId` already does for reopening straight to the sponsor overview.
+  function viewAllOrderResponses(orderId) {
+    navigate(location.pathname, {
+      replace: true,
+      state: { sponsorId: selectedSponsor?.id, reopenFormResponses: true, packageName: responsesPackageName },
+    })
+    navigate(`/orders-draft-1/${orderId}/responses`)
   }
 
   // The Form Overview's "Add Question" button — opens as another screen in
@@ -485,7 +517,7 @@ export default function SponsorsListPage() {
             <SponsorOverviewPanel
               sponsor={selectedSponsor}
               onViewOrderDetails={() => openOrderDetails(selectedSponsor.orderId)}
-              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor', name: selectedSponsor.contactName })}
+              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor', packageName: selectedSponsor.package })}
             />
           )
         ) : editingResponse ? (
@@ -526,14 +558,23 @@ export default function SponsorsListPage() {
         ) : viewingOrderResponses ? (
           viewingOrder && (
             <OrderResponsesListDraft1
+              // Remounts whenever the scope actually changes (a different
+              // sponsor, or a fresh visit) — `category`/`selectedName` are
+              // local state seeded from these same init props, but only on
+              // mount, so without this key they'd go stale instead of
+              // following a prop change on an already-mounted instance.
+              key={`${viewingOrder.id}:${responsesPackageName ?? 'all'}:${responsesCategory ?? ''}:${responsesNameFilter ?? ''}`}
               order={viewingOrder}
               onEditResponses={entries => startEditingResponse(viewingOrder.id, entries)}
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(viewingOrder.id, responseIndex, answerIndex, value)
               }
-              onViewFormAcrossOrders={viewFormEntity}
+              onViewFormAcrossOrders={responsesOpenedDirectly ? null : viewFormEntity}
               initialCategory={responsesCategory}
               initialSelectedName={responsesNameFilter}
+              initialPackageName={responsesPackageName}
+              locked={responsesOpenedDirectly}
+              onViewAllResponses={responsesOpenedDirectly ? () => viewAllOrderResponses(viewingOrder.id) : null}
             />
           )
         ) : viewingOrder ? (
@@ -543,7 +584,7 @@ export default function SponsorsListPage() {
             <SponsorOverviewPanel
               sponsor={selectedSponsor}
               onViewOrderDetails={() => openOrderDetails(selectedSponsor.orderId)}
-              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor', name: selectedSponsor.contactName })}
+              onViewFormResponses={() => openOrderResponses(selectedSponsor.orderId, { direct: true, category: 'sponsor', packageName: selectedSponsor.package })}
             />
           )
         )}

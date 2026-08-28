@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
@@ -57,13 +57,6 @@ function groupResponses(responses) {
   return packages
 }
 
-function formatEditedAt(iso) {
-  const date = new Date(iso)
-  const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-  const day = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-  return `Edited ${time} on ${day}`
-}
-
 function matchesQuery(entry, query) {
   if (!query) return true
   if (entry.question.toLowerCase().includes(query)) return true
@@ -72,10 +65,15 @@ function matchesQuery(entry, query) {
   )
 }
 
-// 'all' shows every fillLevel — Team/Sponsor/Players narrow to their
-// own occurrence type (see OrderResponsesFilterNav.jsx).
+// 'all' shows every fillLevel — Team/Sponsor/Players narrow to their own
+// occurrence type (see OrderResponsesFilterNav.jsx). A category can also be
+// an array (e.g. ['team', 'player']) for a locked, multi-fillLevel scope —
+// see `initialPackageName` below — that the filter nav itself never
+// produces on its own.
 function matchesCategory(entry, category) {
-  return category === 'all' || entry.fillLevel === category
+  if (!category || category === 'all') return true
+  if (Array.isArray(category)) return category.includes(entry.fillLevel)
+  return entry.fillLevel === category
 }
 
 // Which of a question's answer tiles to actually show for the current
@@ -106,9 +104,36 @@ export default function OrderResponsesListDraft1({
   order,
   onEditResponses,
   onSaveAnswer,
-  onViewFormAcrossOrders,
+  // The "| View Team"/"| View Sponsor" link next to a form section's
+  // subtitle — only meaningful when this page itself doesn't already know
+  // which team/sponsor/player it's scoped to (reached via a plain Order
+  // Details, not a team's/sponsor's own "Form Responses" row or one of their
+  // player tiles — see `locked` below); a caller passes `null` instead of a
+  // real handler whenever it's already scoped, which this omits the link
+  // for entirely rather than leaving it clickable to nowhere.
+  onViewFormAcrossOrders = null,
   initialSelectedName = null,
   initialCategory = null,
+  // Scopes the whole page down to one team's or sponsor's own package (see
+  // the Team/Sponsor Overview "Form Responses" row in TeamsListPage.jsx/
+  // SponsorsListPage.jsx/OrdersDraft1Page.jsx) — matched against each
+  // response's own `packageName`, the same field that disambiguates a multi-
+  // team or multi-sponsor order (see the ord-1005/ord-1006 comments in
+  // mockTeams.js/mockOrders.js), so a bundled order only ever shows the one
+  // entity's own forms.
+  initialPackageName = null,
+  // Permanently hides the filter switcher (see `showFilter` below) — passed
+  // whenever a caller opened this page already scoped to one specific
+  // entity/respondent (a team's or sponsor's own "Form Responses" row, a
+  // Team Overview player tile, or an unassigned player's own card — see
+  // `responsesOpenedDirectly` in TeamsListPage.jsx/SponsorsListPage.jsx),
+  // since landing here already IS the filter — there's nothing left to
+  // change away from. Kept independent of `initialPackageName` since an
+  // unassigned player has no package of their own to lock to at all, but is
+  // just as locked to their own one respondent. `onViewAllResponses`, when
+  // given, adds a header action back to the unscoped, fully filterable view.
+  locked = false,
+  onViewAllResponses = null,
 }) {
   const [search, setSearch] = useState('')
   // A caller that already knows the category (e.g. landing here from a
@@ -151,7 +176,9 @@ export default function OrderResponsesListDraft1({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   })
 
-  const fullResponses = order.formResponses
+  const fullResponses = initialPackageName
+    ? order.formResponses.filter(entry => entry.packageName === initialPackageName)
+    : order.formResponses
   const query = search.trim().toLowerCase()
   const filteredResponses = fullResponses.filter(entry => matchesQuery(entry, query) && matchesCategory(entry, category))
   const packages = groupResponses(filteredResponses)
@@ -202,10 +229,11 @@ export default function OrderResponsesListDraft1({
   // Only offer categories this order actually has occurrences of — e.g. no
   // Sponsor tab on an order with no sponsor forms at all — and skip the
   // whole filter when there's nothing to narrow down (a single occurrence
-  // type makes "All" and that type identical).
+  // type makes "All" and that type identical), or when `locked` says this
+  // page is already scoped to one specific entity/respondent.
   const presentFillLevels = new Set(fullResponses.map(entry => entry.fillLevel))
   const availableCategories = RESPONSE_CATEGORIES.filter(c => c.value === 'all' || presentFillLevels.has(c.value))
-  const showFilter = presentFillLevels.size > 1
+  const showFilter = !locked && presentFillLevels.size > 1
 
   const filterDescription = selectedName
     ? `${nameLabelsByCategory[category]?.[selectedName] ?? selectedName} Responses`
@@ -314,11 +342,10 @@ export default function OrderResponsesListDraft1({
                   )}
                 </div>
               )}
-              {!isEditing && (
-                <div className="ordr1-answer-meta">
-                  {answer.editedAt && (
-                    <span className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</span>
-                  )}
+              <div className="ordr1-answer-meta">
+                {isEditing ? (
+                  <GSButton buttonIcon={faTimesCircle} size="primary" isFocusable onClick={cancelAnswerEdit} />
+                ) : (
                   <GSButton
                     type="white icon ord-form-response-answer-edit-btn"
                     size="primary"
@@ -329,8 +356,8 @@ export default function OrderResponsesListDraft1({
                       setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
                     }
                   />
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )
         })}
@@ -361,6 +388,9 @@ export default function OrderResponsesListDraft1({
           ) : (
             'Form Responses'
           )
+        }
+        pageActions={
+          onViewAllResponses ? [{ buttonTitle: 'View All Responses', type: 'light-grey', actionClick: onViewAllResponses }] : []
         }
       />
 
@@ -409,7 +439,7 @@ export default function OrderResponsesListDraft1({
                             <span className="ordr1-form-section-subtitle-text">
                               {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
                             </span>
-                            {viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam) && (
+                            {onViewFormAcrossOrders && viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam) && (
                               <>
                                 <span className="ordr1-filter-switch-sep">|</span>
                                 <button

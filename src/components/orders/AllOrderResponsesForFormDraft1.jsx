@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
@@ -9,7 +9,6 @@ import {
   isAnswerMissing,
   isNumberQuestion,
   occurrenceLabelFor,
-  viewLinkLabelFor,
   QUESTION_OPTIONS,
   optionBreakdown,
   MISSING_OPTION_FILTER,
@@ -17,6 +16,11 @@ import {
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 import './AllOrderResponsesForFormDraft1.scss'
+
+// What each quick-filter card's caption counts by — a player-level
+// question's cards count players, a team-level one counts whole teams, etc.;
+// a plain order-level question (no fillLevel) falls back to counting orders.
+const FILL_LEVEL_COUNT_NOUNS = { team: 'Teams', player: 'Players', sponsor: 'Sponsors' }
 
 const SAVE_DELAY_MS = 1000
 
@@ -36,34 +40,6 @@ function matchesQuery(answer, query) {
     answer.buyerName.toLowerCase().includes(query) ||
     String(answer.value).toLowerCase().includes(query)
   )
-}
-
-// Every order reads as its own unit regardless of fill level — a team's/
-// order's players belong together the same way a single team or sponsor
-// contact does — so once a question's answers are rolled up across orders
-// they're grouped back into that per-order unit rather than left as one
-// long list mixing every order together. Grouped by packageName too, not
-// just orderId — an order can bundle two separate teams (one per package,
-// e.g. a Team Registration plus a Premium Hole Sponsor's included team), and
-// each needs its own group/"View Team" link rather than getting merged into
-// one combined roster (see the ord-1005 comment in mockTeams.js).
-function groupAnswersByOrder(answers) {
-  const groups = []
-  answers.forEach(answer => {
-    let group = groups.find(g => g.orderId === answer.orderId && g.packageName === answer.packageName)
-    if (!group) {
-      group = {
-        orderId: answer.orderId,
-        packageName: answer.packageName,
-        buyerName: answer.buyerName,
-        businessName: answer.businessName,
-        answers: [],
-      }
-      groups.push(group)
-    }
-    group.answers.push(answer)
-  })
-  return groups
 }
 
 // Opened from the arrow button on a form section in OrderResponsesListDraft1
@@ -87,7 +63,7 @@ function groupAnswersByOrder(answers) {
 // by instead of `formName` — same "stays linked across a rename" reasoning
 // as OrderFormOverviewDraft1.jsx; `formName` still does the on-screen
 // labeling either way (see the page header below).
-export default function AllOrderResponsesForFormDraft1({ orders, formName, formId, initialQuestion, onViewOrder, onViewEntity, onSaveAnswer }) {
+export default function AllOrderResponsesForFormDraft1({ orders, formName, formId, initialQuestion, onSaveAnswer }) {
   const [search, setSearch] = useState('')
   const [optionFilter, setOptionFilter] = useState('all')
   // Identifies the answer being edited by its home order/entry/answer
@@ -180,38 +156,16 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
     return answer.value === optionFilter
   }
 
+  // Flat, A-Z-by-respondent list — no more per-order/team grouping, so a
+  // form with the same question answered across many orders just reads as
+  // one plain list of editable tiles instead of a stack of order sections.
   const visibleAnswers = currentQuestion
     ? currentQuestion.answers
         .filter(answer => matchesQuery(answer, query))
         .filter(answer => !isMultipleChoice || matchesOptionFilter(answer))
+        .slice()
+        .sort((a, b) => a.respondent.localeCompare(b.respondent))
     : []
-  const orderGroups = groupAnswersByOrder(visibleAnswers)
-
-  // Left side: the name/business (plus the sponsor contact underneath, for
-  // a sponsor-level group) with the occurrence-type label underneath that —
-  // a team-level group reads as "{captain}'s Team", a sponsor-level group
-  // leads with the business name, and anything else (player-level) keeps
-  // the plain "{buyer}'s Order" label used everywhere else in this view.
-  // The name used is the group's OWN respondent (its first answer), not the
-  // order's `buyerName` — `buyerName` is one value per order, so two teams
-  // or two sponsors sharing an order (see the ord-1005/ord-1006 comments in
-  // mockTeams.js/mockOrders.js) would otherwise render identical, unlabeled
-  // headers back to back. The first respondent is always that group's own
-  // captain/contact (every mock roster lists them first).
-  function renderGroupName(group, fillLevel) {
-    const contactName = group.answers[0]?.respondent ?? group.buyerName
-
-    if (fillLevel === 'sponsor') {
-      return (
-        <>
-          <span className="aof-order-group-name">{group.businessName ?? group.buyerName}</span>
-          <div className="aof-order-group-contact">{contactName}</div>
-        </>
-      )
-    }
-
-    return <span className="aof-order-group-name">{contactName}'s {fillLevel === 'team' ? 'Team' : 'Order'}</span>
-  }
 
   function renderAnswerTile(answer, key) {
     const isEditing = isEditingAnswer(answer)
@@ -263,8 +217,10 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
           </div>
         )}
 
-        {!isEditing && (
-          <div className="ordr1-answer-meta">
+        <div className="ordr1-answer-meta">
+          {isEditing ? (
+            <GSButton buttonIcon={faTimesCircle} size="primary" isFocusable onClick={cancelAnswerEdit} />
+          ) : (
             <GSButton
               type="white icon ord-form-response-answer-edit-btn"
               size="primary"
@@ -281,8 +237,8 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
                 })
               }
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     )
   }
@@ -301,21 +257,6 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
   // filter by.
   const breakdown = currentQuestion ? optionBreakdown(currentQuestion.question, currentQuestion.answers) : null
 
-  // Each bar's fill sits at its own slice of the whole 0-100% range, one
-  // after another in bar order, rather than every fill starting back at the
-  // track's left edge — so the run of bars reads as one distribution added
-  // up across rows (Figma "Answer Breakdown" component,
-  // node 2450:51922) instead of a set of independent 0-N gauges.
-  let cumulativePct = 0
-  const barsWithOffset = breakdown
-    ? breakdown.bars.map(bar => {
-        const pct = breakdown.total ? (bar.count / breakdown.total) * 100 : 0
-        const offsetPct = cumulativePct
-        cumulativePct += pct
-        return { ...bar, pct, offsetPct }
-      })
-    : []
-
   return (
     <div className="ordr1-list aof-list">
       <GSActionBar
@@ -325,7 +266,13 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
             <>
               {currentQuestion.question}
               <div className="aof-answer-summary">
-                {hasMultipleQuestions ? `${questionIndex + 1} of ${allQuestions.length} Questions | ${formName}` : formName}
+                {/* Every respondent who had this question in front of them at
+                    all — a real answer or not (the "No Response" bucket in
+                    the quick filter below counts the gap) — not just the
+                    ones who actually filled it in, so this reads as "how
+                    many X could've answered" rather than a live response
+                    tally. */}
+                {currentQuestion.answers.length} {occurrenceLabelFor(currentQuestion.fillLevel, currentQuestion.answers.length)} | {formName}
               </div>
             </>
           )
@@ -350,103 +297,73 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
         }
       />
 
-      <div className="ordr1-list-body">
-        <div className="ordr1-list-groups">
-          <div className="ordr1-package">
-            {breakdown && (
-              <div className="ordr1-question-tile aof-option-bars-tile">
-                <div className="aof-option-bars">
-                  {barsWithOffset.map(bar => {
-                    const isActive = optionFilter === bar.value
-                    return (
-                      <button
-                        type="button"
-                        className={`aof-option-bar-row${bar.isMissing ? ' is-missing' : ''}${isActive ? ' is-active' : ''}`}
-                        key={bar.label}
-                        onClick={() => setOptionFilter(isActive ? 'all' : bar.value)}
-                      >
-                        <div className="aof-option-bar-header">
-                          <div className="aof-option-bar-label">{bar.label}</div>
-                          <div className="aof-option-bar-count">{bar.count}</div>
-                        </div>
-                        <div className="aof-option-bar-track">
-                          <div
-                            className="aof-option-bar-fill"
-                            style={{ left: `${bar.offsetPct}%`, width: `${bar.pct}%` }}
-                          />
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="ordr1-list-search">
-              <GSinput
-                leftIcon={faMagnifyingGlass}
-                rightIcon={search ? faXmark : null}
-                rightIconClick={() => setSearch('')}
-                placeholder="Search by respondent, buyer, or response..."
-                textValue={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-
-            {currentQuestion && (
-              <div className="ordr1-forms">
-                <div className="ordr1-form-section">
-                  {orderGroups.length === 0 ? (
-                    <div className="ordr1-question-tile">
-                      <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
+      {breakdown && (
+        <div className="aof-quick-filter-wrap">
+          <div className="aof-quick-filter-list">
+            {breakdown.bars
+              .filter(bar => optionFilter === 'all' || bar.value === optionFilter)
+              .map(bar => {
+                const isActive = optionFilter === bar.value
+                const itemContent = (
+                  <>
+                    <div className="aof-quick-filter-item-text">
+                      <div className="aof-quick-filter-item-label">{bar.label}</div>
+                      <div className="aof-quick-filter-item-count">
+                        {bar.count} {FILL_LEVEL_COUNT_NOUNS[currentQuestion.fillLevel] ?? 'Orders'}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="aof-order-groups">
-                      {orderGroups.map(group => (
-                        <div className="ordr1-question-tile aof-order-group" key={`${group.orderId}-${group.packageName}`}>
-                          <div className="aof-order-group-header">
-                            <div className="aof-order-group-name-col">
-                              {renderGroupName(group, currentQuestion.fillLevel)}
-                              <div className="aof-order-group-type">
-                                {occurrenceLabelFor(currentQuestion.fillLevel, group.answers.length)}
-                              </div>
-                            </div>
+                    {isActive && (
+                      <GSButton
+                        buttonIcon={faTimesCircle}
+                        size="primary"
+                        isFocusable
+                        onClick={() => setOptionFilter('all')}
+                      />
+                    )}
+                  </>
+                )
+                const itemClassName = `aof-quick-filter-item${isActive ? ' is-active' : ''}`
 
-                            <div className="aof-order-group-links">
-                              <button type="button" className="aof-order-group-link" onClick={() => onViewOrder(group.orderId)}>
-                                View Order
-                              </button>
-                              <span className="aof-order-group-sep">|</span>
-                              {/* Unlike "View Order", this group's order can belong to a
-                                  different team/sponsor than whichever one the caller's
-                                  panel currently has open — onViewEntity re-resolves the
-                                  specific team/sponsor for THIS order rather than assuming
-                                  it's the one already on screen. Passing this group's own
-                                  packageName along disambiguates which of an order's teams
-                                  it is, for the rare order that bundles more than one. */}
-                              <button
-                                type="button"
-                                className="aof-order-group-link"
-                                onClick={() => onViewEntity(group.orderId, currentQuestion.fillLevel, group.packageName)}
-                              >
-                                {viewLinkLabelFor(currentQuestion.fillLevel)}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="ord-form-response-answers">
-                            {group.answers.map((answer, i) => renderAnswerTile(answer, i))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+                // Active item closes via its own X button rather than
+                // staying a giant click-anywhere-to-clear target — plain div
+                // instead of a button so that GSButton isn't nested inside
+                // one.
+                return isActive ? (
+                  <div className={itemClassName} key={bar.label}>
+                    {itemContent}
+                  </div>
+                ) : (
+                  <button type="button" className={itemClassName} key={bar.label} onClick={() => setOptionFilter(bar.value)}>
+                    {itemContent}
+                  </button>
+                )
+              })}
           </div>
         </div>
+      )}
+
+      <div className="ordr1-list-search">
+        <GSinput
+          leftIcon={faMagnifyingGlass}
+          rightIcon={search ? faXmark : null}
+          rightIconClick={() => setSearch('')}
+          placeholder="Search by respondent, buyer, or response..."
+          textValue={search}
+          onChange={e => setSearch(e.target.value)}
+        />
       </div>
+
+      {currentQuestion && (
+        <div className="aof-response-list-wrap">
+          {visibleAnswers.length === 0 ? (
+            <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
+          ) : (
+            <div className="ord-form-response-answers">
+              {visibleAnswers.map((answer, i) => renderAnswerTile(answer, i))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

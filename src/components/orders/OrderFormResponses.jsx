@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faPen } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faPen, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import GSField from '../../gs-lib/components/gs-field'
 import GSButton from '../../gs-lib/components/gs-button'
 import { QUESTION_OPTIONS } from './orderUtils'
@@ -146,11 +146,13 @@ export default function OrderFormResponses({ responses, onEditResponses, onSaveA
                 </div>
               )}
 
-              {!isEditing && (
-                <div className="ordr1-answer-meta">
-                  {answer.editedAt && (
-                    <span className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</span>
-                  )}
+              <div className="ordr1-answer-meta">
+                {!isEditing && answer.editedAt && (
+                  <span className="ord-form-response-answer-edited">{formatEditedAt(answer.editedAt)}</span>
+                )}
+                {isEditing ? (
+                  <GSButton buttonIcon={faTimesCircle} size="primary" isFocusable onClick={cancelAnswerEdit} />
+                ) : (
                   <GSButton
                     type="white icon ord-form-response-answer-edit-btn"
                     size="primary"
@@ -161,7 +163,8 @@ export default function OrderFormResponses({ responses, onEditResponses, onSaveA
                       setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
                     }
                   />
-                </div>
+                )}
+              </div>
               )}
             </div>
           )

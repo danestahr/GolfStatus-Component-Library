@@ -247,19 +247,13 @@ export default function OrderFormOverviewDraft1({
                           buttonIcon={faPen}
                           onClick={() => onEditQuestion(draftForQuestion(q))}
                         />
-                        {/* Hidden — responses still work, just reached by
-                            appending /responses to a form's own URL instead
-                            (see EventSitePackagesListPage's `openViewResponses`)
-                            while that screen's still being worked on.
-                            `onViewQuestion` is left wired in from the caller,
-                            so restoring this is just uncommenting it. */}
-                        {/* <GSButton
+                        <GSButton
                           type="light-grey"
                           size="primary"
-                          title={`Responses (${q.answers.length})`}
+                          title="Responses"
                           buttonIcon={faCommentAlt}
                           onClick={() => onViewQuestion(q.question)}
-                        /> */}
+                        />
                       </div>
                     </div>
                   </div>

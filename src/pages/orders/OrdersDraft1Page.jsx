@@ -48,6 +48,7 @@ export default function OrdersDraft1Page() {
   const [pickingOrderForTeam, setPickingOrderForTeam] = useState(null)
   const [responsesNameFilter, setResponsesNameFilter] = useState(null)
   const [responsesCategory, setResponsesCategory] = useState(null)
+  const [responsesPackageName, setResponsesPackageName] = useState(null)
 
   const selectedOrder = orderList.find(o => o.id === id) ?? null
   const viewingAllResponses = location.pathname.endsWith('/responses')
@@ -130,6 +131,7 @@ export default function OrdersDraft1Page() {
     setPickingOrderForTeam(null)
     setResponsesNameFilter(null)
     setResponsesCategory(null)
+    setResponsesPackageName(null)
     navigate('/orders-draft-1')
   }
 
@@ -137,13 +139,25 @@ export default function OrdersDraft1Page() {
     saveCurrentScroll()
     setResponsesNameFilter(null)
     setResponsesCategory(null)
+    setResponsesPackageName(null)
     navigate(`/orders-draft-1/${id}/responses`)
   }
 
+  // Only ever reached via the panel's own back chevron (see
+  // `handlePanelBack`'s `viewingAllResponses` branch) — `openAllResponses`
+  // above is the one and only way this Responses screen gets pushed onto
+  // history in the first place, so real back (`navigate(-1)`) always pops
+  // straight back to wherever that push came from, same as the base Order
+  // Details screen's own `onBack` below. A hardcoded forward push here
+  // instead would just pile a fresh Details entry on top every time the
+  // chevron's clicked, so the stack never actually shrinks back toward
+  // wherever the user actually came from (a sponsor's/team's own Form
+  // Responses screen, for instance — see SponsorsListPage.jsx/
+  // TeamsListPage.jsx's `viewAllOrderResponses`).
   function closeAllResponses() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
-    navigate(`/orders-draft-1/${id}`)
+    navigate(-1)
   }
 
   // The "| View ___" link on a form section — whether reached from a single
@@ -225,11 +239,14 @@ export default function OrdersDraft1Page() {
   // into this same order's own Order Details / Form Responses screens
   // rather than anywhere else, since the sponsor/team is always the one
   // attached to the order already open underneath. The "Form Responses"
-  // rows land pre-filtered to that entity's own category AND, when the order
-  // bundles more than one team or sponsor, to that specific one (matched by
-  // its contact's name — see OrderResponsesFilterNav.jsx's Team/Sponsor/
-  // Players tabs) so an order with e.g. two sponsors doesn't show the other
-  // sponsor's answers mixed in when you got here from one of them.
+  // rows land locked to that entity's own package (matched by `packageName`
+  // — see `initialPackageName` in OrderResponsesListDraft1.jsx) so an order
+  // that bundles more than one team or sponsor (see the ord-1005/ord-1006
+  // comments in mockTeams.js/mockOrders.js) never shows the other one's
+  // answers mixed in, and the filter switcher itself is hidden — there's
+  // nothing left to change away from once you've landed on one entity's own
+  // scope. The header's "View All Responses" action (see
+  // `onViewAllResponses`) is the way back out to the unscoped view.
   function viewSponsorOrderDetails() {
     saveCurrentScroll()
     setViewingSponsor(null)
@@ -238,10 +255,10 @@ export default function OrdersDraft1Page() {
 
   function viewSponsorFormResponses() {
     saveCurrentScroll()
-    const contactName = viewingSponsor?.contactName ?? null
     setViewingSponsor(null)
-    setResponsesNameFilter(contactName)
+    setResponsesNameFilter(null)
     setResponsesCategory('sponsor')
+    setResponsesPackageName(viewingSponsor?.package ?? null)
     if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
   }
 
@@ -266,12 +283,16 @@ export default function OrdersDraft1Page() {
     viewOrderDetails(orderId)
   }
 
+  // Locked to ['team', 'player'] (not just 'team') — a team's own Form
+  // Responses reads as the team AND its players' answers together, not the
+  // team-level questions alone (see `initialCategory`/`initialPackageName`
+  // in OrderResponsesListDraft1.jsx).
   function viewTeamFormResponses() {
     saveCurrentScroll()
-    const contactName = viewingTeam?.contactName ?? null
     setViewingTeam(null)
-    setResponsesNameFilter(contactName)
-    setResponsesCategory('team')
+    setResponsesNameFilter(null)
+    setResponsesCategory(['team', 'player'])
+    setResponsesPackageName(viewingTeam?.packageName ?? null)
     if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
   }
 
@@ -468,6 +489,18 @@ export default function OrdersDraft1Page() {
         onBack={
           pickingOrderForTeam || viewingSponsor || viewingTeam || editingResponse || viewingFormQuestion || viewingFormName || viewingAllResponses
             ? handlePanelBack
+            // The base Order Details screen — nothing left in this page's
+            // own panel stack to step back through, but that doesn't mean
+            // there's nowhere to go: this order can just as easily have been
+            // reached by a deep link from a totally different page (a
+            // sponsor's/team's own "View All Responses", see
+            // SponsorsListPage.jsx/TeamsListPage.jsx), so falling back to
+            // onClose here (this page's own bare list) would strand that
+            // page's in-panel state behind a hardcoded destination instead
+            // of actually retracing how the user got here. Real browser back
+            // handles both cases correctly on its own.
+            : selectedOrder
+            ? () => navigate(-1)
             : undefined
         }
         bodyRef={panelBodyRef}
@@ -558,14 +591,25 @@ export default function OrdersDraft1Page() {
         ) : viewingAllResponses ? (
           selectedOrder && (
             <OrderResponsesListDraft1
+              // Remounts whenever the scope actually changes (a fresh visit,
+              // a different team/sponsor/player, or dropping back to the
+              // unscoped view via "View All Responses") — `category`/
+              // `selectedName` are local state seeded from these same init
+              // props, but only on mount, so without this key they'd go
+              // stale instead of following a prop change on an
+              // already-mounted instance.
+              key={`${selectedOrder.id}:${responsesPackageName ?? 'all'}:${responsesCategory ?? ''}:${responsesNameFilter ?? ''}`}
               order={selectedOrder}
               onEditResponses={entries => startEditingResponse(selectedOrder.id, entries)}
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(selectedOrder.id, responseIndex, answerIndex, value)
               }
-              onViewFormAcrossOrders={viewFormAcrossOrders}
+              onViewFormAcrossOrders={responsesPackageName ? null : viewFormAcrossOrders}
               initialSelectedName={responsesNameFilter}
               initialCategory={responsesCategory}
+              initialPackageName={responsesPackageName}
+              locked={!!responsesPackageName}
+              onViewAllResponses={responsesPackageName ? openAllResponses : null}
             />
           )
         ) : (

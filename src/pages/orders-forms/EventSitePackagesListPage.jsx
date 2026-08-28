@@ -78,12 +78,12 @@ const FORMS_PATH = '/orders-forms/event-site-packages/forms'
 // add question), same single-panel-many-screens convention as TeamsListPage/
 // SponsorsListPage, rather than each destination opening its own stacked
 // panel. Unlike those, though, the "which form"/"viewing its responses"
-// screens ARE routes here (see `formId`/`viewingResponses` below) — the
-// Responses button on a question tile is hidden for now (still being worked
-// on; see OrderFormOverviewDraft1.jsx) but the screen it opened stays
-// reachable by appending /responses to a form's own URL. Add Form/Add
-// Question stay plain local-state overlays (`addingForm`/`addingQuestion`)
-// on top of whichever route screen is showing, same as before.
+// screens ARE routes here (see `formId`/`viewingResponses` below) — a
+// question tile's Responses button (OrderFormOverviewDraft1.jsx) opens that
+// route directly, and it's also reachable by appending /responses to a
+// form's own URL by hand. Add Form/Add Question stay plain local-state
+// overlays (`addingForm`/`addingQuestion`) on top of whichever route screen
+// is showing, same as before.
 export default function EventSitePackagesListPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -133,6 +133,19 @@ export default function EventSitePackagesListPage() {
     if (formOverviewName != null) setFormNameDraft(formOverviewName)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formOverviewId])
+  // Add Form/Add Question are plain overlays on top of whichever route is
+  // showing (see the comment above this component) — they never push their
+  // own history entry, so the browser's own back/forward buttons skip right
+  // past them and change the route underneath without ever closing them.
+  // Closing both here on every route change (however it happened — the
+  // panel's own back chevron, the browser's back/forward buttons, or a
+  // question's Responses link) keeps whichever overlay was open from being
+  // left stranded over a screen it no longer belongs to.
+  useEffect(() => {
+    setAddingForm(false)
+    setAddingQuestion(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
   const isEditingFormName = formOverviewName != null && formNameDraft !== formOverviewName
   // Which question AllOrderResponsesForFormDraft1 should open on — only
   // ever set by clicking a question's own Responses button (see
