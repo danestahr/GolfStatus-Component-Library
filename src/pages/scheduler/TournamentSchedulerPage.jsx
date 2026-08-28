@@ -26,7 +26,6 @@ import {
   faTriangleExclamation,
   faArrowRight,
   fa1,
-  faGripLines,
   faLink,
   faLinkSlash,
 } from '@fortawesome/free-solid-svg-icons'
@@ -403,13 +402,15 @@ function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, 
         )}
       </div>
       <div className="sched-round-card-actions">
-        {!hasAssignments && (
-          <GSButton type="light-grey" isFocusable buttonIcon={faPen} title="Edit Round" onClick={onEditRound} />
-        )}
-        <GSButton type="light-grey" isFocusable buttonIcon={faBolt} title="Hole Assignments" onClick={onOpenHoleAssignments} />
-        {hasAssignments && (
-          <GSButton type="green" isFocusable title="Start Round" onClick={() => {}} />
-        )}
+        <div className="sched-round-card-actions-group">
+          {!hasAssignments && (
+            <GSButton type="light-grey" isFocusable buttonIcon={faPen} title="Edit Round" onClick={onEditRound} />
+          )}
+          <GSButton type="light-grey" isFocusable buttonIcon={faBolt} title="Hole Assignments" onClick={onOpenHoleAssignments} />
+          {hasAssignments && (
+            <GSButton type="green" isFocusable title="Start Round" onClick={() => {}} />
+          )}
+        </div>
         <GSButton type="light-grey icon" size="primary" isFocusable buttonIcon={faClone} title="Copy Round" onClick={onCloneRound} />
       </div>
     </div>
@@ -417,157 +418,15 @@ function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, 
 }
 
 // One linked section's rounds (a Round Number group, or a wave's own
-// rounds), drag-to-reorder via a grabber — same pointer-driven adjacent-swap
-// approach as WavesPanel's own wave list, scaled down to this list's flat
-// rows (no header-collapse needed; a round card is already just the one
-// row, nothing nested to shrink out of the way while dragging). Reordering
-// only ever changes the array `rounds` is rendered in — it never touches
-// each round's own (internal, never-shown) Round Letter; onReorder feeds
-// roundOrderOverrides, which is the actual source of truth for display
-// order from here on.
-function RoundGroupList({ rounds, renderRound, onReorder }) {
-  const [draggingRound, setDraggingRound] = useState(null)
-  const [dragOffsetY, setDragOffsetY] = useState(0)
-  const [draftOrder, setDraftOrder] = useState(null)
-  const [flashOffsets, setFlashOffsets] = useState({})
-  const isReordering = draggingRound != null
-
-  const rowRefs = useRef(new Map())
-  const dragStartYRef = useRef(0)
-  const listRef = useRef(null)
-
-  const displayRounds = draftOrder ?? rounds
-
-  function setRowRef(round, el) {
-    if (el) rowRefs.current.set(round, el)
-    else rowRefs.current.delete(round)
-  }
-
-  function measureRowStep(excludeRound) {
-    const gap = listRef.current ? parseFloat(getComputedStyle(listRef.current).rowGap) || 0 : 0
-    for (const [round, el] of rowRefs.current) {
-      if (round === excludeRound) continue
-      return el.getBoundingClientRect().height + gap
-    }
-    return 0
-  }
-
-  function handleGrabberPointerDown(e, round) {
-    if (e.button != null && e.button !== 0) return
-    e.preventDefault()
-    dragStartYRef.current = e.clientY
-    setDraggingRound(round)
-    setDragOffsetY(0)
-    setDraftOrder(rounds)
-  }
-
-  function handleGrabberPointerMove(e) {
-    if (draggingRound == null) return
-    const step = measureRowStep(draggingRound)
-    let offset = e.clientY - dragStartYRef.current
-    if (step > 0) {
-      const order = [...(draftOrder ?? rounds)]
-      let idx = order.indexOf(draggingRound)
-      const flashes = {}
-      let didSwap = false
-      while (idx < order.length - 1 && offset > step / 2) {
-        const other = order[idx + 1]
-        order[idx] = other
-        order[idx + 1] = draggingRound
-        flashes[other] = step
-        idx += 1
-        offset -= step
-        didSwap = true
-      }
-      while (idx > 0 && offset < -step / 2) {
-        const other = order[idx - 1]
-        order[idx] = other
-        order[idx - 1] = draggingRound
-        flashes[other] = -step
-        idx -= 1
-        offset += step
-        didSwap = true
-      }
-      if (didSwap) {
-        setDraftOrder(order)
-        setFlashOffsets(prev => ({ ...prev, ...flashes }))
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setFlashOffsets(prev => {
-              const next = { ...prev }
-              Object.keys(flashes).forEach(id => { next[id] = 0 })
-              return next
-            })
-          })
-        })
-      }
-      const min = -idx * step
-      const max = (order.length - 1 - idx) * step
-      offset = Math.min(Math.max(offset, min), max)
-    }
-    setDragOffsetY(offset)
-    dragStartYRef.current = e.clientY - offset
-  }
-
-  function handleGrabberPointerUp() {
-    if (draftOrder && draftOrder.some((round, i) => round !== rounds[i])) {
-      onReorder(draftOrder)
-    }
-    setDraggingRound(null)
-    setDragOffsetY(0)
-    setFlashOffsets({})
-    setDraftOrder(null)
-  }
-
-  const pointerMoveRef = useRef(() => {})
-  const pointerUpRef = useRef(() => {})
-  pointerMoveRef.current = handleGrabberPointerMove
-  pointerUpRef.current = handleGrabberPointerUp
-
-  useEffect(() => {
-    if (draggingRound == null) return
-    const onMove = e => pointerMoveRef.current(e)
-    const onUp = e => pointerUpRef.current(e)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-    }
-  }, [draggingRound])
-
-  // Same as WavesPanel's wave grabber: reordering only means anything once
-  // there's a second row to reorder against, so a lone round in its group
-  // gets no grabber to drag.
-  const showGrabber = rounds.length >= 2
-
+// rounds), listed in order.
+function RoundGroupList({ rounds, renderRound }) {
   return (
-    <div ref={listRef} className={`sched-round-group-list${isReordering ? ' sched-round-group-list--reordering' : ''}`}>
-      {displayRounds.map(r => {
-        const isDragging = r === draggingRound
-        const rowStyle = {
-          transform: (isDragging ? dragOffsetY : (flashOffsets[r] ?? 0)) !== 0
-            ? `translateY(${isDragging ? dragOffsetY : flashOffsets[r]}px)`
-            : undefined,
-          zIndex: isDragging ? 2 : undefined,
-        }
-        return (
-          <div key={r} ref={el => setRowRef(r, el)} className="sched-round-row" style={rowStyle}>
-            <div className={`sched-round-row-inner${isDragging ? ' sched-round-row-inner--dragging' : ''}`}>
-              <div className="sched-round-row-card">
-                {renderRound(r)}
-              </div>
-              {showGrabber && (
-                <div className="sched-round-row-grabber" onPointerDown={e => handleGrabberPointerDown(e, r)}>
-                  <GSButton size="secondary" buttonIcon={faGripLines} onClick={e => e.stopPropagation()} />
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })}
+    <div className="sched-round-group-list">
+      {rounds.map(r => (
+        <div key={r} className="sched-round-row">
+          {renderRound(r)}
+        </div>
+      ))}
     </div>
   )
 }
@@ -1572,21 +1431,12 @@ export default function TournamentSchedulerPage() {
   const [teamSearch, setTeamSearch]       = useState('')
   const [roundListSearch, setRoundListSearch] = useState('')
 
-  // Manual drag order for a linked section's rounds (see RoundGroupList),
-  // keyed by the section's own key — independent of each round's Round
-  // Letter, which is never shown or user-editable, just auto-assigned at
-  // creation (see CreateRoundPanel) to give same-number rounds a stable
-  // default order before anyone's dragged them. This override is what
-  // actually decides display order from then on.
-  const [roundOrderOverrides, setRoundOrderOverrides] = useState({})
-
   // Rounds shown on the tournament landing view, filtered by round
   // number/name and ordered by each round's own Round Number (not its
   // ROUND_META key, which is just an internal id that a custom-numbered or
   // edited round can easily disagree with), then by each round's internal,
   // auto-assigned Round Letter (A-Z) as a default tiebreak for rounds that
-  // share a number — overridden the moment someone drags one, see
-  // roundOrderOverrides above.
+  // share a number.
   const filteredRounds = useMemo(() => {
     const q = roundListSearch.trim().toLowerCase()
     const rounds = q
@@ -1689,22 +1539,7 @@ export default function TournamentSchedulerPage() {
       }))
   }, [waves, filteredRounds, linkedRoundLabels])
 
-  // Layers any manual drag order on top of a section's default (Round
-  // Number then Letter) order — a stored override only ever reorders rounds
-  // already in the section; a round added or unlinked since the drag just
-  // falls in at the end rather than getting dropped.
-  const displayedRoundSections = useMemo(() => {
-    const sections = groupedRoundSections ?? roundNumberGroupedSections
-    if (!sections) return sections
-    return sections.map(section => {
-      const order = roundOrderOverrides[section.key]
-      if (!order) return section
-      const orderedSet = new Set(order)
-      const ordered = order.filter(r => section.rounds.includes(r))
-      const rest = section.rounds.filter(r => !orderedSet.has(r))
-      return { ...section, rounds: [...ordered, ...rest] }
-    })
-  }, [groupedRoundSections, roundNumberGroupedSections, roundOrderOverrides])
+  const displayedRoundSections = groupedRoundSections ?? roundNumberGroupedSections
 
   // Every distinct Round Number already in use, oldest first, each with the
   // letters already claimed within it — feeds CreateRoundPanel's own Round
@@ -2285,13 +2120,8 @@ export default function TournamentSchedulerPage() {
           ...(formatManagesWaves(savedRoundFormat) ? [
             { buttonTitle: 'Manage Waves', buttonIcon: faWater, type: 'light-grey', actionClick: () => setWavesPanelOpen(true) },
           ] : []),
-          // Team Check In and Documents both operate on rounds that already
-          // exist — nothing to check a team into or attach a document to
-          // before this tournament's first round is actually created.
-          ...(hasRounds ? [
-            { buttonTitle: 'Team Check In', buttonIcon: faListCheck, type: 'light-grey', actionClick: () => {} },
-            { buttonTitle: 'Documents', buttonIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
-          ] : []),
+          { buttonTitle: 'Team Check In', buttonIcon: faListCheck, type: 'light-grey', actionClick: () => {} },
+          { buttonTitle: 'Documents', buttonIcon: faFolderOpen, type: 'light-grey', actionClick: () => {} },
           ...(!useLegacyFilter && savedRoundFormat && !tournament.hideSettingsButton ? [{ buttonIcon: faGear, type: 'light-grey', actionClick: openSettingsPanel }] : []),
         ]}
       />
@@ -2360,11 +2190,10 @@ export default function TournamentSchedulerPage() {
                     // single Round Number of its own to link a new round
                     // into (see handleAddRoundToGroupClick). Round-Number
                     // groups have nothing to "manage" the way a wave does
-                    // (no membership panel; dragging a round's own grabber,
-                    // see RoundGroupList, is what reorders one), so the edit
-                    // pencil stays wave-only — the group's cosmetic label is
-                    // still editable via openLinkedRoundLabelPanel, but that
-                    // entry point is hidden here for now.
+                    // (no membership panel), so the edit pencil stays
+                    // wave-only — the group's cosmetic label is still
+                    // editable via openLinkedRoundLabelPanel, but that entry
+                    // point is hidden here for now.
                     pageActions={[
                       ...(section.key !== 'ungrouped' ? [
                         { buttonIcon: faPlus, type: 'light-grey icon', isFocusable: true, actionClick: () => handleAddRoundToGroupClick(section) },
@@ -2376,7 +2205,6 @@ export default function TournamentSchedulerPage() {
                   />
                   <RoundGroupList
                     rounds={section.rounds}
-                    onReorder={newOrder => setRoundOrderOverrides(prev => ({ ...prev, [section.key]: newOrder }))}
                     renderRound={r => (
                       <RoundListCard
                         name={roundCardName(r)}
