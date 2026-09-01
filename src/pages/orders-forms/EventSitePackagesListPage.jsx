@@ -395,11 +395,10 @@ export default function EventSitePackagesListPage() {
       : addingQuestion
       ? 'Question Details'
       : formOverviewId
-      ? viewingResponses
-        ? 'Responses'
-        // Static, matching 'Add Form' above, now that renaming happens
-        // inline on the form-overview screen itself.
-        : 'Form Details'
+      // Static, matching 'Add Form' above, now that renaming happens inline
+      // on the form-overview screen itself — same title whether that
+      // screen's showing the form or its responses.
+      ? 'Form Details'
       : 'Forms'
 
   // Save stays disabled until there's actually something to save — a name
@@ -455,7 +454,7 @@ export default function EventSitePackagesListPage() {
     <>
       <EntityListPage
         header="Event Site & Packages"
-        searchPlaceholder="Search..."
+        searchPlaceholder="Search Event Site and Packages..."
         search={search}
         onSearchChange={setSearch}
       >

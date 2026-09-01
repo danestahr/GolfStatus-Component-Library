@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faBarsStaggered, faFlag, faMagnifyingGlass, faPen, faTimesCircle, faUsers, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
@@ -179,12 +179,6 @@ export default function OrderResponsesListDraft1({
   const fullResponses = initialPackageName
     ? order.formResponses.filter(entry => entry.packageName === initialPackageName)
     : order.formResponses
-  // Whether unlocking (onViewAllResponses) would actually surface anything
-  // this locked scope (package + category) doesn't already show — an order
-  // with only the one sponsor/team/player this page is scoped to has
-  // nowhere left to go, so the button hides itself rather than linking to a
-  // view identical to the one already on screen.
-  const hasMoreResponsesElsewhere = order.formResponses.length > fullResponses.filter(entry => matchesCategory(entry, category)).length
   const query = search.trim().toLowerCase()
   const filteredResponses = fullResponses.filter(entry => matchesQuery(entry, query) && matchesCategory(entry, category))
   const packages = groupResponses(filteredResponses)
@@ -232,17 +226,14 @@ export default function OrderResponsesListDraft1({
     })
   })
 
-  // Every category stays selectable even when this order has no occurrences
-  // of it at all (e.g. a Sponsor tab on an order with no sponsor forms) —
-  // picking it just lands on the "No responses match this filter." empty
-  // state below rather than hiding the tab outright. The filter switcher
-  // itself stays up on the same terms — keyed only off `locked` — so editing
-  // answers down to zero matches for whichever category is currently
-  // selected doesn't yank the switcher (and the selection it's showing) out
-  // from under the user; skipped entirely only when `locked` says this page
-  // is already scoped to one specific entity/respondent.
-  const availableCategories = RESPONSE_CATEGORIES
-  const showFilter = !locked
+  // Only offer categories this order actually has occurrences of — e.g. no
+  // Sponsor tab on an order with no sponsor forms at all — and skip the
+  // whole filter when there's nothing to narrow down (a single occurrence
+  // type makes "All" and that type identical), or when `locked` says this
+  // page is already scoped to one specific entity/respondent.
+  const presentFillLevels = new Set(fullResponses.map(entry => entry.fillLevel))
+  const availableCategories = RESPONSE_CATEGORIES.filter(c => c.value === 'all' || presentFillLevels.has(c.value))
+  const showFilter = !locked && presentFillLevels.size > 1
 
   const filterDescription = selectedName
     ? `${nameLabelsByCategory[category]?.[selectedName] ?? selectedName} Responses`
@@ -329,27 +320,12 @@ export default function OrderResponsesListDraft1({
                 <GSField
                   label={entry.question}
                   isEditable
-                  // A free-text answer can run long (a name, a note) — grows
-                  // as a textarea instead of scrolling sideways in a single-
-                  // line input, so the whole value stays visible.
-                  type={isNumberQuestion(entry.question) ? 'number' : 'text-area'}
-                  rows={isNumberQuestion(entry.question) ? undefined : 1}
+                  type={isNumberQuestion(entry.question) ? 'number' : undefined}
                   value={editingAnswer.draft}
                   onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
                   onSubmit={canSave ? saveAnswerEdit : undefined}
-                  onKeyDown={e => {
-                    if (e.key === 'Escape') return cancelAnswerEdit()
-                    // The textarea swap loses the plain input's Enter-to-
-                    // submit (native keyUp handling only wires up for a
-                    // single-line <input> in gs-input.jsx) — Shift+Enter
-                    // still inserts a newline for a genuinely multi-line
-                    // answer.
-                    if (!isNumberQuestion(entry.question) && e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      canSave && saveAnswerEdit()
-                    }
-                  }}
-                  rightText="Save"
+                  onKeyDown={e => e.key === 'Escape' && cancelAnswerEdit()}
+                  rightIcon={faCheck}
                   rightIconClick={canSave ? saveAnswerEdit : undefined}
                   buttonStyle={saveButtonStyle(canSave)}
                   disabled={isSaving}
@@ -358,7 +334,7 @@ export default function OrderResponsesListDraft1({
               ) : (
                 <div className="ord-form-response-answer-row">
                   {isMissing ? (
-                    <div className="ordr1-answer-placeholder">No Response</div>
+                    <div className="ordr1-answer-placeholder">No response yet</div>
                   ) : (
                     answer.value !== answer.respondent && (
                       <div className="ord-form-response-answer-value">{answer.value}</div>
@@ -399,27 +375,23 @@ export default function OrderResponsesListDraft1({
               Form Responses
               <div className="ordr1-filter-switch">
                 <span className="ordr1-filter-switch-name">{filterDescription}</span>
+                <span className="ordr1-filter-switch-sep">|</span>
+                <button
+                  type="button"
+                  className="ordr1-filter-switch-link"
+                  onClick={() => setFilterNavOpen(v => !v)}
+                >
+                  {filterNavOpen ? 'Close' : 'Change'}
+                </button>
               </div>
             </>
           ) : (
             'Form Responses'
           )
         }
-        pageActions={[
-          ...(showFilter
-            ? [
-                {
-                  buttonTitle: filterNavOpen ? null : 'Filter',
-                  buttonIcon: filterNavOpen ? faTimesCircle : faBarsStaggered,
-                  type: 'light-grey',
-                  actionClick: () => setFilterNavOpen(v => !v),
-                },
-              ]
-            : []),
-          ...(onViewAllResponses && hasMoreResponsesElsewhere
-            ? [{ buttonTitle: 'View All Responses', type: 'light-grey', actionClick: onViewAllResponses }]
-            : []),
-        ]}
+        pageActions={
+          onViewAllResponses ? [{ buttonTitle: 'View All Responses', type: 'light-grey', actionClick: onViewAllResponses }] : []
+        }
       />
 
       {showFilter && (
@@ -440,7 +412,7 @@ export default function OrderResponsesListDraft1({
           leftIcon={faMagnifyingGlass}
           rightIcon={search ? faXmark : null}
           rightIconClick={() => setSearch('')}
-          placeholder="Search..."
+          placeholder="Search by question, response, or respondent..."
           textValue={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -458,11 +430,7 @@ export default function OrderResponsesListDraft1({
                 <div className="ordr1-package-label">{pkg.packageName}</div>
 
                 <div className="ordr1-forms">
-                  {pkg.forms.map(({ form, entries }) => {
-                    const viewLinkLabel = onViewFormAcrossOrders
-                      ? viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam)
-                      : null
-                    return (
+                  {pkg.forms.map(({ form, entries }) => (
                     <div className="ordr1-form-section" key={form.formName}>
                       <div className="ordr1-form-section-header">
                         <div className="ordr1-form-section-text">
@@ -471,20 +439,20 @@ export default function OrderResponsesListDraft1({
                             <span className="ordr1-form-section-subtitle-text">
                               {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
                             </span>
+                            {onViewFormAcrossOrders && viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam) && (
+                              <>
+                                <span className="ordr1-filter-switch-sep">|</span>
+                                <button
+                                  type="button"
+                                  className="ordr1-filter-switch-link"
+                                  onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
+                                >
+                                  {viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam)}
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
-                        {viewLinkLabel && (
-                          <div className="ordr1-form-section-actions">
-                            <GSButton
-                              type="light-grey"
-                              size="secondary"
-                              buttonIcon={viewLinkLabel === 'View Sponsor' ? faFlag : faUsers}
-                              title={viewLinkLabel}
-                              isFocusable
-                              onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
-                            />
-                          </div>
-                        )}
                       </div>
 
                       <div className="ordr1-question-tiles">
@@ -496,8 +464,7 @@ export default function OrderResponsesListDraft1({
                         ))}
                       </div>
                     </div>
-                    )
-                  })}
+                  ))}
                 </div>
               </div>
               )

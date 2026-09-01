@@ -443,7 +443,7 @@ export default function OrdersDraft1Page() {
                 leftIcon={faMagnifyingGlass}
                 rightIcon={search ? faXmark : null}
                 rightIconClick={() => setSearch('')}
-                placeholder="Search..."
+                placeholder="Search Orders..."
                 textValue={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -518,7 +518,7 @@ export default function OrdersDraft1Page() {
             : viewingFormName
             ? viewingFormName
             : viewingAllResponses
-            ? 'Responses'
+            ? 'Form Responses'
             : 'Order Details'
         }
         actions={

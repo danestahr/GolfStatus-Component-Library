@@ -286,6 +286,10 @@
 // waves exist.
 
 .sched-round-group {
+  & + & {
+    margin-top: $large-pad;
+  }
+
   // Sticks right beneath the round list's own sticky search/roster-overview
   // bar (see --round-group-header-offset, set in TournamentSchedulerPage.jsx)
   // rather than at top:0, which would hide it behind that bar instead.
@@ -386,7 +390,10 @@
 // it) and is sticky, same as a hole's own header below it — that's what lets the
 // browser hand the top:0 spot off between them natively as you scroll past this
 // header's real (unset, un-guessed) height, with no measurement or hardcoded
-// pixel value needed on either side.
+// pixel value needed on either side. Hiding it early via transform, before that
+// native handoff would happen on its own, is what gives it the deliberate
+// scroll-distance threshold (see the onScroll handlers in
+// TournamentSchedulerPage.jsx) instead of just however tall it happens to be.
 .sched-col-header {
   position: sticky;
   top: 0;
@@ -396,6 +403,12 @@
   flex-direction: column;
   gap: $medium-large-pad;
   background: $white;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Slides out of view on scroll-down, slides back in on scroll-up.
+  &--hidden {
+    transform: translateY(-100%);
+  }
 }
 
 .sched-col-title {
@@ -994,6 +1007,22 @@
   padding: $medium-large-pad $x-large-pad;
 }
 
+// Full-screen panel: cards vary in height (player count differs per team), so a
+// CSS multi-column ("bento") layout packs them tighter than a uniform grid would.
+// column-count is used instead of column-width — with this many (70+) tall,
+// break-inside:avoid items, Chrome's column-width auto-balancing collapses to a
+// single column instead of distributing them; a fixed count sidesteps that.
+.sched-teams-list--bento {
+  display: block;
+  column-count: 3;
+  column-gap: $medium-pad;
+
+  .sched-team-card {
+    break-inside: avoid;
+    margin-bottom: $medium-pad;
+  }
+}
+
 .sched-team-info {
   flex: 1;
   min-width: 0;
@@ -1291,6 +1320,7 @@
   // off in favor of the header just scrolling away with everything beneath it.
   .sched-col-header {
     position: static;
+    transform: none !important;
   }
 
   // Docked at the bottom of the panel's scroll — sticky (not fixed) so it stays

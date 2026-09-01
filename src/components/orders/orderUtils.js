@@ -217,12 +217,7 @@ export function optionBreakdown(question, answers) {
     count: answers.filter(a => a.value === option.value).length,
   }))
   const missingCount = answers.filter(isAnswerMissing).length
-  // Always present, even at zero — same reasoning as every other bar here:
-  // editing answers down to no more missing ones shouldn't make the "No
-  // Response" bar vanish while it's the one currently selected (see
-  // AllOrderResponsesForFormDraft1.jsx's quick-filter list, which keeps
-  // whatever bar `optionFilter` points at on screen even with a 0 count).
-  bars.push({ label: 'No Response', value: MISSING_OPTION_FILTER, count: missingCount, isMissing: true })
+  if (missingCount > 0) bars.push({ label: 'No Response', value: MISSING_OPTION_FILTER, count: missingCount, isMissing: true })
 
   return { bars, total: answers.length }
 }

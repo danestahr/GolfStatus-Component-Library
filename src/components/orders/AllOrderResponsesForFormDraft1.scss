@@ -21,18 +21,6 @@
 // via the shared .ordr1-list-search rule.
 .aof-response-list-wrap {
   padding: $x-large-pad;
-
-  // A quick-filter card selected down to an answer nobody picked — same
-  // generous top padding/centering as TournamentSchedulerPage's
-  // .sched-round-list-body--empty, so the GSEmptyList reads as its own
-  // focused moment rather than a cramped list item.
-  &--empty-filter {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    text-align: center;
-    padding: 120px $x-large-pad;
-  }
 }
 
 // Taller top/bottom breathing room than the response list below it, plus its

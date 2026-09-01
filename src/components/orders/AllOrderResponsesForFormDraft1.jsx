@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
-import GSEmptyList from '../../gs-lib/components/gs-empty-list'
 import {
   responsesForFormAcrossOrders,
   isAnswerMissing,
@@ -197,26 +196,12 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
           <GSField
             label={currentQuestion.question}
             isEditable
-            // A free-text answer can run long (a name, a note) — grows as a
-            // textarea instead of scrolling sideways in a single-line
-            // input, so the whole value stays visible.
-            type={isNumberQuestion(currentQuestion.question) ? 'number' : 'text-area'}
-            rows={isNumberQuestion(currentQuestion.question) ? undefined : 1}
+            type={isNumberQuestion(currentQuestion.question) ? 'number' : undefined}
             value={editingAnswer.draft}
             onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
             onSubmit={canSave ? saveAnswerEdit : undefined}
-            onKeyDown={e => {
-              if (e.key === 'Escape') return cancelAnswerEdit()
-              // The textarea swap loses the plain input's Enter-to-submit
-              // (native keyUp handling only wires up for a single-line
-              // <input> in gs-input.jsx) — Shift+Enter still inserts a
-              // newline for a genuinely multi-line answer.
-              if (!isNumberQuestion(currentQuestion.question) && e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                canSave && saveAnswerEdit()
-              }
-            }}
-            rightText="Save"
+            onKeyDown={e => e.key === 'Escape' && cancelAnswerEdit()}
+            rightIcon={faCheck}
             rightIconClick={canSave ? saveAnswerEdit : undefined}
             buttonStyle={saveButtonStyle(canSave)}
             disabled={isSaving}
@@ -225,7 +210,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
         ) : (
           <div className="ord-form-response-answer-row">
             {isAnswerMissing(answer) ? (
-              <div className="ordr1-answer-placeholder">No Response</div>
+              <div className="ordr1-answer-placeholder">No response yet</div>
             ) : (
               answer.value !== answer.respondent && <div className="ord-form-response-answer-value">{answer.value}</div>
             )}
@@ -362,33 +347,20 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
           leftIcon={faMagnifyingGlass}
           rightIcon={search ? faXmark : null}
           rightIconClick={() => setSearch('')}
-          placeholder="Search..."
+          placeholder="Search by respondent, buyer, or response..."
           textValue={search}
           onChange={e => setSearch(e.target.value)}
         />
       </div>
 
       {currentQuestion && (
-        <div className={`aof-response-list-wrap${visibleAnswers.length === 0 && !search && optionFilter !== 'all' ? ' aof-response-list-wrap--empty-filter' : ''}`}>
-          {visibleAnswers.length > 0 ? (
+        <div className="aof-response-list-wrap">
+          {visibleAnswers.length === 0 ? (
+            <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
+          ) : (
             <div className="ord-form-response-answers">
               {visibleAnswers.map((answer, i) => renderAnswerTile(answer, i))}
             </div>
-          ) : search ? (
-            <div className="ordr1-list-empty">{`No results for "${search}"`}</div>
-          ) : optionFilter !== 'all' ? (
-            // The quick filter narrowed to a specific answer that nobody
-            // picked — calls that out by name instead of the generic "no
-            // responses match this filter" text, with a way back to "all"
-            // right there instead of making the user retrace their way to
-            // the active filter card's own X.
-            <GSEmptyList
-              title={breakdown.bars.find(bar => bar.value === optionFilter)?.label}
-              detail="No one has selected this answer yet."
-              actions={[{ title: 'Clear Filter', type: 'light-grey', isFocusable: true, onClick: () => setOptionFilter('all') }]}
-            />
-          ) : (
-            <div className="ordr1-list-empty">No responses match this filter.</div>
           )}
         </div>
       )}
