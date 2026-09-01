@@ -7,8 +7,6 @@ import {
   faBolt,
   faGear,
   faFloppyDisk,
-  faUpRightAndDownLeftFromCenter,
-  faDownLeftAndUpRightToCenter,
   faCircleXmark,
   faRetweet,
   faArrowsRotate,
@@ -654,8 +652,6 @@ export default function TournamentSchedulerPage() {
   }
 
   const [panelOpen, setPanelOpen] = useState(false)
-  const [panelExpanded, setPanelExpanded] = useState(false)
-  const [panelWidthAnimating, setPanelWidthAnimating] = useState(false)
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false)
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
 
@@ -1254,58 +1250,11 @@ export default function TournamentSchedulerPage() {
     closeWaveRoundsPanel()
   }
 
-  // Only animate the width change for the moment right after the expand button is
-  // pressed — leaving the transition off the rest of the time keeps live viewport
-  // resizes (which also change the panel's calc()-based width) instant, not jerky.
-  function toggleExpanded() {
-    setPanelWidthAnimating(true)
-    setPanelExpanded(prev => !prev)
-    window.setTimeout(() => setPanelWidthAnimating(false), 320)
-  }
-
-  // Each column's header (title + search) slides out of view once you've scrolled
-  // down 56px continuously, and slides back as soon as you've scrolled up 56px —
-  // the same distance both ways, so hide/show feels identical between columns
-  // regardless of how tall their rows are. Distance-based (not per-event) so a
-  // single scroll-down doesn't hide it instantly, and reversing direction resets
-  // the count so short back-and-forth jitter near the top doesn't flicker it.
-  const TOGGLE_DISTANCE = 56
-  const [holesHeaderHidden, setHolesHeaderHidden] = useState(false)
-  const [teamsHeaderHidden, setTeamsHeaderHidden] = useState(false)
-  const holesScrollState = useRef({ lastTop: 0, accum: 0, direction: null })
-  const teamsScrollState = useRef({ lastTop: 0, accum: 0, direction: null })
   // The actual scrollable elements, so switching rounds/waves can snap both
   // columns back to the top instead of leaving them mid-scroll on content
   // that now belongs to a different round.
   const holesColScrollRef = useRef(null)
   const teamsColScrollRef = useRef(null)
-
-  function makeHeaderScrollHandler(stateRef, setHidden) {
-    return e => {
-      const top = e.currentTarget.scrollTop
-      const state = stateRef.current
-      const delta = top - state.lastTop
-      state.lastTop = top
-
-      if (top <= 0) {
-        state.accum = 0
-        state.direction = null
-        setHidden(false)
-        return
-      }
-      if (delta === 0) return
-
-      const direction = delta > 0 ? 'down' : 'up'
-      state.accum = direction === state.direction ? state.accum + Math.abs(delta) : Math.abs(delta)
-      state.direction = direction
-
-      if (direction === 'down' && state.accum >= TOGGLE_DISTANCE) setHidden(true)
-      else if (direction === 'up' && state.accum >= TOGGLE_DISTANCE) setHidden(false)
-    }
-  }
-
-  const handleHolesScroll = makeHeaderScrollHandler(holesScrollState, setHolesHeaderHidden)
-  const handleTeamsScroll = makeHeaderScrollHandler(teamsScrollState, setTeamsHeaderHidden)
 
   // Measured (never assumed) height of the Holes column's Assigned header. Both
   // it and a hole's own header are sticky at the same top:0, so without this a
@@ -1381,14 +1330,9 @@ export default function TournamentSchedulerPage() {
     setPendingTeams(new Set())
 
     // Each column scrolls independently per round, but the scroll position
-    // (and the header hide/show it drives) shouldn't carry over — land back
-    // at the top of both columns, with their headers visible, every time.
+    // shouldn't carry over — land back at the top of both columns every time.
     if (holesColScrollRef.current) holesColScrollRef.current.scrollTop = 0
     if (teamsColScrollRef.current) teamsColScrollRef.current.scrollTop = 0
-    holesScrollState.current = { lastTop: 0, accum: 0, direction: null }
-    teamsScrollState.current = { lastTop: 0, accum: 0, direction: null }
-    setHolesHeaderHidden(false)
-    setTeamsHeaderHidden(false)
   }
 
   // Picking a different round while the panel is already open (from
@@ -2143,7 +2087,7 @@ export default function TournamentSchedulerPage() {
                 leftIcon={faMagnifyingGlass}
                 rightIcon={roundListSearch ? faCircleXmark : undefined}
                 rightIconClick={() => setRoundListSearch('')}
-                placeholder="Search by Round Number or Label…"
+                placeholder="Search..."
                 textValue={roundListSearch}
                 onChange={e => setRoundListSearch(e.target.value)}
               />
@@ -2249,10 +2193,6 @@ export default function TournamentSchedulerPage() {
         onClose={() => setPanelOpen(false)}
         title={activeRound !== undefined ? `${roundName(activeRound)} Hole Assignments` : 'Hole Assignments'}
         banner={isSwitchingRound ? null : panelBanner}
-        expanded={panelExpanded}
-        animateWidth={panelWidthAnimating}
-        rightIcon={panelExpanded ? faDownLeftAndUpRightToCenter : faUpRightAndDownLeftFromCenter}
-        onRightAction={toggleExpanded}
       >
         <div className="sched-panel-layout">
           <div className="sched-panel-action-bar">
@@ -2321,10 +2261,10 @@ export default function TournamentSchedulerPage() {
             {/* ── Left: Holes ─────────────────────────────────────────────── */}
             <div
               className="sched-col sched-col--holes"
-              style={{ '--col-header-offset': `${holesHeaderHidden ? 0 : holesHeaderHeight}px` }}
+              style={{ '--col-header-offset': `${holesHeaderHeight}px` }}
             >
-              <div className="sched-col-scroll" ref={holesColScrollRef} onScroll={handleHolesScroll}>
-                <div ref={holesHeaderRef} className={`sched-col-header${holesHeaderHidden ? ' sched-col-header--hidden' : ''}`}>
+              <div className="sched-col-scroll" ref={holesColScrollRef}>
+                <div ref={holesHeaderRef} className="sched-col-header">
                   <div className="sched-col-title">
                     Assigned <span className="sched-col-count">({assignedCount}{!hidingAnyTeams ? `/${TOURNAMENT_TEAMS.length}` : ''})</span>
                   </div>
@@ -2369,8 +2309,8 @@ export default function TournamentSchedulerPage() {
                 full width instead of leaving an empty panel on screen. */}
             {availableTeams.length > 0 && (
               <div className="sched-col sched-col--teams">
-                <div className="sched-col-scroll" ref={teamsColScrollRef} onScroll={handleTeamsScroll}>
-                  <div className={`sched-col-header${teamsHeaderHidden ? ' sched-col-header--hidden' : ''}`}>
+                <div className="sched-col-scroll" ref={teamsColScrollRef}>
+                  <div className="sched-col-header">
                     <div className="sched-col-title">
                       Unassigned <span className="sched-col-count">({filteredAvailableTeams.length})</span>
                     </div>
@@ -2408,7 +2348,7 @@ export default function TournamentSchedulerPage() {
                     <div className="sched-empty-msg">No results for "{teamSearch}"</div>
                   )}
                   {filteredAvailableTeams.length > 0 && (
-                    <div className={`sched-teams-list${panelExpanded ? ' sched-teams-list--bento' : ''}`}>
+                    <div className="sched-teams-list">
                       {filteredAvailableTeams.map(team => (
                         <TeamCard
                           key={team.name}

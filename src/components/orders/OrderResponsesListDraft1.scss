@@ -17,9 +17,11 @@
   }
 }
 
-// "{Category} Responses | Change" line under the "Responses" header —
-// mirrors TournamentSchedulerPage.scss's .sched-wave-switch* for the same
-// pattern above Hole Assignments' WaveRoundNav.
+// "{Category} Responses" line under the "Responses" header — mirrors
+// TournamentSchedulerPage.scss's .sched-wave-switch-name for the same
+// pattern above Hole Assignments' WaveRoundNav. The switcher itself is now
+// the action bar's own "Filter" button rather than an inline text link (see
+// OrderResponsesListDraft1.jsx).
 .ordr1-filter-switch {
   display: flex;
   align-items: center;
@@ -31,27 +33,6 @@
   font-size: $small-font;
   font-weight: $regular-font-weight;
   color: $grey-800;
-}
-
-.ordr1-filter-switch-sep {
-  font-size: $small-font;
-  color: $grey-400;
-}
-
-.ordr1-filter-switch-link {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-family: $font-family;
-  font-size: $small-font;
-  font-weight: $regular-font-weight;
-  color: $cyan-700;
-  transition: color 0.15s;
-
-  &:hover {
-    color: $cyan-800;
-  }
 }
 
 // Full-width, sticky under the page header — its own background so it
@@ -202,13 +183,17 @@
     // A respondent that hasn't answered yet — outlined instead of filled so
     // it reads as "not there yet" rather than just a blank cyan tile.
     &.ordr1-answer-missing {
-      background: transparent;
-      border-width: 2px;
-      border-color: $grey-200;
-      border-style: dashed;
+      background-color: transparent;
+      border: none;
+      // Plain CSS `border-style: dashed` can't pin an exact dash/gap length,
+      // so the border's drawn as an inline SVG rect instead — 4px stroke, 6px
+      // dash, 6px gap, one step darker than $grey-200 ($grey-400) — traced
+      // around the tile's own border-radius ($medium-radius, 8px) so it
+      // still reads as this tile's outline rather than a separate overlay.
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='none' rx='8' ry='8' stroke='%23BEBEBE' stroke-width='4' stroke-dasharray='6 6'/%3E%3C/svg%3E");
 
       &:hover {
-        background: rgba($grey-500, 0.08);
+        background-color: rgba($grey-500, 0.08);
       }
 
       .ord-form-response-answer-name {
@@ -244,6 +229,37 @@
         .field {
           width: 100%;
         }
+
+        // The Save button shouldn't clip its label if the input narrows —
+        // let it wrap and grow instead of overflowing, taking the whole
+        // input row with it (rather than spilling past its border) while
+        // staying centered in that row.
+        gs-input {
+          height: auto;
+          gap: $medium-pad;
+        }
+
+        // A long free-text answer grows the textarea (see the
+        // type="text-area" swap in OrderResponsesListDraft1.jsx/
+        // AllOrderResponsesForFormDraft1.jsx) instead of scrolling it
+        // sideways in a single line — field-sizing lets it start at one
+        // row and expand with wrapped content, no manual resize handle.
+        textarea {
+          field-sizing: content;
+          min-height: 1lh;
+        }
+
+        .right-icon {
+          align-self: center;
+
+          gs-button {
+            height: auto;
+            min-height: 28px;
+            overflow: visible;
+            white-space: normal;
+            text-align: center;
+          }
+        }
       }
     }
 
@@ -274,8 +290,9 @@
 
   .ordr1-answer-placeholder {
     font-size: $small-font;
+    font-weight: 700;
     color: $grey-800;
-    opacity: 0.6;
+    opacity: 0.7;
   }
 }
 
