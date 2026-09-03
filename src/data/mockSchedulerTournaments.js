@@ -313,17 +313,4 @@ export const TOURNAMENTS = [
     hideRosterCount: true,
     hideSettingsButton: true,
   },
-  // Same empty-rounds shape as the canonical heritage-classic-invitational
-  // above, kept as its own id so open-ended round-setup experimentation has
-  // somewhere to happen without reshaping the original prototyping ground.
-  // Shown on the list (unlike the other riffs above) since it's the one
-  // actively being iterated on.
-  {
-    id: 'heritage-classic-invitational-riff',
-    name: '2026 Heritage Classic Invitational (Riff)',
-    courseName: 'Heritage Golf Club',
-    rounds: {},
-    hideRosterCount: true,
-    hideSettingsButton: true,
-  },
 ]

@@ -138,66 +138,6 @@ gs-select {
     }
   }
 
-  .gs-select__menu {
-    margin-top: 0;
-    border-radius: $medium-large-border-radius;;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    box-shadow: $no-top-second-layer-shadow;
-    border: none;
-
-    .gs-select__menu-list {
-      display: flex;
-      flex-direction: column;
-      overflow: auto;
-      box-sizing: border-box;
-      margin: auto $small-pad;
-      
-      .gs-select__menu-notice {
-        @include gs-font($x-small-font, $regular-font-weight, unset);
-        opacity: 0.7;
-        line-height: $spacious-line-height;
-      }
-
-      .gs-select__option {
-        display: inline-block;
-        padding: $medium-large-pad;
-
-        &:hover {
-          cursor: pointer;
-        }
-
-        &.gs-select__option--is-focused {
-          background: $grey-50;  
-          transition: $fast;
-          border-radius: $medium-large-border-radius;;
-        }
-
-        &.gs-select__option--is-selected {
-          color: unset;
-          background-color: $grey-50;
-          border-radius: $medium-radius;
-        }
-
-        .custom-select-option {
-          @include v-stack(center, unset);
-          margin: auto;
-
-          .main-select-label {
-            @include gs-font($small-font, $regular-font-weight, unset);
-            line-height: $spacious-line-height;
-          }
-    
-          .sub-select-label {
-            @include gs-font($x-small-font, $regular-font-weight, unset);
-            opacity: 0.7;
-            line-height: $spacious-line-height;
-          }
-        }
-      }
-    }    
-  }
-
   .gs-select--is-disabled {
     .select-dropdown-indicator {
       opacity: 0.3;
@@ -205,6 +145,72 @@ gs-select {
 
     .gs-select__value-container {
       opacity: 0.5;
+    }
+  }
+}
+
+// Every caller here renders the menu through menuPortalTarget={document.body}
+// (see gs-select.jsx), which detaches it from the <gs-select> element it
+// opened from — a plain `gs-select .gs-select__menu` selector never matches
+// the portaled copy, so this lives unscoped at the top level instead. Class
+// names are react-select's own generated BEM names (classNamePrefix="gs-select"),
+// specific enough that nothing else in the app collides with them.
+.gs-select__menu {
+  margin-top: 0;
+  border-radius: $medium-large-border-radius;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  box-shadow: $no-top-second-layer-shadow;
+  border: none;
+
+  .gs-select__menu-list {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    box-sizing: border-box;
+    margin: auto $small-pad;
+
+    .gs-select__menu-notice {
+      @include gs-font($x-small-font, $regular-font-weight, unset);
+      opacity: 0.7;
+      line-height: $spacious-line-height;
+    }
+
+    .gs-select__option {
+      display: inline-block;
+      padding: $medium-large-pad;
+
+      &:hover {
+        cursor: pointer;
+      }
+
+      &.gs-select__option--is-focused {
+        background: $grey-50;
+        transition: $fast;
+        border-radius: $medium-large-border-radius;
+      }
+
+      &.gs-select__option--is-selected {
+        color: unset;
+        background-color: $grey-50;
+        border-radius: $medium-radius;
+      }
+
+      .custom-select-option {
+        @include v-stack(center, unset);
+        margin: auto;
+
+        .main-select-label {
+          @include gs-font($small-font, $regular-font-weight, unset);
+          line-height: $spacious-line-height;
+        }
+
+        .sub-select-label {
+          @include gs-font($x-small-font, $regular-font-weight, unset);
+          opacity: 0.7;
+          line-height: $spacious-line-height;
+        }
+      }
     }
   }
 }

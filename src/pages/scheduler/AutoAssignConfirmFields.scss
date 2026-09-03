@@ -1,0 +1,51 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.aacf-header {
+  display: flex;
+  align-items: center;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  border-bottom: $light-border;
+}
+
+.aacf-header-icon {
+  flex-shrink: 0;
+  font-size: $x-large-font;
+  color: $grey-800;
+}
+
+.aacf-header-title {
+  margin: 0;
+  font-size: $large-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.aacf-body {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $small-layout-pad $x-large-pad;
+}
+
+.aacf-desc {
+  font-size: $small-font;
+  color: $grey-800;
+  opacity: 0.7;
+  line-height: $regular-line-height;
+}
+
+.aacf-round-list {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  border: 1px solid $grey-200;
+  border-radius: $medium-large-border-radius;
+  padding: $x-large-pad;
+}
+
+.aacf-round-card {
+  background: $grey-50;
+  border-radius: $medium-large-border-radius;
+  padding: $x-large-pad;
+}

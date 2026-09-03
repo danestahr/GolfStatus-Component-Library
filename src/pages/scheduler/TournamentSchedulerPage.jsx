@@ -7,8 +7,6 @@ import {
   faBolt,
   faGear,
   faFloppyDisk,
-  faUpRightAndDownLeftFromCenter,
-  faDownLeftAndUpRightToCenter,
   faCircleXmark,
   faRetweet,
   faArrowsRotate,
@@ -26,8 +24,6 @@ import {
   faTriangleExclamation,
   faArrowRight,
   fa1,
-  faLink,
-  faLinkSlash,
 } from '@fortawesome/free-solid-svg-icons'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
@@ -45,6 +41,8 @@ import SwapRoundWavePanel from './SwapRoundWavePanel'
 import DeleteWavePanel from './DeleteWavePanel'
 import WaveRoundNav from './WaveRoundNav'
 import LinkedRoundLabelPanel from './LinkedRoundLabelPanel'
+import AutoAssignFields from './AutoAssignFields'
+import AutoAssignConfirmFields from './AutoAssignConfirmFields'
 import { HOLE_DATA, TEAM_DATA, SORTED_TEAMS, TOURNAMENTS } from '../../data/mockSchedulerTournaments'
 import './TournamentSchedulerPage.scss'
 
@@ -57,6 +55,66 @@ function groupLetter(index) {
 
 function getSlotIds(holeNumber, groupCount) {
   return Array.from({ length: groupCount }, (_, i) => `${holeNumber}-${groupLetter(i)}`)
+}
+
+// Auto Assign Holes' own Assignment Type choices — each sorts the round's
+// available teams before handing them out hole by hole (see
+// sortTeamsForAutoAssign below). Team Handicap sorts on the team's own
+// handicap field; Player Handicap sorts on the average of its roster's
+// individual handicaps (parsed out of TEAM_DATA's "Name (##)" player list),
+// for tournaments that scale groups by who's actually playing rather than
+// the team's own posted number.
+const AUTO_ASSIGN_TYPE_OPTIONS = [
+  { value: 'team-handicap-asc', label: 'Team Handicap', subLabel: 'Low to High' },
+  { value: 'team-handicap-desc', label: 'Team Handicap', subLabel: 'High to Low' },
+  { value: 'player-handicap-asc', label: 'Player Handicap', subLabel: 'Low to High' },
+  { value: 'player-handicap-desc', label: 'Player Handicap', subLabel: 'High to Low' },
+]
+
+function averagePlayerHandicap(team) {
+  const handicaps = [...team.players.matchAll(/\((\d+)\)/g)].map(m => Number(m[1]))
+  if (!handicaps.length) return team.handicap
+  return handicaps.reduce((sum, h) => sum + h, 0) / handicaps.length
+}
+
+function sortTeamsForAutoAssign(teams, assignmentType) {
+  switch (assignmentType?.value) {
+    case 'team-handicap-asc':
+      return [...teams].sort((a, b) => a.handicap - b.handicap)
+    case 'team-handicap-desc':
+      return [...teams].sort((a, b) => b.handicap - a.handicap)
+    case 'player-handicap-asc':
+      return [...teams].sort((a, b) => averagePlayerHandicap(a) - averagePlayerHandicap(b))
+    case 'player-handicap-desc':
+      return [...teams].sort((a, b) => averagePlayerHandicap(b) - averagePlayerHandicap(a))
+    default:
+      return teams
+  }
+}
+
+const AUTO_ASSIGN_MS = 1200
+
+// Fills a single round's empty slots hole-by-hole from `pool`, starting at
+// `startIndex`, placing at most `maxCount` teams — the shared building block
+// behind every Auto Assign outcome (a full fill just passes Infinity). A Par
+// 3's B slot is always left empty — Auto Assign never doubles up a Par 3,
+// full fill or capped, on or off Balance Assignments.
+function fillRoundSlots(groupCounts, existingAssignments, pool, startIndex, maxCount) {
+  const placements = {}
+  let poolIndex = startIndex
+  let placed = 0
+  for (const hole of HOLE_DATA) {
+    if (placed >= maxCount || poolIndex >= pool.length) break
+    for (const slotId of getSlotIds(hole.number, groupCounts[hole.number] ?? 2)) {
+      if (placed >= maxCount || poolIndex >= pool.length) break
+      if (existingAssignments[slotId]) continue
+      if (hole.par === 3 && slotId.endsWith('-B')) continue
+      placements[slotId] = pool[poolIndex].name
+      poolIndex++
+      placed++
+    }
+  }
+  return { placements, nextIndex: poolIndex }
 }
 
 // Round Setup: the four ways a tournament's rounds can relate to each other —
@@ -632,6 +690,20 @@ export default function TournamentSchedulerPage() {
     return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`
   }
 
+  // The group header's own description line below — a solo round reads as
+  // "All teams can play in Round 1", two rounds keep the Oxford "either A or
+  // B" phrasing, three to five spell every letter out slash-separated (an
+  // Oxford list of that many stops reading well), and six or more collapse
+  // to just the first and last letter as a range so the line doesn't run on
+  // forever.
+  function roundGroupDescription(rounds) {
+    if (rounds.length === 1) return `All teams can play in ${roundName(rounds[0])}`
+    const letters = rounds.map(roundGroupLetter)
+    if (rounds.length === 2) return `Teams can play in either Round ${formatOxfordList(letters)}`
+    if (rounds.length <= 5) return `Teams can play in one of the following rounds: ${letters.join('/')}`
+    return `Teams can play in one of the following rounds: ${letters[0]} - ${letters[letters.length - 1]}`
+  }
+
   function roundCourse(r) {
     return ROUND_META[r]?.course ?? COURSE_NAME
   }
@@ -654,8 +726,23 @@ export default function TournamentSchedulerPage() {
   }
 
   const [panelOpen, setPanelOpen] = useState(false)
-  const [panelExpanded, setPanelExpanded] = useState(false)
-  const [panelWidthAnimating, setPanelWidthAnimating] = useState(false)
+
+  // Auto Assign Holes — reached from the "Auto Assign" button inside the
+  // already-open Hole Assignments panel, replacing its content in place
+  // rather than stacking a second panel on top (side panels in this app are
+  // one-per-page, swapping "screens" via state, never stacking — see
+  // DeleteWavePanel/SwapRoundWavePanel for the older stacked-panel style
+  // this deliberately avoids). null shows the normal Hole Assignments
+  // screen; 'form' shows the Assignment Type picker; 'confirm' (only
+  // reached when the active round has linked mates) asks whether to run it
+  // across every linked round at once.
+  const [autoAssignScreen, setAutoAssignScreen] = useState(null)
+  const [autoAssignType, setAutoAssignType] = useState(null)
+  const [autoAssignEvenlyDistribute, setAutoAssignEvenlyDistribute] = useState(true)
+  // Simulated save latency for the Assign action, same idea as PENDING_MS
+  // elsewhere — the panel drops back to the round board immediately and
+  // covers it with a spinner for AUTO_ASSIGN_MS before the placements land.
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false)
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false)
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
 
@@ -824,22 +911,19 @@ export default function TournamentSchedulerPage() {
   // never touches wave assignment (that's WaveRoundsPanel's job), so the
   // Wave quick-select stays hidden whenever this is set.
   const [editingRoundNumber, setEditingRoundNumber] = useState(null)
-  // Set when the panel was opened via the Linked/Unlinked choice below —
-  // unlike createRoundOpenedFromWave's panel, that one closes itself before
-  // this one opens (it has nothing left to show once the choice is made),
-  // so there's no longer anything else on screen to carry the dim overlay;
-  // this only ever suppresses the slide-in transition, keeping the swap
-  // feeling like one continuous panel rather than a close-then-reopen.
+  // Set when the panel was opened via Copy Round — suppresses the slide-in
+  // transition so a duplicate's round number group shortcut still feels
+  // like one continuous panel (see handleAddRoundToGroupClick).
   const [createRoundOpenedFromLinkChoice, setCreateRoundOpenedFromLinkChoice] = useState(false)
   // Seeds the form's Round Number field with a specific already-existing
-  // number (see linkToRoundNumber below) instead of the next unused one —
-  // null means "leave it at the usual default."
+  // number instead of the next unused one — null means "leave it at the
+  // usual default."
   const [createRoundInitialNumber, setCreateRoundInitialNumber] = useState(null)
   // Set when the panel was opened to duplicate an existing round (see
-  // handleCloneRoundClick/chooseUnlinkedRound/linkToRoundNumber below)
-  // instead of creating a blank one — the form pre-fills every field from
-  // this round's current ROUND_META, same as editing does, but Save still
-  // appends a new round rather than overwriting it.
+  // handleCloneRoundClick below) instead of creating a blank one — the form
+  // pre-fills every field from this round's current ROUND_META, same as
+  // editing does, but Save still appends a new round rather than
+  // overwriting it.
   const [duplicateFromMeta, setDuplicateFromMeta] = useState(null)
 
   function openCreateRoundPanel(targetWaveId = null, initialNumber = null, openedFromLinkChoice = false, duplicateFromRound = null) {
@@ -870,82 +954,30 @@ export default function TournamentSchedulerPage() {
     setDuplicateFromMeta(null)
   }
 
-  // Round Number linking's own guided picker — shown before CreateRoundPanel
-  // for Copy Round (see handleCloneRoundClick below), since a duplicate
-  // needs its own Round Number decided same as any other new round would —
-  // silently inheriting the original's would either double up an existing
-  // link or leave the two indistinguishable with no chance to reconsider.
-  // 'choice' offers Linked/Unlinked; 'target' (skipped entirely when
-  // exactly one Round Number already exists — see chooseLinkedRound) lets a
-  // Linked choice pick which existing Round Number to share. Add Round
-  // itself no longer goes through this picker at all — every round is
-  // always shown grouped by its own Round Number now (see
-  // roundNumberGroupedSections), solo groups included, so "Add Round" only
-  // ever needs to mean "a brand new, not-yet-linked-to-anything round" —
-  // linking one into an existing group instead is what each group's own
-  // Add Course shortcut is for (see handleAddRoundToGroupClick).
-  // addRoundTargetWaveId carries a wave-scoped Copy Round through the same
-  // picker.
-  const [addRoundChoicePanelOpen, setAddRoundChoicePanelOpen] = useState(false)
-  const [addRoundChoiceStep, setAddRoundChoiceStep] = useState('choice')
-  const [cloningRound, setCloningRound] = useState(null)
-  const [addRoundTargetWaveId, setAddRoundTargetWaveId] = useState(null)
-
-  // Always heads straight into a blank CreateRoundPanel — no Linked/Unlinked
-  // ask (see the picker's own comment above) — landing on the next unused
-  // Round Number of its own (CreateRoundPanel's own nextRoundNumber default,
-  // since initialNumber is left unset here) rather than joining any
+  // Always heads straight into a blank CreateRoundPanel, landing on the next
+  // unused Round Number of its own (CreateRoundPanel's own nextRoundNumber
+  // default, since initialNumber is left unset here) rather than joining any
   // existing group.
   function handleAddRoundClick(targetWaveId = null) {
     openCreateRoundPanel(targetWaveId)
   }
 
+  // Copy Round goes straight into CreateRoundPanel pre-filled from the
+  // source round (duplicateFromMeta) — unlinked, same as a brand new round,
+  // rather than joining the source's Round Number group.
   function handleCloneRoundClick(round) {
-    setCloningRound(round)
-    setAddRoundTargetWaveId(null)
-    setAddRoundChoiceStep('choice')
-    setAddRoundChoicePanelOpen(true)
+    openCreateRoundPanel(null, null, true, round)
   }
 
-  // Round group header's own Add Round shortcut: unlike handleCloneRoundClick,
-  // the group a new round belongs to is already known from context (this is
-  // its section), so there's nothing left for the Linked/Unlinked picker to
-  // ask — this goes straight into CreateRoundPanel pre-linked to the group,
-  // duplicating its last round the same way Copy Round would.
+  // Round group header's own Add Round shortcut: the group a new round
+  // belongs to is already known from context (this is its section), so this
+  // goes straight into CreateRoundPanel pre-linked to the group, duplicating
+  // its last round the same way Copy Round would.
   function handleAddRoundToGroupClick(section) {
     const source = section.rounds[section.rounds.length - 1]
     if (source === undefined) return
     const number = section.kind === 'roundNumber' ? section.number : roundNumberOf(source)
     openCreateRoundPanel(section.waveId ?? null, number, false, source)
-  }
-
-  function closeAddRoundChoicePanel() {
-    setAddRoundChoicePanelOpen(false)
-    setAddRoundChoiceStep('choice')
-    setCloningRound(null)
-    setAddRoundTargetWaveId(null)
-  }
-
-  function chooseUnlinkedRound() {
-    const source = cloningRound
-    const targetWaveId = addRoundTargetWaveId
-    closeAddRoundChoicePanel()
-    openCreateRoundPanel(targetWaveId, null, true, source)
-  }
-
-  function chooseLinkedRound() {
-    if (roundNumberGroups.length === 1) {
-      linkToRoundNumber(roundNumberGroups[0].number)
-    } else {
-      setAddRoundChoiceStep('target')
-    }
-  }
-
-  function linkToRoundNumber(number) {
-    const source = cloningRound
-    const targetWaveId = addRoundTargetWaveId
-    closeAddRoundChoicePanel()
-    openCreateRoundPanel(targetWaveId, number, true, source)
   }
 
   function handleCreateRound(roundMeta) {
@@ -1254,58 +1286,11 @@ export default function TournamentSchedulerPage() {
     closeWaveRoundsPanel()
   }
 
-  // Only animate the width change for the moment right after the expand button is
-  // pressed — leaving the transition off the rest of the time keeps live viewport
-  // resizes (which also change the panel's calc()-based width) instant, not jerky.
-  function toggleExpanded() {
-    setPanelWidthAnimating(true)
-    setPanelExpanded(prev => !prev)
-    window.setTimeout(() => setPanelWidthAnimating(false), 320)
-  }
-
-  // Each column's header (title + search) slides out of view once you've scrolled
-  // down 56px continuously, and slides back as soon as you've scrolled up 56px —
-  // the same distance both ways, so hide/show feels identical between columns
-  // regardless of how tall their rows are. Distance-based (not per-event) so a
-  // single scroll-down doesn't hide it instantly, and reversing direction resets
-  // the count so short back-and-forth jitter near the top doesn't flicker it.
-  const TOGGLE_DISTANCE = 56
-  const [holesHeaderHidden, setHolesHeaderHidden] = useState(false)
-  const [teamsHeaderHidden, setTeamsHeaderHidden] = useState(false)
-  const holesScrollState = useRef({ lastTop: 0, accum: 0, direction: null })
-  const teamsScrollState = useRef({ lastTop: 0, accum: 0, direction: null })
   // The actual scrollable elements, so switching rounds/waves can snap both
   // columns back to the top instead of leaving them mid-scroll on content
   // that now belongs to a different round.
   const holesColScrollRef = useRef(null)
   const teamsColScrollRef = useRef(null)
-
-  function makeHeaderScrollHandler(stateRef, setHidden) {
-    return e => {
-      const top = e.currentTarget.scrollTop
-      const state = stateRef.current
-      const delta = top - state.lastTop
-      state.lastTop = top
-
-      if (top <= 0) {
-        state.accum = 0
-        state.direction = null
-        setHidden(false)
-        return
-      }
-      if (delta === 0) return
-
-      const direction = delta > 0 ? 'down' : 'up'
-      state.accum = direction === state.direction ? state.accum + Math.abs(delta) : Math.abs(delta)
-      state.direction = direction
-
-      if (direction === 'down' && state.accum >= TOGGLE_DISTANCE) setHidden(true)
-      else if (direction === 'up' && state.accum >= TOGGLE_DISTANCE) setHidden(false)
-    }
-  }
-
-  const handleHolesScroll = makeHeaderScrollHandler(holesScrollState, setHolesHeaderHidden)
-  const handleTeamsScroll = makeHeaderScrollHandler(teamsScrollState, setTeamsHeaderHidden)
 
   // Measured (never assumed) height of the Holes column's Assigned header. Both
   // it and a hole's own header are sticky at the same top:0, so without this a
@@ -1380,15 +1365,10 @@ export default function TournamentSchedulerPage() {
     setPendingSlots(new Map())
     setPendingTeams(new Set())
 
-    // Each column scrolls independently per round, but the scroll position
-    // (and the header hide/show it drives) shouldn't carry over — land back
-    // at the top of both columns, with their headers visible, every time.
+    // Each column scrolls independently per round, so the scroll position
+    // shouldn't carry over — land back at the top of both columns every time.
     if (holesColScrollRef.current) holesColScrollRef.current.scrollTop = 0
     if (teamsColScrollRef.current) teamsColScrollRef.current.scrollTop = 0
-    holesScrollState.current = { lastTop: 0, accum: 0, direction: null }
-    teamsScrollState.current = { lastTop: 0, accum: 0, direction: null }
-    setHolesHeaderHidden(false)
-    setTeamsHeaderHidden(false)
   }
 
   // Picking a different round while the panel is already open (from
@@ -2083,6 +2063,14 @@ export default function TournamentSchedulerPage() {
   const activeRoundIsUnlinked = activeRound !== undefined && roundNumberMates(activeRound).length === 0
   const hideWaveSwitchLabel = showPlainRoundNav || (showRoundNumberNav && activeRoundIsUnlinked)
 
+  // The redundancy hideWaveSwitchLabel is avoiding only holds when the header
+  // above is already saying the same "Round N" — once this solo round has its
+  // own custom Round Label (see roundName), the header reads that label
+  // instead, so the bare round number still earns a spot next to Change
+  // Round to say which Round Number the labeled round actually is.
+  const activeRoundHasLabel = activeRound !== undefined && !!ROUND_META[activeRound]?.name
+  const showRoundNumberBeforeChangeRound = hideWaveSwitchLabel && activeRoundHasLabel
+
   // WaveRoundNav (the wave/round picker) is collapsed to a compact "Wave
   // Name | Change Round" line by default and only expands on demand — it
   // re-collapses itself the moment a round is actually picked, rather than
@@ -2101,6 +2089,94 @@ export default function TournamentSchedulerPage() {
       <span className="sched-banner-text">Assignments will be automatically saved.</span>
     </div>
   )
+
+  // Auto Assign Holes — see autoAssignScreen state above for the screen
+  // machine this drives.
+  const linkedRoundMates = activeRound !== undefined ? roundNumberMates(activeRound) : []
+  const hasLinkedRoundMates = linkedRoundMates.length > 0
+
+  const autoAssignRoundNumberLabel = activeRound !== undefined
+    ? linkedGroupLabel(roundNumberOf(activeRound), `Round ${roundNumberOf(activeRound)}`)
+    : ''
+
+  const autoAssignLinkedRounds = linkedRoundMates.map(r => ({
+    name: roundName(r),
+    groupLabel: autoAssignRoundNumberLabel,
+    meta: ROUND_META[r],
+    courseName: roundCourse(r),
+    status: Object.keys(assignmentsByRound[r] || {}).length > 0 ? 'Ready' : 'Draft',
+  }))
+
+  function openAutoAssign() {
+    setAutoAssignType(AUTO_ASSIGN_TYPE_OPTIONS[0])
+    setAutoAssignEvenlyDistribute(true)
+    setAutoAssignScreen('form')
+  }
+
+  function closeAutoAssign() {
+    setAutoAssignScreen(null)
+  }
+
+  // The confirm step only exists to ask about linked rounds — a solo round
+  // has nothing to confirm, so Assign runs immediately.
+  function submitAutoAssignForm() {
+    if (hasLinkedRoundMates) {
+      setAutoAssignScreen('confirm')
+    } else {
+      runAutoAssign(false)
+    }
+  }
+
+  // Fills the target round(s) from the round's currently available teams,
+  // sorted (or shuffled) per autoAssignType — availableTeams is the right
+  // shared pool for every linked round at once, since round-number-linked
+  // rounds are already mutually exclusive of each other (a team assigned to
+  // one is excluded from the rest — see assignedTeamNames above). Drops the
+  // panel back to the round board immediately and covers it with a spinner
+  // for AUTO_ASSIGN_MS, the same simulated-latency idea as PENDING_MS
+  // elsewhere, before the placements actually land.
+  //
+  // Balance Assignments is what decides capped-vs-full, regardless of
+  // whether every linked round is being assigned at once or just this one:
+  //  - On (and this round has others linked to it): never take more than an
+  //    even share of the pool (pool.length / total linked rounds) — a solo
+  //    "Assign Round 1A" still leaves its mates their fair share, same as
+  //    running all of them together would.
+  //  - Off (or a solo round with nothing linked to it): each target round
+  //    fills to its own full capacity before the next one gets any teams,
+  //    same as a plain manual fill would.
+  function runAutoAssign(assignAllLinkedRounds) {
+    const targetRounds = assignAllLinkedRounds ? [activeRound, ...linkedRoundMates] : [activeRound]
+    const pool = sortTeamsForAutoAssign(availableTeams, autoAssignType)
+    const placements = {}
+
+    const shareCap = autoAssignEvenlyDistribute && linkedRoundMates.length > 0
+      ? Math.floor(pool.length / (linkedRoundMates.length + 1))
+      : Infinity
+
+    let poolIndex = 0
+    targetRounds.forEach(r => {
+      const remaining = Math.min(shareCap, pool.length - poolIndex)
+      const { placements: roundPlacements, nextIndex } = fillRoundSlots(
+        groupCountsByRound[r] ?? {}, assignmentsByRound[r] ?? {}, pool, poolIndex, remaining
+      )
+      placements[r] = roundPlacements
+      poolIndex = nextIndex
+    })
+
+    setAutoAssignScreen(null)
+    setIsAutoAssigning(true)
+    window.setTimeout(() => {
+      setAssignmentsByRound(prev => {
+        const next = { ...prev }
+        targetRounds.forEach(r => {
+          next[r] = { ...(prev[r] ?? {}), ...(placements[r] ?? {}) }
+        })
+        return next
+      })
+      setIsAutoAssigning(false)
+    }, AUTO_ASSIGN_MS)
+  }
 
   return (
     <div className="sched-page-bg">
@@ -2179,9 +2255,7 @@ export default function TournamentSchedulerPage() {
                       <div className="sched-round-group-header">
                         <div className="sched-round-group-header-title">{section.title}</div>
                         <div className="sched-round-group-header-desc">
-                          {section.rounds.length === 1
-                            ? `All teams can play in Round ${roundNumberOf(section.rounds[0])}`
-                            : `Teams can play in either Round ${formatOxfordList(section.rounds.map(roundGroupLetter))}`}
+                          {roundGroupDescription(section.rounds)}
                         </div>
                       </div>
                     }
@@ -2247,13 +2321,47 @@ export default function TournamentSchedulerPage() {
       <AppSidePanel
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
-        title={activeRound !== undefined ? `${roundName(activeRound)} Hole Assignments` : 'Hole Assignments'}
-        banner={isSwitchingRound ? null : panelBanner}
-        expanded={panelExpanded}
-        animateWidth={panelWidthAnimating}
-        rightIcon={panelExpanded ? faDownLeftAndUpRightToCenter : faUpRightAndDownLeftFromCenter}
-        onRightAction={toggleExpanded}
+        onBack={
+          autoAssignScreen === 'form' ? closeAutoAssign
+          : autoAssignScreen === 'confirm' ? () => setAutoAssignScreen('form')
+          : undefined
+        }
+        title={
+          autoAssignScreen === 'form' ? 'Auto Assign Holes'
+          : autoAssignScreen === 'confirm' ? 'Assign All Rounds'
+          : activeRound !== undefined ? `${roundName(activeRound)} Hole Assignments` : 'Hole Assignments'
+        }
+        banner={autoAssignScreen || isSwitchingRound || isAutoAssigning ? null : panelBanner}
+        actions={
+          autoAssignScreen === 'form' ? [
+            { name: 'Assign', type: 'black', isDisabled: !autoAssignType, action: submitAutoAssignForm },
+            { name: 'Cancel', type: 'light-grey', action: closeAutoAssign },
+          ] : autoAssignScreen === 'confirm' ? [
+            { name: 'Assign All Rounds', type: 'black', action: () => runAutoAssign(true) },
+            { name: `Assign ${roundName(activeRound)}`, type: 'light-grey', action: () => runAutoAssign(false) },
+          ] : undefined
+        }
       >
+        {autoAssignScreen === 'form' ? (
+          <div className="sched-panel-layout">
+            <GSActionBar type="form-header H3" header="Auto Assign Holes" />
+            <AutoAssignFields
+              options={AUTO_ASSIGN_TYPE_OPTIONS}
+              assignmentType={autoAssignType}
+              onChangeAssignmentType={setAutoAssignType}
+              showDistributeToggle={hasLinkedRoundMates}
+              evenlyDistribute={autoAssignEvenlyDistribute}
+              onToggleEvenlyDistribute={() => setAutoAssignEvenlyDistribute(v => !v)}
+            />
+          </div>
+        ) : autoAssignScreen === 'confirm' ? (
+          <div className="sched-panel-layout">
+            <AutoAssignConfirmFields
+              roundNumberLabel={autoAssignRoundNumberLabel}
+              linkedRounds={autoAssignLinkedRounds}
+            />
+          </div>
+        ) : (
         <div className="sched-panel-layout">
           <div className="sched-panel-action-bar">
             <GSActionBar
@@ -2278,6 +2386,12 @@ export default function TournamentSchedulerPage() {
                           <span className="sched-wave-switch-sep">|</span>
                         </>
                       )}
+                      {showRoundNumberBeforeChangeRound && (
+                        <>
+                          <span className="sched-wave-switch-name">Round {roundNumberOf(activeRound)}</span>
+                          <span className="sched-wave-switch-sep">|</span>
+                        </>
+                      )}
                       <button
                         type="button"
                         className="sched-wave-switch-link"
@@ -2294,7 +2408,7 @@ export default function TournamentSchedulerPage() {
                   buttonTitle: 'Auto Assign',
                   buttonIcon: faBolt,
                   type: 'black',
-                  actionClick: () => {},
+                  actionClick: openAutoAssign,
                 },
                 {
                   buttonIcon: faGear,
@@ -2321,10 +2435,10 @@ export default function TournamentSchedulerPage() {
             {/* ── Left: Holes ─────────────────────────────────────────────── */}
             <div
               className="sched-col sched-col--holes"
-              style={{ '--col-header-offset': `${holesHeaderHidden ? 0 : holesHeaderHeight}px` }}
+              style={{ '--col-header-offset': `${holesHeaderHeight}px` }}
             >
-              <div className="sched-col-scroll" ref={holesColScrollRef} onScroll={handleHolesScroll}>
-                <div ref={holesHeaderRef} className={`sched-col-header${holesHeaderHidden ? ' sched-col-header--hidden' : ''}`}>
+              <div className="sched-col-scroll" ref={holesColScrollRef}>
+                <div ref={holesHeaderRef} className="sched-col-header">
                   <div className="sched-col-title">
                     Assigned <span className="sched-col-count">({assignedCount}{!hidingAnyTeams ? `/${TOURNAMENT_TEAMS.length}` : ''})</span>
                   </div>
@@ -2369,8 +2483,8 @@ export default function TournamentSchedulerPage() {
                 full width instead of leaving an empty panel on screen. */}
             {availableTeams.length > 0 && (
               <div className="sched-col sched-col--teams">
-                <div className="sched-col-scroll" ref={teamsColScrollRef} onScroll={handleTeamsScroll}>
-                  <div className={`sched-col-header${teamsHeaderHidden ? ' sched-col-header--hidden' : ''}`}>
+                <div className="sched-col-scroll" ref={teamsColScrollRef}>
+                  <div className="sched-col-header">
                     <div className="sched-col-title">
                       Unassigned <span className="sched-col-count">({filteredAvailableTeams.length})</span>
                     </div>
@@ -2408,7 +2522,7 @@ export default function TournamentSchedulerPage() {
                     <div className="sched-empty-msg">No results for "{teamSearch}"</div>
                   )}
                   {filteredAvailableTeams.length > 0 && (
-                    <div className={`sched-teams-list${panelExpanded ? ' sched-teams-list--bento' : ''}`}>
+                    <div className="sched-teams-list">
                       {filteredAvailableTeams.map(team => (
                         <TeamCard
                           key={team.name}
@@ -2428,13 +2542,14 @@ export default function TournamentSchedulerPage() {
               </div>
             )}
           </div>
-          {isSwitchingRound && (
+          {(isSwitchingRound || isAutoAssigning) && (
             <GSLoadingSpinnerOverlay
               spinnerSize="large"
-              mainText="Loading Round…"
+              mainText={isAutoAssigning ? 'Assigning Teams…' : 'Loading Round…'}
             />
           )}
         </div>
+        )}
       </AppSidePanel>
 
       {useLegacyFilter && hasMultipleRounds && (
@@ -2727,62 +2842,6 @@ export default function TournamentSchedulerPage() {
         roundNumber={editingLinkedRoundNumber}
         initialLabel={editingLinkedRoundNumber != null ? linkedRoundLabels[editingLinkedRoundNumber] : ''}
       />
-
-      {/* Round Number linking's own Linked/Unlinked picker (see
-          handleAddRoundClick) — precedes CreateRoundPanel itself, so it's
-          declared just above it in this same stacking-order convention. */}
-      <AppSidePanel
-        isOpen={addRoundChoicePanelOpen}
-        onClose={closeAddRoundChoicePanel}
-        onBack={addRoundChoiceStep === 'target' ? () => setAddRoundChoiceStep('choice') : undefined}
-        title={cloningRound != null ? 'Copy Round' : 'Add Round'}
-        dimOverlay={!addRoundTargetWaveId}
-        noTransition={!!addRoundTargetWaveId}
-      >
-        {addRoundChoiceStep === 'choice' ? (
-          <>
-            <GSActionBar type="form-header H3" header="Add Round" />
-            <GSFormSection
-              extras={
-                <div className="sched-format-option-list">
-                  <RoundFormatOption
-                    icon={faLink}
-                    title="Link to Existing Round"
-                    playDescription="A portion of players and teams will play in this round."
-                    advancesToNextStep={roundNumberGroups.length > 1}
-                    onClick={chooseLinkedRound}
-                  />
-                  <RoundFormatOption
-                    icon={faLinkSlash}
-                    title="Add New Round"
-                    playDescription="All players and teams will play in this round."
-                    onClick={chooseUnlinkedRound}
-                  />
-                </div>
-              }
-            />
-          </>
-        ) : (
-          <>
-            <GSActionBar type="form-header H3" header="Link to Which Round?" />
-            <GSFormSection
-              extras={
-                <div className="sched-format-option-list">
-                  {roundNumberGroups.map(group => (
-                    <RoundFormatOption
-                      key={group.number}
-                      iconText={String(group.number)}
-                      title={linkedGroupLabel(group.number, roundName(group.entries[0].round))}
-                      playDescription={roundCourse(group.entries[0].round)}
-                      onClick={() => linkToRoundNumber(group.number)}
-                    />
-                  ))}
-                </div>
-              }
-            />
-          </>
-        )}
-      </AppSidePanel>
 
       <CreateRoundPanel
         isOpen={createRoundPanelOpen}
