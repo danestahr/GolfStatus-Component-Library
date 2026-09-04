@@ -1,0 +1,33 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Not sticky — the search bar (.ordr1-list-search) keeps sole ownership of
+// the sticky top-of-scroll spot, so this renders right below it in normal
+// flow instead of competing for the same position: 0 and shoving the search
+// bar down every time it shows/hides.
+.ordr1-unsaved-banner {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  background: $grey-100;
+  padding: $medium-large-pad $x-large-pad;
+}
+
+.ordr1-unsaved-banner-icon {
+  flex-shrink: 0;
+  font-size: $medium-font;
+  color: $grey-800;
+}
+
+.ordr1-unsaved-banner-text {
+  flex: 1;
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+}
+
+.ordr1-unsaved-banner-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}

@@ -136,6 +136,7 @@
   background: $cyan-100;
   border-radius: $medium-radius;
   padding: $x-large-pad;
+  cursor: pointer;
   transition: $fast;
 
   &:hover {
@@ -212,11 +213,11 @@
   gap: $large-pad;
 }
 
-// Editing is now only reachable by tapping this button — the tile itself
-// no longer opens the inline editor on click — so it stays visible at rest
-// rather than only hinting at hover, same "always show what's clickable"
-// treatment as the trash/pencil buttons on a dropdown option row.
-.ord-form-response-answer-edit-btn {
-  transition: $fast;
+// Purely a "this is editable" hint now — tapping anywhere on the tile
+// itself opens the inline editor, so this no longer needs button/hover
+// affordance of its own.
+.ord-form-response-answer-edit-icon {
+  color: $grey-800;
+  opacity: 0.5;
 }
 

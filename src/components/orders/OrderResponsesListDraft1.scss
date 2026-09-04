@@ -54,13 +54,22 @@
   }
 }
 
-// Full-width, sticky under the page header — its own background so it
-// reads as a fixed bar rather than inheriting the body's padding/inset.
-.ordr1-list-search {
+// Sticks the search bar (and, when present, the unsaved-changes banner
+// right below it — see UnsavedAnswerBanner) to the top of the scroll area
+// as one unit. Kept as a single sticky wrapper rather than making each
+// child sticky on its own so the search bar's own position never moves —
+// the banner mounting/unmounting only changes the wrapper's height, it
+// never competes with the search bar for the same top: 0 spot.
+.ordr1-list-sticky {
   position: sticky;
   top: 0;
   z-index: 3;
   background: $white;
+}
+
+// Its own background so it reads as a fixed bar rather than inheriting the
+// body's padding/inset.
+.ordr1-list-search {
   padding: 16px $x-large-pad;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
@@ -264,6 +273,16 @@
 
   .ord-form-response-answer-edited {
     color: $cyan-100;
+  }
+
+  // The default grey pencil (see .ord-form-response-answer-edit-icon in
+  // OrderFormResponses.scss) reads fine on the pale cyan-100 tile it was
+  // designed for, but disappears against this page's darker cyan-700 —
+  // same "flip to white for contrast" treatment as the name/value text
+  // above.
+  .ord-form-response-answer-edit-icon {
+    color: $white;
+    opacity: 1;
   }
 
   // Smooths the swap back from the edit input to the read-only value/edited

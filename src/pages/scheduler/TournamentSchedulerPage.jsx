@@ -7,6 +7,7 @@ import {
   faBolt,
   faGear,
   faFloppyDisk,
+  faCheck,
   faCircleXmark,
   faRetweet,
   faArrowsRotate,
@@ -32,6 +33,8 @@ import GStoggle from '../../gs-lib/components/gs-toggle'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSEmptyList from '../../gs-lib/components/gs-empty-list'
 import GSLoadingSpinnerOverlay from '../../gs-lib/components/gs-loading-spinner-overlay'
+import GSPageBanner from '../../gs-lib/components/gs-page-banner'
+import GSItemInfo from '../../gs-lib/components/gs-item-info'
 import AppSidePanel from '../../components/AppSidePanel'
 import CreateRoundPanel from './CreateRoundPanel'
 import WavesPanel from './WavesPanel'
@@ -42,7 +45,7 @@ import DeleteWavePanel from './DeleteWavePanel'
 import WaveRoundNav from './WaveRoundNav'
 import LinkedRoundLabelPanel from './LinkedRoundLabelPanel'
 import AutoAssignFields from './AutoAssignFields'
-import AutoAssignConfirmFields from './AutoAssignConfirmFields'
+import AutoAssignSuccessFields from './AutoAssignSuccessFields'
 import { HOLE_DATA, TEAM_DATA, SORTED_TEAMS, TOURNAMENTS } from '../../data/mockSchedulerTournaments'
 import './TournamentSchedulerPage.scss'
 
@@ -115,6 +118,15 @@ function fillRoundSlots(groupCounts, existingAssignments, pool, startIndex, maxC
     }
   }
   return { placements, nextIndex: poolIndex }
+}
+
+// The even-share cap Balance Assignments enforces — a fixed slice of the
+// group's whole roster (totalTeams / shareDivisor), not of whatever's left
+// unassigned right now, so a round already holding its share (by hand or a
+// prior Auto Assign run) doesn't shrink everyone else's. Balance off (or a
+// shareDivisor of 1, i.e. nothing linked) means no cap at all.
+function autoAssignShareCap(evenlyDistribute, shareDivisor, totalTeams) {
+  return evenlyDistribute && shareDivisor > 1 ? Math.floor(totalTeams / shareDivisor) : Infinity
 }
 
 // Round Setup: the four ways a tournament's rounds can relate to each other —
@@ -743,6 +755,10 @@ export default function TournamentSchedulerPage() {
   // elsewhere — the panel drops back to the round board immediately and
   // covers it with a spinner for AUTO_ASSIGN_MS before the placements land.
   const [isAutoAssigning, setIsAutoAssigning] = useState(false)
+  // The Success screen's own "Your changes have been saved" banner — shown
+  // fresh every time that screen is reached, then hidden by GSPageBanner's
+  // own timeout (see the banner prop below), not left up indefinitely.
+  const [showAutoAssignSavedBanner, setShowAutoAssignSavedBanner] = useState(false)
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false)
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
 
@@ -2107,6 +2123,20 @@ export default function TournamentSchedulerPage() {
     status: Object.keys(assignmentsByRound[r] || {}).length > 0 ? 'Ready' : 'Draft',
   }))
 
+  const autoAssignAssignedCount = activeRound !== undefined
+    ? Object.keys(assignmentsByRound[activeRound] ?? {}).length
+    : 0
+  const autoAssignRemainingCount = availableTeams.length
+
+  const autoAssignSavedBanner = (
+    <GSPageBanner
+      type="success"
+      title={<GSItemInfo icon={faCheck} description="Your changes have been saved." />}
+      timeout={3000}
+      timeoutAction={() => setShowAutoAssignSavedBanner(false)}
+    />
+  )
+
   function openAutoAssign() {
     setAutoAssignType(AUTO_ASSIGN_TYPE_OPTIONS[0])
     setAutoAssignEvenlyDistribute(true)
@@ -2117,54 +2147,47 @@ export default function TournamentSchedulerPage() {
     setAutoAssignScreen(null)
   }
 
-  // The confirm step only exists to ask about linked rounds — a solo round
-  // has nothing to confirm, so Assign runs immediately.
-  function submitAutoAssignForm() {
-    if (hasLinkedRoundMates) {
-      setAutoAssignScreen('confirm')
-    } else {
-      runAutoAssign(false)
-    }
-  }
-
-  // Fills the target round(s) from the round's currently available teams,
-  // sorted (or shuffled) per autoAssignType — availableTeams is the right
-  // shared pool for every linked round at once, since round-number-linked
-  // rounds are already mutually exclusive of each other (a team assigned to
-  // one is excluded from the rest — see assignedTeamNames above). Drops the
-  // panel back to the round board immediately and covers it with a spinner
-  // for AUTO_ASSIGN_MS, the same simulated-latency idea as PENDING_MS
-  // elsewhere, before the placements actually land.
+  // Fills `targetRounds` from the round's currently available teams, sorted
+  // (or shuffled) per autoAssignType — availableTeams is the right shared
+  // pool for every linked round, since round-number-linked rounds are
+  // already mutually exclusive of each other (a team assigned to one is
+  // excluded from the rest — see assignedTeamNames above). Covers the round
+  // board with a spinner for AUTO_ASSIGN_MS, the same simulated-latency idea
+  // as PENDING_MS elsewhere, before the placements actually land and onDone
+  // runs.
   //
-  // Balance Assignments is what decides capped-vs-full, regardless of
-  // whether every linked round is being assigned at once or just this one:
-  //  - On (and this round has others linked to it): never take more than an
-  //    even share of the pool (pool.length / total linked rounds) — a solo
-  //    "Assign Round 1A" still leaves its mates their fair share, same as
-  //    running all of them together would.
-  //  - Off (or a solo round with nothing linked to it): each target round
-  //    fills to its own full capacity before the next one gets any teams,
-  //    same as a plain manual fill would.
-  function runAutoAssign(assignAllLinkedRounds) {
-    const targetRounds = assignAllLinkedRounds ? [activeRound, ...linkedRoundMates] : [activeRound]
+  // Balance Assignments decides capped-vs-full:
+  //  - On: the cap is a fixed share of the group's whole roster
+  //    (TOURNAMENT_TEAMS.length / shareDivisor) — not of whatever's left in
+  //    the pool right now, since teams already assigned (by hand, or by an
+  //    earlier Auto Assign run) still count against a round's share. Each
+  //    round only ever gets topped up to that cap, so a round already at or
+  //    past it (someone hand-assigned more than its share) gets nothing
+  //    more, and its leftover share spills into whichever round is
+  //    processed next — same as manually filling would. shareDivisor is
+  //    passed separately from targetRounds.length so assigning just the
+  //    active round still divides by the *total* linked round count,
+  //    reserving its mates' share even though only this one is being
+  //    filled right now.
+  //  - Off: no cap — each target round fills to its own full capacity
+  //    before the next one gets any teams.
+  function fillAutoAssignRounds(targetRounds, shareDivisor, onDone) {
     const pool = sortTeamsForAutoAssign(availableTeams, autoAssignType)
+    const shareCap = autoAssignShareCap(autoAssignEvenlyDistribute, shareDivisor, TOURNAMENT_TEAMS.length)
+
     const placements = {}
-
-    const shareCap = autoAssignEvenlyDistribute && linkedRoundMates.length > 0
-      ? Math.floor(pool.length / (linkedRoundMates.length + 1))
-      : Infinity
-
     let poolIndex = 0
     targetRounds.forEach(r => {
-      const remaining = Math.min(shareCap, pool.length - poolIndex)
+      const alreadyAssigned = Object.keys(assignmentsByRound[r] ?? {}).length
+      const needed = Math.max(0, shareCap - alreadyAssigned)
+      const toAdd = Math.min(needed, pool.length - poolIndex)
       const { placements: roundPlacements, nextIndex } = fillRoundSlots(
-        groupCountsByRound[r] ?? {}, assignmentsByRound[r] ?? {}, pool, poolIndex, remaining
+        groupCountsByRound[r] ?? {}, assignmentsByRound[r] ?? {}, pool, poolIndex, toAdd
       )
       placements[r] = roundPlacements
       poolIndex = nextIndex
     })
 
-    setAutoAssignScreen(null)
     setIsAutoAssigning(true)
     window.setTimeout(() => {
       setAssignmentsByRound(prev => {
@@ -2175,7 +2198,35 @@ export default function TournamentSchedulerPage() {
         return next
       })
       setIsAutoAssigning(false)
+      onDone()
     }, AUTO_ASSIGN_MS)
+  }
+
+  // Assign always fills just the active round — Balance Assignments still
+  // reserves an even share of the pool for its linked mates (dividing by
+  // the total linked round count), even though only this round is being
+  // filled right now. A round with mates lands on the Success screen
+  // afterward, offering to run the same settings against them; a solo
+  // round just drops straight back to the board.
+  function submitAutoAssignForm() {
+    setAutoAssignScreen(null)
+    fillAutoAssignRounds([activeRound], linkedRoundMates.length + 1, () => {
+      if (hasLinkedRoundMates) {
+        setShowAutoAssignSavedBanner(true)
+        setAutoAssignScreen('success')
+      }
+    })
+  }
+
+  // "Auto Assign All" on the Success screen — fills whatever's still linked
+  // (not the active round again) from whatever's left in the pool after the
+  // first fill. Divides by the *total* linked round count (mates + the
+  // active round), not just how many rounds are left to fill, so each
+  // mate's cap matches what it would have been had every round been filled
+  // together from the start.
+  function runAutoAssignRemaining() {
+    setAutoAssignScreen(null)
+    fillAutoAssignRounds(linkedRoundMates, linkedRoundMates.length + 1, () => {})
   }
 
   return (
@@ -2321,24 +2372,24 @@ export default function TournamentSchedulerPage() {
       <AppSidePanel
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
-        onBack={
-          autoAssignScreen === 'form' ? closeAutoAssign
-          : autoAssignScreen === 'confirm' ? () => setAutoAssignScreen('form')
-          : undefined
-        }
+        onBack={autoAssignScreen ? closeAutoAssign : undefined}
         title={
           autoAssignScreen === 'form' ? 'Auto Assign Holes'
-          : autoAssignScreen === 'confirm' ? 'Assign All Rounds'
+          : autoAssignScreen === 'success' ? `${roundName(activeRound)} Assigned`
           : activeRound !== undefined ? `${roundName(activeRound)} Hole Assignments` : 'Hole Assignments'
         }
-        banner={autoAssignScreen || isSwitchingRound || isAutoAssigning ? null : panelBanner}
+        banner={
+          autoAssignScreen === 'success' ? (showAutoAssignSavedBanner ? autoAssignSavedBanner : null)
+          : autoAssignScreen || isSwitchingRound || isAutoAssigning ? null
+          : panelBanner
+        }
         actions={
           autoAssignScreen === 'form' ? [
             { name: 'Assign', type: 'black', isDisabled: !autoAssignType, action: submitAutoAssignForm },
             { name: 'Cancel', type: 'light-grey', action: closeAutoAssign },
-          ] : autoAssignScreen === 'confirm' ? [
-            { name: 'Assign All Rounds', type: 'black', action: () => runAutoAssign(true) },
-            { name: `Assign ${roundName(activeRound)}`, type: 'light-grey', action: () => runAutoAssign(false) },
+          ] : autoAssignScreen === 'success' ? [
+            { name: 'Auto Assign All', type: 'green', action: runAutoAssignRemaining },
+            { name: 'Close', type: 'light-grey', action: closeAutoAssign },
           ] : undefined
         }
       >
@@ -2354,10 +2405,12 @@ export default function TournamentSchedulerPage() {
               onToggleEvenlyDistribute={() => setAutoAssignEvenlyDistribute(v => !v)}
             />
           </div>
-        ) : autoAssignScreen === 'confirm' ? (
+        ) : autoAssignScreen === 'success' ? (
           <div className="sched-panel-layout">
-            <AutoAssignConfirmFields
-              roundNumberLabel={autoAssignRoundNumberLabel}
+            <AutoAssignSuccessFields
+              roundName={roundName(activeRound)}
+              assignedCount={autoAssignAssignedCount}
+              remainingCount={autoAssignRemainingCount}
               linkedRounds={autoAssignLinkedRounds}
             />
           </div>

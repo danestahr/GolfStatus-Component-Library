@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
+import UnsavedAnswerBanner from './UnsavedAnswerBanner.jsx'
 import {
   responsesForFormAcrossOrders,
   isAnswerMissing,
@@ -75,13 +77,38 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
   // instead of a single order's own response array.
   const [editingAnswer, setEditingAnswer] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [showUnsavedBanner, setShowUnsavedBanner] = useState(false)
   const editingTileRef = useRef(null)
 
   useEffect(() => {
     if (!editingAnswer) return
 
+    // A dirty text/number draft doesn't get silently thrown away by
+    // clicking elsewhere anymore — it surfaces the unsaved-changes banner
+    // instead (see `showUnsavedBanner`). Skipped mid-save (a multiple-
+    // choice pick auto-saves right after setting `draft`) and reset if the
+    // click lands back inside the tile being edited.
     function handleClickOutside(e) {
-      if (editingTileRef.current && !editingTileRef.current.contains(e.target)) {
+      if (!editingTileRef.current || isSaving) return
+      if (editingTileRef.current.contains(e.target)) {
+        setShowUnsavedBanner(false)
+        return
+      }
+      // A mousedown on a DIFFERENT answer tile is left alone here — that
+      // tile's own onClick (via openAnswerTile) already handles it
+      // completely once `click` fires. Cancelling here first would race
+      // it: this runs on mousedown, before `click` is dispatched, so
+      // closing the current tile now shrinks it and reflows the list
+      // right before the browser hit-tests `click` — shifting whatever
+      // tile is below the one just closed out from under an unmoved
+      // pointer, so the click lands on the wrong tile (or nothing).
+      // Skipping tiles here and letting `click` do the work sidesteps
+      // that reflow entirely; only a genuinely-outside click (search bar,
+      // header, blank space) is handled below.
+      if (e.target.closest?.('.ord-form-response-answer')) return
+      if (editingAnswer.draft !== editingAnswer.original) {
+        setShowUnsavedBanner(true)
+      } else {
         cancelAnswerEdit()
       }
     }
@@ -102,6 +129,25 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
   function cancelAnswerEdit() {
     if (isSaving) return
     setEditingAnswer(null)
+    setShowUnsavedBanner(false)
+  }
+
+  // Tapping a tile while a different one is sitting on a dirty draft
+  // shouldn't just abandon that draft and jump straight to the new tile —
+  // same unsaved-changes banner as clicking outside entirely.
+  function openAnswerTile(answer) {
+    if (isSaving) return
+    if (editingAnswer && editingAnswer.draft !== editingAnswer.original) {
+      setShowUnsavedBanner(true)
+      return
+    }
+    setEditingAnswer({
+      orderId: answer.orderId,
+      responseIndex: answer.responseIndex,
+      answerIndex: answer.answerIndex,
+      draft: answer.value,
+      original: answer.value,
+    })
   }
 
   function saveAnswerEdit() {
@@ -111,6 +157,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
       onSaveAnswer(orderId, responseIndex, answerIndex, draft)
       setEditingAnswer(null)
       setIsSaving(false)
+      setShowUnsavedBanner(false)
     }, SAVE_DELAY_MS)
   }
 
@@ -176,6 +223,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
         className={`ord-form-response-answer${isAnswerMissing(answer) && !isEditing ? ' ordr1-answer-missing' : ''}${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}`}
         key={key}
         ref={isEditing ? editingTileRef : null}
+        onClick={() => !isEditing && openAnswerTile(answer)}
       >
         <div className="ord-form-response-answer-name">{answer.respondent}</div>
         {isEditing && isMultipleChoice ? (
@@ -217,28 +265,11 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
           </div>
         )}
 
-        <div className="ordr1-answer-meta">
-          {isEditing ? (
-            <GSButton buttonIcon={faTimesCircle} size="primary" isFocusable onClick={cancelAnswerEdit} />
-          ) : (
-            <GSButton
-              type="white icon ord-form-response-answer-edit-btn"
-              size="primary"
-              buttonIcon={faPen}
-              isFocusable
-              onClick={() =>
-                !isSaving &&
-                setEditingAnswer({
-                  orderId: answer.orderId,
-                  responseIndex: answer.responseIndex,
-                  answerIndex: answer.answerIndex,
-                  draft: answer.value,
-                  original: answer.value,
-                })
-              }
-            />
-          )}
-        </div>
+        {!isEditing && (
+          <div className="ordr1-answer-meta">
+            <FontAwesomeIcon icon={faPen} className="ord-form-response-answer-edit-icon" />
+          </div>
+        )}
       </div>
     )
   }
@@ -342,15 +373,21 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
         </div>
       )}
 
-      <div className="ordr1-list-search">
-        <GSinput
-          leftIcon={faMagnifyingGlass}
-          rightIcon={search ? faXmark : null}
-          rightIconClick={() => setSearch('')}
-          placeholder="Search by respondent, buyer, or response..."
-          textValue={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      <div className="ordr1-list-sticky">
+        {showUnsavedBanner && editingAnswer && (
+          <UnsavedAnswerBanner onSave={saveAnswerEdit} onDiscard={cancelAnswerEdit} isSaving={isSaving} />
+        )}
+
+        <div className="ordr1-list-search">
+          <GSinput
+            leftIcon={faMagnifyingGlass}
+            rightIcon={search ? faXmark : null}
+            rightIconClick={() => setSearch('')}
+            placeholder="Search by respondent, buyer, or response..."
+            textValue={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       {currentQuestion && (

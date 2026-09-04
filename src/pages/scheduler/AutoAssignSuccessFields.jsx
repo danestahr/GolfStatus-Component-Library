@@ -1,28 +1,28 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBolt } from '@fortawesome/free-solid-svg-icons'
-import './AutoAssignConfirmFields.scss'
+import { faCircleCheck } from '@fortawesome/free-solid-svg-icons'
+import './AutoAssignSuccessFields.scss'
 
-// Confirmation step shown between the Auto Assign form and actually running
-// it, only when the active round has other rounds linked to it. Each card
-// reuses the exact same round-detail markup/classes as RoundListCard and
-// FilterRoundCard (.sched-filter-round-details etc., from
+// Shown after Auto Assign fills just the active round, only when that round
+// has other rounds linked to it — offers to run the same settings against
+// them too. Each card reuses the exact same round-detail markup/classes as
+// RoundListCard and FilterRoundCard (.sched-filter-round-details etc., from
 // TournamentSchedulerPage.scss) so a linked round reads identically here as
 // it does everywhere else in the app, including the real Draft/Ready status
 // pill rather than a one-off status just for this screen.
-export default function AutoAssignConfirmFields({ roundNumberLabel, linkedRounds }) {
+export default function AutoAssignSuccessFields({ roundName, assignedCount, remainingCount, linkedRounds }) {
   return (
     <>
-      <div className="aacf-header">
-        <FontAwesomeIcon icon={faBolt} className="aacf-header-icon" />
-        <h1 className="aacf-header-title">Assign All Rounds</h1>
+      <div className="aasf-header">
+        <FontAwesomeIcon icon={faCircleCheck} className="aasf-header-icon" />
+        <h1 className="aasf-header-title">{roundName} Assigned</h1>
       </div>
-      <div className="aacf-body">
-        <div className="aacf-desc">
-          Do you want to assign the other rounds associated with {roundNumberLabel}?
+      <div className="aasf-body">
+        <div className="aasf-desc">
+          {assignedCount} teams have been assigned to {roundName}. Would you like to use the same settings and assign the remaining {remainingCount} teams to the following rounds:
         </div>
-        <div className="aacf-round-list">
+        <div className="aasf-round-list">
           {linkedRounds.map(r => (
-            <div className="aacf-round-card" key={r.name}>
+            <div className="aasf-round-card" key={r.name}>
               <div className="sched-filter-round-details">
                 <div className="sched-filter-round-group">
                   <div className="sched-filter-round-name">{r.name}</div>

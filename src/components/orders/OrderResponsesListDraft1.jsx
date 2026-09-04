@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
-import GSButton from '../../gs-lib/components/gs-button'
 import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } from './OrderResponsesFilterNav.jsx'
+import UnsavedAnswerBanner from './UnsavedAnswerBanner.jsx'
 import { QUESTION_OPTIONS, isAnswerMissing, isNumberQuestion, occurrenceLabelFor, entityNameFor } from './orderUtils'
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
@@ -147,6 +148,7 @@ export default function OrderResponsesListDraft1({
   const [editingAnswer, setEditingAnswer] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [flashedAnswers, setFlashedAnswers] = useState(new Set())
+  const [showUnsavedBanner, setShowUnsavedBanner] = useState(false)
   const editingTileRef = useRef(null)
 
   function selectCategory(value) {
@@ -166,8 +168,34 @@ export default function OrderResponsesListDraft1({
   useEffect(() => {
     if (!editingAnswer) return
 
+    // A dirty text/number draft doesn't get silently thrown away by
+    // clicking elsewhere anymore — it surfaces the unsaved-changes banner
+    // instead (see `showUnsavedBanner`), same "don't lose it" treatment as
+    // Escape/the X button staying available. Skipped entirely mid-save (a
+    // multiple-choice pick auto-saves right after setting `draft`, and that
+    // brief window shouldn't flash the banner) and reset if the click lands
+    // back inside the tile being edited.
     function handleClickOutside(e) {
-      if (editingTileRef.current && !editingTileRef.current.contains(e.target)) {
+      if (!editingTileRef.current || isSaving) return
+      if (editingTileRef.current.contains(e.target)) {
+        setShowUnsavedBanner(false)
+        return
+      }
+      // A mousedown on a DIFFERENT answer tile is left alone here — that
+      // tile's own onClick (via openAnswerTile) already handles it
+      // completely once `click` fires. Cancelling here first would race
+      // it: this runs on mousedown, before `click` is dispatched, so
+      // closing the current tile now shrinks it and reflows the list
+      // right before the browser hit-tests `click` — shifting whatever
+      // tile is below the one just closed out from under an unmoved
+      // pointer, so the click lands on the wrong tile (or nothing).
+      // Skipping tiles here and letting `click` do the work sidesteps
+      // that reflow entirely; only a genuinely-outside click (search bar,
+      // header, blank space) is handled below.
+      if (e.target.closest?.('.ord-form-response-answer')) return
+      if (editingAnswer.draft !== editingAnswer.original) {
+        setShowUnsavedBanner(true)
+      } else {
         cancelAnswerEdit()
       }
     }
@@ -242,6 +270,22 @@ export default function OrderResponsesListDraft1({
   function cancelAnswerEdit() {
     if (isSaving) return
     setEditingAnswer(null)
+    setShowUnsavedBanner(false)
+  }
+
+  // Tapping a tile while a different one is sitting on a dirty draft
+  // shouldn't just abandon that draft and jump straight to the new tile —
+  // same unsaved-changes banner as clicking outside entirely, just
+  // triggered from inside the list instead of from the document-level
+  // click-outside handler (which only ever sees the tile actually being
+  // edited, not whichever tile got tapped next).
+  function openAnswerTile(entryIndex, answerIndex, answer) {
+    if (isSaving) return
+    if (editingAnswer && editingAnswer.draft !== editingAnswer.original) {
+      setShowUnsavedBanner(true)
+      return
+    }
+    setEditingAnswer({ entryIndex, answerIndex, draft: answer.value, original: answer.value })
   }
 
   // Confirmation flash for an answer that was just saved — same treatment as
@@ -266,6 +310,7 @@ export default function OrderResponsesListDraft1({
       onSaveAnswer(entryIndex, answerIndex, draft)
       setEditingAnswer(null)
       setIsSaving(false)
+      setShowUnsavedBanner(false)
       if (draft) flashAnswer(entryIndex, answerIndex)
     }, SAVE_DELAY_MS)
   }
@@ -298,6 +343,7 @@ export default function OrderResponsesListDraft1({
               className={`ord-form-response-answer${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}${isFlashing ? ' is-flash' : ''}${isMissing ? ' ordr1-answer-missing' : ''}`}
               key={j}
               ref={isEditing ? editingTileRef : null}
+              onClick={() => !isEditing && openAnswerTile(entryIndex, j, answer)}
             >
               <div className="ord-form-response-answer-name">
                 {entityNameFor(order.id, entry.fillLevel, entry.packageName, answer.respondent)}
@@ -342,22 +388,11 @@ export default function OrderResponsesListDraft1({
                   )}
                 </div>
               )}
-              <div className="ordr1-answer-meta">
-                {isEditing ? (
-                  <GSButton buttonIcon={faTimesCircle} size="primary" isFocusable onClick={cancelAnswerEdit} />
-                ) : (
-                  <GSButton
-                    type="white icon ord-form-response-answer-edit-btn"
-                    size="primary"
-                    buttonIcon={faPen}
-                    isFocusable
-                    onClick={() =>
-                      !isSaving &&
-                      setEditingAnswer({ entryIndex, answerIndex: j, draft: answer.value, original: answer.value })
-                    }
-                  />
-                )}
-              </div>
+              {!isEditing && (
+                <div className="ordr1-answer-meta">
+                  <FontAwesomeIcon icon={faPen} className="ord-form-response-answer-edit-icon" />
+                </div>
+              )}
             </div>
           )
         })}
@@ -407,15 +442,21 @@ export default function OrderResponsesListDraft1({
         />
       )}
 
-      <div className="ordr1-list-search">
-        <GSinput
-          leftIcon={faMagnifyingGlass}
-          rightIcon={search ? faXmark : null}
-          rightIconClick={() => setSearch('')}
-          placeholder="Search by question, response, or respondent..."
-          textValue={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      <div className="ordr1-list-sticky">
+        {showUnsavedBanner && editingAnswer && (
+          <UnsavedAnswerBanner onSave={saveAnswerEdit} onDiscard={cancelAnswerEdit} isSaving={isSaving} />
+        )}
+
+        <div className="ordr1-list-search">
+          <GSinput
+            leftIcon={faMagnifyingGlass}
+            rightIcon={search ? faXmark : null}
+            rightIconClick={() => setSearch('')}
+            placeholder="Search by question, response, or respondent..."
+            textValue={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="ordr1-list-body">
