@@ -229,6 +229,14 @@
         color: $grey-800;
         opacity: 0.7;
       }
+
+      // The white flip below (see .ord-form-response-answer-edit-icon) is
+      // only for the filled cyan-700 tile — this one's transparent/dashed,
+      // so a white pencil would disappear against the page behind it.
+      .ord-form-response-answer-edit-icon {
+        color: $grey-800;
+        opacity: 1;
+      }
     }
 
     &.is-editing {
