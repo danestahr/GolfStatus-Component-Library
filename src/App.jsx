@@ -64,7 +64,11 @@ export default function App() {
           <NavItem to="/exclusion-v2" label="Exclusion V2" />
           <NavItem to="/scheduler" label="Hole Assignments" />
           <NavItem to="/messaging" label="Message Draft" />
-          <NavItem to="/orders-forms" label="Edit Form Responses" />
+          <NavItem to="/orders-forms/event-site-packages" label="Event Site & Packages" end />
+          <NavItem to="/orders-forms/event-site-packages/forms" label="Edit Form Responses" />
+          <NavItem to="/teams" label="Players & Teams" />
+          <NavItem to="/sponsors" label="Sponsors" />
+          <NavItem to="/orders" label="Orders & Payouts" />
         </nav>
 
         {/* Page content */}
@@ -85,15 +89,16 @@ export default function App() {
             <Route path="/scheduler/:tournamentId" element={<TournamentSchedulerPage />} />
             <Route path="/messaging" element={<MessageDraftPage />} />
             <Route path="/orders-forms" element={<OrdersFormsHubPage />} />
-            <Route path="/orders-forms/sponsors" element={<SponsorsListPage />} />
-            <Route path="/orders-forms/teams" element={<TeamsListPage />} />
+            <Route path="/sponsors" element={<SponsorsListPage />} />
+            <Route path="/teams" element={<TeamsListPage />} />
             <Route path="/orders-forms/event-site-packages" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/forms" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/forms/:formId" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/forms/:formId/responses" element={<EventSitePackagesListPage />} />
-            <Route path="/orders-draft-1" element={<OrdersDraft1Page />} />
-            <Route path="/orders-draft-1/:id" element={<OrdersDraft1Page />} />
-            <Route path="/orders-draft-1/:id/responses" element={<OrdersDraft1Page />} />
+            <Route path="/orders-forms/event-site-packages/homepage" element={<EventSitePackagesListPage />} />
+            <Route path="/orders" element={<OrdersDraft1Page />} />
+            <Route path="/orders/:id" element={<OrdersDraft1Page />} />
+            <Route path="/orders/:id/responses" element={<OrdersDraft1Page />} />
           </Routes>
         </main>
 
@@ -102,9 +107,9 @@ export default function App() {
   )
 }
 
-function NavItem({ to, label }) {
+function NavItem({ to, label, end }) {
   return (
-    <NavLink to={to} style={({ isActive }) => ({
+    <NavLink to={to} end={end} style={({ isActive }) => ({
       display: 'block', padding: '8px 12px', borderRadius: 6,
       fontSize: 14, lineHeight: 1.2, fontWeight: 500, textDecoration: 'none',
       background: isActive ? '#ffffff18' : 'transparent',

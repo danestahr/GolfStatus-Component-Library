@@ -2,10 +2,10 @@ import "./gs-text-editor.scss";
 import React, { useEffect, useRef, useState } from "react";
 import "../styles/quill.scss";
 import ReactQuill from "react-quill";
-import { GSInput } from "..";
+import GSInput from "./gs-input";
 import GSButton from "./gs-button";
 import { faCode, faEye, faPen } from "@fortawesome/free-solid-svg-icons";
-import { HTMLViewer } from "../stories/controls/gs-html-viewer.stories";
+import GSHTMLViewer from "./gs-html-viewer";
 
 
 
@@ -158,7 +158,7 @@ const GSTextEditor = props => {
   const getEditor = () => {
     if (state === "preview") {
       return (
-        <HTMLViewer html={value}/>
+        <GSHTMLViewer html={value}/>
       );
     } else if (state === "code") {
       return (

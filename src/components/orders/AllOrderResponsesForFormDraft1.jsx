@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faChevronLeft, faChevronRight, faMagnifyingGlass, faPen, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft, faChevronRight, faCircleNotch, faMagnifyingGlass, faPen, faPlus, faTimesCircle, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
@@ -25,14 +25,17 @@ import './AllOrderResponsesForFormDraft1.scss'
 const FILL_LEVEL_COUNT_NOUNS = { team: 'Teams', player: 'Players', sponsor: 'Sponsors' }
 
 const SAVE_DELAY_MS = 1000
+// Matches the confirmation flash duration used for an assigned slot in the
+// Hole Assignments feature (see TournamentSchedulerPage.jsx's FLASH_MS).
+const FLASH_MS = 3000
 
+// Matches gs-button's own .disabled treatment ($disabled-background/
+// $disabled in colors.scss) instead of just dimming the enabled colors, so a
+// disabled Save reads the same as any other disabled button in the app.
 function saveButtonStyle(canSave) {
-  return {
-    background: '#232323',
-    color: '#fff',
-    opacity: canSave ? 1 : 0.4,
-    cursor: canSave ? 'pointer' : 'not-allowed',
-  }
+  return canSave
+    ? { background: '#232323', color: '#fff', cursor: 'pointer' }
+    : { background: '#e5e5e5', color: '#a2a2a2', cursor: 'default' }
 }
 
 function matchesQuery(answer, query) {
@@ -65,7 +68,7 @@ function matchesQuery(answer, query) {
 // by instead of `formName` — same "stays linked across a rename" reasoning
 // as OrderFormOverviewDraft1.jsx; `formName` still does the on-screen
 // labeling either way (see the page header below).
-export default function AllOrderResponsesForFormDraft1({ orders, formName, formId, initialQuestion, onSaveAnswer }) {
+export default function AllOrderResponsesForFormDraft1({ orders, formName, formId, initialQuestion, onSaveAnswer, onAddResponse }) {
   const [search, setSearch] = useState('')
   const [optionFilter, setOptionFilter] = useState('all')
   // Identifies the answer being edited by its home order/entry/answer
@@ -77,6 +80,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
   // instead of a single order's own response array.
   const [editingAnswer, setEditingAnswer] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [flashedAnswers, setFlashedAnswers] = useState(new Set())
   const [showUnsavedBanner, setShowUnsavedBanner] = useState(false)
   const editingTileRef = useRef(null)
 
@@ -150,6 +154,22 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
     })
   }
 
+  // Confirmation flash for an answer that was just saved — same treatment as
+  // an assigned slot in Hole Assignments: holds the "just saved" cyan-800 for
+  // a beat, then fades back to the resting cyan-700 (see .is-flash in
+  // OrderResponsesListDraft1.scss, shared by this page's .ordr1-list tiles).
+  function flashAnswer(orderId, responseIndex, answerIndex) {
+    const key = `${orderId}-${responseIndex}-${answerIndex}`
+    setFlashedAnswers(prev => new Set(prev).add(key))
+    window.setTimeout(() => {
+      setFlashedAnswers(prev => {
+        const next = new Set(prev)
+        next.delete(key)
+        return next
+      })
+    }, FLASH_MS)
+  }
+
   function saveAnswerEdit() {
     const { orderId, responseIndex, answerIndex, draft } = editingAnswer
     setIsSaving(true)
@@ -158,6 +178,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
       setEditingAnswer(null)
       setIsSaving(false)
       setShowUnsavedBanner(false)
+      if (draft) flashAnswer(orderId, responseIndex, answerIndex)
     }, SAVE_DELAY_MS)
   }
 
@@ -171,6 +192,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
       onSaveAnswer(answer.orderId, answer.responseIndex, answer.answerIndex, value)
       setEditingAnswer(null)
       setIsSaving(false)
+      if (value) flashAnswer(answer.orderId, answer.responseIndex, answer.answerIndex)
     }, SAVE_DELAY_MS)
   }
 
@@ -217,10 +239,11 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
   function renderAnswerTile(answer, key) {
     const isEditing = isEditingAnswer(answer)
     const canSave = isEditing && !isSaving && editingAnswer.draft !== editingAnswer.original
+    const isFlashing = flashedAnswers.has(`${answer.orderId}-${answer.responseIndex}-${answer.answerIndex}`)
 
     return (
       <div
-        className={`ord-form-response-answer${isAnswerMissing(answer) && !isEditing ? ' ordr1-answer-missing' : ''}${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}`}
+        className={`ord-form-response-answer${isAnswerMissing(answer) && !isEditing ? ' ordr1-answer-missing' : ''}${isEditing ? ' is-editing' : ''}${isSaving && isEditing ? ' is-saving' : ''}${isFlashing ? ' is-flash' : ''}`}
         key={key}
         ref={isEditing ? editingTileRef : null}
         onClick={() => !isEditing && openAnswerTile(answer)}
@@ -249,7 +272,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
             onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
             onSubmit={canSave ? saveAnswerEdit : undefined}
             onKeyDown={e => e.key === 'Escape' && cancelAnswerEdit()}
-            rightIcon={faCheck}
+            rightTitle="Save"
             rightIconClick={canSave ? saveAnswerEdit : undefined}
             buttonStyle={saveButtonStyle(canSave)}
             disabled={isSaving}
@@ -265,10 +288,16 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
           </div>
         )}
 
-        {!isEditing && (
+        {isEditing && isSaving ? (
           <div className="ordr1-answer-meta">
-            <FontAwesomeIcon icon={faPen} className="ord-form-response-answer-edit-icon" />
+            <FontAwesomeIcon icon={faCircleNotch} className="ord-form-response-answer-saving-icon" />
           </div>
+        ) : (
+          !isEditing && (
+            <div className="ordr1-answer-meta">
+              <FontAwesomeIcon icon={faPen} className="ord-form-response-answer-edit-icon" />
+            </div>
+          )
         )}
       </div>
     )
@@ -308,8 +337,9 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
             </>
           )
         }
-        pageActions={
-          hasMultipleQuestions
+        pageActions={[
+          ...(onAddResponse ? [{ buttonTitle: 'Add Response', buttonIcon: faPlus, type: 'black', actionClick: onAddResponse }] : []),
+          ...(hasMultipleQuestions
             ? [
                 {
                   actionIcon: faChevronLeft,
@@ -324,8 +354,8 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
                   isDisabled: questionIndex === allQuestions.length - 1,
                 },
               ]
-            : []
-        }
+            : []),
+        ]}
       />
 
       {breakdown && (

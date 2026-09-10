@@ -6,10 +6,10 @@ import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import './OrdersFormsHubPage.scss'
 
 const TILES = [
-  { to: '/orders-forms/sponsors', icon: faUserTie, name: 'Sponsors', description: 'Everyone who purchased a sponsorship package.' },
-  { to: '/orders-forms/teams', icon: faPeopleGroup, name: 'Teams', description: 'Everyone who registered a team.' },
+  { to: '/sponsors', icon: faUserTie, name: 'Sponsors', description: 'Everyone who purchased a sponsorship package.' },
+  { to: '/teams', icon: faPeopleGroup, name: 'Teams', description: 'Everyone who registered a team.' },
   { to: '/orders-forms/event-site-packages', icon: faGlobe, name: 'Event Site & Packages', description: 'Manage the event site, registration packages, and related pages.' },
-  { to: '/orders-draft-1', icon: faHandHoldingDollar, name: 'Orders & Payouts', description: 'Every order placed, and the funds available to pay out.' },
+  { to: '/orders', icon: faHandHoldingDollar, name: 'Orders & Payouts', description: 'Every order placed, and the funds available to pay out.' },
 ]
 
 // Landing spot for the "Edit Form Responses" nav item — a tile per area, each

@@ -221,3 +221,18 @@
   opacity: 0.5;
 }
 
+// Sits in that same corner while a save is in flight (text input Save or a
+// dropdown pick) — same grey-800 spin treatment as an in-progress slot/team
+// card save in Hole Assignments (see TournamentSchedulerPage.scss's
+// sched-slot-spinner/sched-spin).
+.ord-form-response-answer-saving-icon {
+  color: $grey-800;
+  animation: ord-form-response-spin 0.9s linear infinite;
+}
+
+@keyframes ord-form-response-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

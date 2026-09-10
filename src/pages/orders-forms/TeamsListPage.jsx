@@ -228,7 +228,7 @@ export default function TeamsListPage() {
       const sponsor =
         sponsors.find(s => s.orderId === orderId && s.package === packageName) ??
         sponsors.find(s => s.orderId === orderId)
-      navigate('/orders-forms/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
+      navigate('/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
       return
     }
     const team =
@@ -334,7 +334,7 @@ export default function TeamsListPage() {
         playerName: responsesPlayerFilter,
       },
     })
-    navigate(`/orders-draft-1/${orderId}/responses`)
+    navigate(`/orders/${orderId}/responses`)
   }
 
   // The Team Overview's own "Form Responses" row — locked to ['team',
@@ -784,6 +784,7 @@ export default function TeamsListPage() {
                 saveResponseAnswer(viewingOrder.id, responseIndex, answerIndex, value)
               }
               onViewFormAcrossOrders={responsesOpenedDirectly ? null : viewFormEntity}
+              onViewOrder={openOrderDetails}
               initialSelectedName={responsesPlayerFilter}
               initialCategory={responsesCategory}
               initialPackageName={responsesPackageName}

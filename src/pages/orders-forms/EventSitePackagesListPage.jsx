@@ -8,8 +8,10 @@ import NavRow from '../../components/orders-forms/NavRow.jsx'
 import EventSitePreviewCard from '../../components/orders-forms/EventSitePreviewCard.jsx'
 import PackageCard from '../../components/orders-forms/PackageCard.jsx'
 import FormsListContent from '../../components/orders-forms/FormsListContent.jsx'
+import EventSiteHomepageFields from '../../components/orders-forms/EventSiteHomepageFields.jsx'
 import AddFormFields from '../../components/orders-forms/AddFormFields.jsx'
 import AddQuestionFields, { emptyQuestionDraft } from '../../components/orders-forms/AddQuestionFields.jsx'
+import AddResponseFields, { answerKey, emptyResponseDraft, formQuestionsFor, playerAnswerKey } from '../../components/orders-forms/AddResponseFields.jsx'
 import AppSidePanel from '../../components/AppSidePanel.jsx'
 import OrderFormOverviewDraft1 from '../../components/orders/OrderFormOverviewDraft1.jsx'
 import AllOrderResponsesForFormDraft1 from '../../components/orders/AllOrderResponsesForFormDraft1.jsx'
@@ -73,6 +75,7 @@ function matches(query, ...texts) {
 }
 
 const FORMS_PATH = '/orders-forms/event-site-packages/forms'
+const HOMEPAGE_PATH = '/orders-forms/event-site-packages/homepage'
 
 // One side panel for the whole Forms flow (list → add form → form overview →
 // add question), same single-panel-many-screens convention as TeamsListPage/
@@ -97,6 +100,12 @@ export default function EventSitePackagesListPage() {
   // `handleAddFormSave`); renaming an existing form still commits instantly.
   const [creatingForm, setCreatingForm] = useState(false)
   const [addingQuestion, setAddingQuestion] = useState(false)
+  // Overlay on top of the responses screen, same convention as
+  // addingForm/addingQuestion above — opened via AllOrderResponsesForFormDraft1's
+  // own "Add Response" button (see `openAddResponse`/`handleAddResponseSave`
+  // below).
+  const [addingResponse, setAddingResponse] = useState(false)
+  const [responseDraft, setResponseDraft] = useState(emptyResponseDraft)
   const [formsList, setFormsList] = useState(initialForms)
   // Only mutated by AllOrderResponsesForFormDraft1's inline answer editing
   // (see `saveResponseAnswer` below) — this page has no order-details screen
@@ -121,7 +130,8 @@ export default function EventSitePackagesListPage() {
   const formOverviewName = formOverviewId ? formsList.find(f => f.id === formOverviewId)?.name ?? null : null
   const showingFormsList = location.pathname === FORMS_PATH
   const viewingResponses = location.pathname.endsWith('/responses')
-  const panelOpen = location.pathname.startsWith(FORMS_PATH)
+  const showingHomepage = location.pathname === HOMEPAGE_PATH
+  const panelOpen = location.pathname.startsWith(FORMS_PATH) || showingHomepage
   // The Form Name field's draft on OrderFormOverviewDraft1 itself (renaming
   // moved inline there — see `handleSaveFormName`/`handleCancelFormName`
   // below). Reseeded from the form's current name whenever the *route's*
@@ -144,6 +154,7 @@ export default function EventSitePackagesListPage() {
   useEffect(() => {
     setAddingForm(false)
     setAddingQuestion(false)
+    setAddingResponse(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
   const isEditingFormName = formOverviewName != null && formNameDraft !== formOverviewName
@@ -177,8 +188,36 @@ export default function EventSitePackagesListPage() {
   // matters for real ones, but filtering by it either way is simplest.
   const [deletedQuestionsByForm, setDeletedQuestionsByForm] = useState({})
 
+  // Event Site Homepage (Figma "Event Site Homepage") — a single settings
+  // screen, not a list-backed entity like Forms, so there's just one saved
+  // doc (`homepageSaved`) and one live draft of it. The draft reseeds from
+  // whatever's currently saved every time this screen's route is entered
+  // (below), same "reseed on route, not on every saved change" reasoning as
+  // `formNameDraft`, and Cancel/the panel's own close chevron just navigate
+  // away without ever committing it back.
+  const emptyHomepage = { bannerFiles: [], description: '', additionalDescription: '' }
+  const [homepageSaved, setHomepageSaved] = useState(emptyHomepage)
+  const [homepageDraft, setHomepageDraft] = useState(emptyHomepage)
+  useEffect(() => {
+    if (showingHomepage) setHomepageDraft(homepageSaved)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
   function openFormsPanel() {
     navigate(FORMS_PATH)
+  }
+
+  function openHomepagePanel() {
+    navigate(HOMEPAGE_PATH)
+  }
+
+  function handleSaveHomepage() {
+    setHomepageSaved(homepageDraft)
+    navigate('/orders-forms/event-site-packages')
+  }
+
+  function handleCancelHomepage() {
+    navigate('/orders-forms/event-site-packages')
   }
 
   function openAddForm() {
@@ -241,7 +280,7 @@ export default function EventSitePackagesListPage() {
   // navigate to whichever page actually owns that entity, same resolution
   // OrdersDraft1Page/TeamsListPage/SponsorsListPage use.
   function viewOrder(orderId) {
-    navigate(`/orders-draft-1/${orderId}`)
+    navigate(`/orders/${orderId}`)
   }
 
   // `packageName` disambiguates the rare order that bundles two separate
@@ -254,13 +293,13 @@ export default function EventSitePackagesListPage() {
       const sponsor =
         sponsors.find(s => s.orderId === orderId && s.package === packageName) ??
         sponsors.find(s => s.orderId === orderId)
-      navigate('/orders-forms/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
+      navigate('/sponsors', sponsor ? { state: { sponsorId: sponsor.id } } : undefined)
       return
     }
     const team =
       registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName) ??
       registeredTeams.find(t => t.orderId === orderId)
-    navigate('/orders-forms/teams', team ? { state: { teamId: team.id } } : undefined)
+    navigate('/teams', team ? { state: { teamId: team.id } } : undefined)
   }
 
   function saveResponseAnswer(orderId, responseIndex, answerIndex, value) {
@@ -285,7 +324,83 @@ export default function EventSitePackagesListPage() {
     )
   }
 
+  function openAddResponse() {
+    setResponseDraft(emptyResponseDraft)
+    setAddingResponse(true)
+  }
+
+  // Bundles every link/form/question combination in `responseDraft` into one
+  // synthetic order (no real purchase backs a manually-added response, but
+  // AllOrderResponsesForFormDraft1/OrderFormOverviewDraft1 only ever read an
+  // order's `id`/`buyerName`/`businessName`/`formResponses` — see
+  // OrderFormOverviewDraft1.jsx's computeFormStats — so a minimal stand-in
+  // object slots right into `orderList` and shows up in both alongside every
+  // real order). A team/sponsor/order link answers each of that category's
+  // own questions once (see AddResponseFields' CATEGORY_FILL_LEVEL); a
+  // player link answers each player-level question once per player on its
+  // roster instead, same "everyone on the team answers separately" shape a
+  // real team registration's own player-level responses already have.
+  // Blank answers are kept (same as a real unanswered question) rather than
+  // silently dropped, and a question already answered by a different link
+  // just becomes a second `formResponses` entry for the same question —
+  // responsesForFormAcrossOrders (orderUtils.js) merges every entry for a
+  // question into one answer list regardless of how many entries it came
+  // from, so this doesn't need to merge them itself.
+  function handleAddResponseSave() {
+    const formResponses = []
+    responseDraft.formIds.forEach(formId => {
+      const form = formsList.find(f => f.id === formId)
+      if (!form) return
+      responseDraft.links.forEach(link => {
+        if (link.category === 'player') {
+          formQuestionsFor(orderList, form)
+            .filter(q => q.fillLevel === 'player')
+            .forEach(q => {
+              formResponses.push({
+                formId,
+                formName: form.name,
+                packageName: 'Manually Added',
+                question: q.question,
+                fillLevel: 'player',
+                answers: link.players.map(player => ({
+                  respondent: player.name,
+                  value: responseDraft.answers[playerAnswerKey(link.key, player.id, formId, q.question)] ?? '',
+                })),
+              })
+            })
+          return
+        }
+        const questions =
+          link.category === 'order'
+            ? formQuestionsFor(orderList, form)
+            : formQuestionsFor(orderList, form).filter(q => q.fillLevel === link.category)
+        questions.forEach(q => {
+          formResponses.push({
+            formId,
+            formName: form.name,
+            packageName: 'Manually Added',
+            question: q.question,
+            fillLevel: q.fillLevel,
+            answers: [{ respondent: link.name, value: responseDraft.answers[answerKey(link.key, formId, q.question)] ?? '' }],
+          })
+        })
+      })
+    })
+    if (formResponses.length > 0) {
+      setOrderList(prev => [
+        ...prev,
+        { id: `manual-${Date.now()}`, buyerName: 'Manually Added', businessName: null, formResponses },
+      ])
+    }
+    setAddingResponse(false)
+    setResponseDraft(emptyResponseDraft)
+  }
+
   function handlePanelBack() {
+    if (addingResponse) {
+      setAddingResponse(false)
+      return
+    }
     if (addingQuestion) {
       setAddingQuestion(false)
       return
@@ -394,6 +509,10 @@ export default function EventSitePackagesListPage() {
       ? 'Form Details'
       : addingQuestion
       ? 'Question Details'
+      : addingResponse
+      ? 'Add Response'
+      : showingHomepage
+      ? 'Event Site Homepage'
       : formOverviewId
       // Static, matching 'Add Form' above, now that renaming happens inline
       // on the form-overview screen itself — same title whether that
@@ -412,6 +531,17 @@ export default function EventSitePackagesListPage() {
   // the screen opened, see `openAddQuestion`/`openEditQuestion`).
   const canSaveQuestion =
     questionDraft.question.trim() !== '' && JSON.stringify(questionDraft) !== JSON.stringify(originalQuestionDraft)
+  // Same "nothing to save yet" reasoning as the two above — file objects
+  // don't survive JSON.stringify meaningfully, so the banner image just
+  // compares by count instead.
+  const canSaveHomepage =
+    homepageDraft.description !== homepageSaved.description ||
+    homepageDraft.additionalDescription !== homepageSaved.additionalDescription ||
+    homepageDraft.bannerFiles.length !== homepageSaved.bannerFiles.length
+  // At least one link to attach the response to, and at least one form to
+  // answer questions on — the answers themselves are allowed to stay blank
+  // (same "No response yet" allowance a real order's own responses get).
+  const canSaveResponse = responseDraft.links.length > 0 && responseDraft.formIds.length > 0
 
   const panelActions =
     // Buttons hidden during the simulated create — nothing to Save (already
@@ -435,6 +565,16 @@ export default function EventSitePackagesListPage() {
           // Only once there's an actual question to delete — creating a
           // brand new one (`editingQuestionKey` null) has nothing yet.
           ...(editingQuestionKey ? [{ name: 'Delete Question', type: 'transparent red', action: handleDeleteQuestion }] : []),
+        ]
+      : showingHomepage
+      ? [
+          { name: 'Save', type: 'black', action: handleSaveHomepage, isDisabled: !canSaveHomepage },
+          { name: 'Cancel', type: 'light-grey', action: handleCancelHomepage },
+        ]
+      : addingResponse
+      ? [
+          { name: 'Save', type: 'black', action: handleAddResponseSave, isDisabled: !canSaveResponse },
+          { name: 'Cancel', type: 'light-grey', action: () => setAddingResponse(false) },
         ]
       : viewingResponses
       ? []
@@ -468,7 +608,13 @@ export default function EventSitePackagesListPage() {
                   <NavRow
                     title={row.title}
                     description={row.description}
-                    onClick={row.id === 'forms' ? openFormsPanel : undefined}
+                    onClick={
+                      row.id === 'forms'
+                        ? openFormsPanel
+                        : row.id === 'event-site-homepage'
+                        ? openHomepagePanel
+                        : undefined
+                    }
                   />
                 )}
                 {row.id === 'event-site-details' && visibleRowIds.has('event-site-details') && (
@@ -494,7 +640,11 @@ export default function EventSitePackagesListPage() {
         // still land on the new form afterward regardless, which would be a
         // confusing jump back if the panel had already navigated away).
         onClose={creatingForm ? undefined : () => navigate('/orders-forms/event-site-packages')}
-        onBack={creatingForm || !panelOpen || (showingFormsList && !addingForm && !addingQuestion) ? undefined : handlePanelBack}
+        onBack={
+          creatingForm || !panelOpen || showingHomepage || (showingFormsList && !addingForm && !addingQuestion)
+            ? undefined
+            : handlePanelBack
+        }
         title={panelTitle}
         actions={panelActions}
       >
@@ -520,6 +670,24 @@ export default function EventSitePackagesListPage() {
             onSubmit={handleAddFormSave}
             isEditing={editingFormId != null}
           />
+        ) : addingResponse ? (
+          <AddResponseFields
+            orders={orderList}
+            forms={formsList}
+            draft={responseDraft}
+            onChange={patch => setResponseDraft(prev => ({ ...prev, ...patch }))}
+          />
+        ) : showingHomepage ? (
+          <EventSiteHomepageFields
+            bannerFiles={homepageDraft.bannerFiles}
+            onChangeBannerFiles={files => setHomepageDraft(prev => ({ ...prev, bannerFiles: files }))}
+            description={homepageDraft.description}
+            onChangeDescription={description => setHomepageDraft(prev => ({ ...prev, description }))}
+            additionalDescription={homepageDraft.additionalDescription}
+            onChangeAdditionalDescription={additionalDescription =>
+              setHomepageDraft(prev => ({ ...prev, additionalDescription }))
+            }
+          />
         ) : viewingResponses ? (
           formOverviewName && (
             <AllOrderResponsesForFormDraft1
@@ -531,6 +699,7 @@ export default function EventSitePackagesListPage() {
               onViewOrder={viewOrder}
               onViewEntity={viewEntity}
               onSaveAnswer={saveResponseAnswer}
+              onAddResponse={openAddResponse}
             />
           )
         ) : formOverviewId ? (

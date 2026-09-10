@@ -14,7 +14,9 @@ import GSSelect from "./gs-select";
  * @property {string} textValue :text inside the input box
  * 
  * @property {object} rightIcon :icon to the right of the text
- * 
+ *
+ * @property {string} rightTitle :text label to the right of the text, in place of (or alongside) rightIcon
+ *
  * @property {object} leftIcon :icon to the left of the text
  * 
  * @property {function} rightIconClick :action for the right icon
@@ -99,6 +101,7 @@ export default class GSinput extends Component {
     const {
       textValue,
       rightIcon,
+      rightTitle,
       leftIcon,
       rightIconClick,
       leftIconClick,
@@ -110,7 +113,7 @@ export default class GSinput extends Component {
       pattern,
       placeholder,
       onBlur,
-      min, 
+      min,
       max,
       ...rest
     } = this.props;
@@ -154,7 +157,7 @@ export default class GSinput extends Component {
   };
 
   render() {
-    const { leftIcon, rightIcon, style, buttonStyle, type, leftIconClick, rightIconClick } = this.props;
+    const { leftIcon, rightIcon, rightTitle, style, buttonStyle, type, leftIconClick, rightIconClick } = this.props;
     return (
       <gs-input class={type} style={style}>
         {leftIcon && (
@@ -163,9 +166,9 @@ export default class GSinput extends Component {
           </div>
         )}
         {this.getValue()}
-        {rightIcon && (
+        {(rightIcon || rightTitle) && (
           <div className="right-icon" onClick={rightIconClick}>
-            <GSButton type="secondary" buttonIcon={rightIcon} style={buttonStyle}/>
+            <GSButton type="secondary" buttonIcon={rightIcon} title={rightTitle} style={buttonStyle}/>
           </div>
         )}
       </gs-input>

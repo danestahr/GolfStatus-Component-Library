@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { faCheck, faMagnifyingGlass, faPen, faXmark } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCircleNotch,
+  faFileInvoiceDollar,
+  faFlag,
+  faMagnifyingGlass,
+  faPen,
+  faUsers,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
+import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
 import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } from './OrderResponsesFilterNav.jsx'
@@ -10,12 +19,12 @@ import { QUESTION_OPTIONS, isAnswerMissing, isNumberQuestion, occurrenceLabelFor
 import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 
-// Label for the "| View ___" link next to a form section's response-type
-// subtitle — a player rolls up under their team the same way a team-level
-// question does, so it reads "View Team"; a solo player on a package with no
-// team component at all (e.g. Individual Registration) has no team to roll
-// up under, so it reads "View Player" instead — there's nothing to view for
-// a plain "Order Response" (no fillLevel), so that's left out entirely.
+// Label for the button on the far right of a form tile's header — a player
+// rolls up under their team the same way a team-level question does, so it
+// reads "View Team"; a solo player on a package with no team component at
+// all (e.g. Individual Registration) has no team to roll up under, so it
+// reads "View Player" instead — there's nothing to view for a plain "Order
+// Response" (no fillLevel), so that's left out entirely.
 function viewLinkLabelFor(fillLevel, hasTeam) {
   if (fillLevel === 'player') return hasTeam ? 'View Team' : 'View Player'
   if (fillLevel === 'team') return 'View Team'
@@ -28,13 +37,13 @@ const SAVE_DELAY_MS = 1000
 // Hole Assignments feature (see TournamentSchedulerPage.jsx's FLASH_MS).
 const FLASH_MS = 3000
 
+// Matches gs-button's own .disabled treatment ($disabled-background/
+// $disabled in colors.scss) instead of just dimming the enabled colors, so a
+// disabled Save reads the same as any other disabled button in the app.
 function saveButtonStyle(canSave) {
-  return {
-    background: '#232323',
-    color: '#fff',
-    opacity: canSave ? 1 : 0.4,
-    cursor: canSave ? 'pointer' : 'not-allowed',
-  }
+  return canSave
+    ? { background: '#232323', color: '#fff', cursor: 'pointer' }
+    : { background: '#e5e5e5', color: '#a2a2a2', cursor: 'default' }
 }
 
 // Two-level grouping: a package (form occurrence label) can carry more than
@@ -105,14 +114,22 @@ export default function OrderResponsesListDraft1({
   order,
   onEditResponses,
   onSaveAnswer,
-  // The "| View Team"/"| View Sponsor" link next to a form section's
-  // subtitle — only meaningful when this page itself doesn't already know
+  // The "View Team"/"View Sponsor" button on the far right of a form tile's
+  // header — only meaningful when this page itself doesn't already know
   // which team/sponsor/player it's scoped to (reached via a plain Order
   // Details, not a team's/sponsor's own "Form Responses" row or one of their
   // player tiles — see `locked` below); a caller passes `null` instead of a
-  // real handler whenever it's already scoped, which this omits the link
+  // real handler whenever it's already scoped, which this omits the button
   // for entirely rather than leaving it clickable to nowhere.
   onViewFormAcrossOrders = null,
+  // The "View Order" button on the far right of each form tile — jumps to
+  // this order's own Order Details view. Only meaningful when this page
+  // isn't already showing that order's full context on its own (reached via
+  // a team's/sponsor's own "Form Responses" row rather than a plain Order
+  // Details); a caller passes `null` instead of a real handler whenever it
+  // is, which omits the button entirely rather than linking back to the
+  // screen already underneath it.
+  onViewOrder = null,
   initialSelectedName = null,
   initialCategory = null,
   // Scopes the whole page down to one team's or sponsor's own package (see
@@ -267,6 +284,19 @@ export default function OrderResponsesListDraft1({
     ? `${nameLabelsByCategory[category]?.[selectedName] ?? selectedName} Responses`
     : CATEGORY_DESCRIPTIONS[category]
 
+  // The "[Name] Form Responses" header for a directly-opened, single-entity
+  // view (a sponsor's/team's own Form Responses row, or one player's own) —
+  // resolves the same way `filterDescription` above does, just without that
+  // switcher-only "Responses" suffix. `category` can be an array here (see
+  // `initialCategory` above) for a team's own view, which also rolls up its
+  // players — 'team' is the name that actually identifies the entity there.
+  // Falls back to plain "Form Responses" when there's nothing to resolve (a
+  // locked category with no answers at all yet).
+  const primaryLockedCategory = Array.isArray(category) ? category.find(c => c !== 'player') ?? category[0] : category
+  const lockedRespondent = selectedName ?? namesByCategory[primaryLockedCategory]?.[0]
+  const lockedEntityName =
+    locked && lockedRespondent ? nameLabelsByCategory[primaryLockedCategory]?.[lockedRespondent] ?? lockedRespondent : null
+
   function cancelAnswerEdit() {
     if (isSaving) return
     setEditingAnswer(null)
@@ -371,7 +401,7 @@ export default function OrderResponsesListDraft1({
                   onChange={e => setEditingAnswer(prev => ({ ...prev, draft: e.target.value }))}
                   onSubmit={canSave ? saveAnswerEdit : undefined}
                   onKeyDown={e => e.key === 'Escape' && cancelAnswerEdit()}
-                  rightIcon={faCheck}
+                  rightTitle="Save"
                   rightIconClick={canSave ? saveAnswerEdit : undefined}
                   buttonStyle={saveButtonStyle(canSave)}
                   disabled={isSaving}
@@ -388,10 +418,16 @@ export default function OrderResponsesListDraft1({
                   )}
                 </div>
               )}
-              {!isEditing && (
+              {isEditing && isSaving ? (
                 <div className="ordr1-answer-meta">
-                  <FontAwesomeIcon icon={faPen} className="ord-form-response-answer-edit-icon" />
+                  <FontAwesomeIcon icon={faCircleNotch} className="ord-form-response-answer-saving-icon" />
                 </div>
+              ) : (
+                !isEditing && (
+                  <div className="ordr1-answer-meta">
+                    <FontAwesomeIcon icon={faPen} className="ord-form-response-answer-edit-icon" />
+                  </div>
+                )
               )}
             </div>
           )
@@ -420,12 +456,14 @@ export default function OrderResponsesListDraft1({
                 </button>
               </div>
             </>
+          ) : lockedEntityName ? (
+            `${lockedEntityName} Form Responses`
           ) : (
             'Form Responses'
           )
         }
         pageActions={
-          onViewAllResponses ? [{ buttonTitle: 'View All Responses', type: 'light-grey', actionClick: onViewAllResponses }] : []
+          onViewAllResponses ? [{ buttonTitle: 'View All', type: 'light-grey', actionClick: onViewAllResponses }] : []
         }
       />
 
@@ -452,7 +490,7 @@ export default function OrderResponsesListDraft1({
             leftIcon={faMagnifyingGlass}
             rightIcon={search ? faXmark : null}
             rightIconClick={() => setSearch('')}
-            placeholder="Search by question, response, or respondent..."
+            placeholder="Search..."
             textValue={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -471,7 +509,11 @@ export default function OrderResponsesListDraft1({
                 <div className="ordr1-package-label">{pkg.packageName}</div>
 
                 <div className="ordr1-forms">
-                  {pkg.forms.map(({ form, entries }) => (
+                  {pkg.forms.map(({ form, entries }) => {
+                    const viewLinkLabel = onViewFormAcrossOrders
+                      ? viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam)
+                      : null
+                    return (
                     <div className="ordr1-form-section" key={form.formName}>
                       <div className="ordr1-form-section-header">
                         <div className="ordr1-form-section-text">
@@ -480,20 +522,32 @@ export default function OrderResponsesListDraft1({
                             <span className="ordr1-form-section-subtitle-text">
                               {occurrenceLabelFor(form.questions[0]?.fillLevel, entries[0]?.entry.answers.length ?? 1)}
                             </span>
-                            {onViewFormAcrossOrders && viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam) && (
-                              <>
-                                <span className="ordr1-filter-switch-sep">|</span>
-                                <button
-                                  type="button"
-                                  className="ordr1-filter-switch-link"
-                                  onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
-                                >
-                                  {viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam)}
-                                </button>
-                              </>
-                            )}
                           </div>
                         </div>
+                        {(viewLinkLabel || onViewOrder) && (
+                          <div className="ordr1-form-section-actions">
+                            {viewLinkLabel && (
+                              <GSButton
+                                type="light-grey"
+                                size="secondary"
+                                buttonIcon={viewLinkLabel === 'View Sponsor' ? faFlag : faUsers}
+                                title={viewLinkLabel}
+                                isFocusable
+                                onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
+                              />
+                            )}
+                            {onViewOrder && (
+                              <GSButton
+                                type="light-grey"
+                                size="secondary"
+                                buttonIcon={faFileInvoiceDollar}
+                                title="View Order"
+                                isFocusable
+                                onClick={() => onViewOrder(order.id)}
+                              />
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="ordr1-question-tiles">
@@ -505,7 +559,8 @@ export default function OrderResponsesListDraft1({
                         ))}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
               )

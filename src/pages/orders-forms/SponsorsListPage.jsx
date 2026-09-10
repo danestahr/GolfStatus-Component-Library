@@ -200,7 +200,7 @@ export default function SponsorsListPage() {
       const team =
         registeredTeams.find(t => t.orderId === orderId && t.packageName === packageName) ??
         registeredTeams.find(t => t.orderId === orderId)
-      navigate('/orders-forms/teams', team ? { state: { teamId: team.id } } : undefined)
+      navigate('/teams', team ? { state: { teamId: team.id } } : undefined)
       return
     }
     const sponsor =
@@ -281,7 +281,7 @@ export default function SponsorsListPage() {
       replace: true,
       state: { sponsorId: selectedSponsor?.id, reopenFormResponses: true, packageName: responsesPackageName },
     })
-    navigate(`/orders-draft-1/${orderId}/responses`)
+    navigate(`/orders/${orderId}/responses`)
   }
 
   // The Form Overview's "Add Question" button — opens as another screen in
@@ -570,6 +570,7 @@ export default function SponsorsListPage() {
                 saveResponseAnswer(viewingOrder.id, responseIndex, answerIndex, value)
               }
               onViewFormAcrossOrders={responsesOpenedDirectly ? null : viewFormEntity}
+              onViewOrder={openOrderDetails}
               initialCategory={responsesCategory}
               initialSelectedName={responsesNameFilter}
               initialPackageName={responsesPackageName}

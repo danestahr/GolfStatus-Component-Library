@@ -1,0 +1,42 @@
+.arf-empty {
+  padding: 0 24px 20px;
+  color: #767676;
+  font-size: 14px;
+
+  &--inline {
+    padding: 0;
+  }
+}
+
+.arf-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  width: 100%;
+}
+
+.arf-search-row-name {
+  font-weight: 600;
+}
+
+.arf-search-row-sub {
+  color: #767676;
+  font-size: 12px;
+}
+
+// A player-team link renders as one un-bordered group (team name + remove)
+// followed by one GSFormSection per player, rather than a single section —
+// each player needs their own set of question fields, not one shared set.
+.arf-player-link {
+  border-bottom: 1px solid #e5e5e5;
+
+  gs-form-section {
+    border-bottom: none;
+    padding-top: 0;
+  }
+
+  gs-form-section:last-child {
+    padding-bottom: 20px;
+  }
+}

@@ -132,7 +132,7 @@ export default function OrdersDraft1Page() {
     setResponsesNameFilter(null)
     setResponsesCategory(null)
     setResponsesPackageName(null)
-    navigate('/orders-draft-1')
+    navigate('/orders')
   }
 
   function openAllResponses() {
@@ -140,7 +140,7 @@ export default function OrdersDraft1Page() {
     setResponsesNameFilter(null)
     setResponsesCategory(null)
     setResponsesPackageName(null)
-    navigate(`/orders-draft-1/${id}/responses`)
+    navigate(`/orders/${id}/responses`)
   }
 
   // Only ever reached via the panel's own back chevron (see
@@ -190,7 +190,7 @@ export default function OrdersDraft1Page() {
         saveCurrentScroll()
         setViewingSponsor(sponsor)
       } else {
-        navigate('/orders-forms/sponsors')
+        navigate('/sponsors')
       }
     } else if (fillLevel === 'team' || fillLevel === 'player') {
       const team =
@@ -200,7 +200,7 @@ export default function OrdersDraft1Page() {
         saveCurrentScroll()
         setViewingTeam(team)
       } else {
-        navigate('/orders-forms/teams')
+        navigate('/teams')
       }
     }
   }
@@ -232,7 +232,7 @@ export default function OrdersDraft1Page() {
     setPickingOrderForTeam(null)
     setResponsesNameFilter(null)
     setResponsesCategory(null)
-    navigate(`/orders-draft-1/${orderId}`)
+    navigate(`/orders/${orderId}`)
   }
 
   // Nav rows on the overlaid Sponsor/Team Overview panel — both link back
@@ -250,7 +250,7 @@ export default function OrdersDraft1Page() {
   function viewSponsorOrderDetails() {
     saveCurrentScroll()
     setViewingSponsor(null)
-    if (viewingAllResponses) navigate(`/orders-draft-1/${id}`)
+    if (viewingAllResponses) navigate(`/orders/${id}`)
   }
 
   function viewSponsorFormResponses() {
@@ -259,7 +259,7 @@ export default function OrdersDraft1Page() {
     setResponsesNameFilter(null)
     setResponsesCategory('sponsor')
     setResponsesPackageName(viewingSponsor?.package ?? null)
-    if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
+    if (!viewingAllResponses) navigate(`/orders/${id}/responses`)
   }
 
   // Most teams have exactly one associated order, so this jumps straight
@@ -275,7 +275,7 @@ export default function OrdersDraft1Page() {
     }
     saveCurrentScroll()
     setViewingTeam(null)
-    if (viewingAllResponses) navigate(`/orders-draft-1/${id}`)
+    if (viewingAllResponses) navigate(`/orders/${id}`)
   }
 
   function selectTeamOrder(orderId) {
@@ -293,7 +293,7 @@ export default function OrdersDraft1Page() {
     setResponsesNameFilter(null)
     setResponsesCategory(['team', 'player'])
     setResponsesPackageName(viewingTeam?.packageName ?? null)
-    if (!viewingAllResponses) navigate(`/orders-draft-1/${id}/responses`)
+    if (!viewingAllResponses) navigate(`/orders/${id}/responses`)
   }
 
   // The Team Overview player card's "Form Responses" button — same
@@ -310,9 +310,9 @@ export default function OrdersDraft1Page() {
     setResponsesCategory(null)
     const targetOrderId = player.orderId ?? id
     if (targetOrderId !== id) {
-      navigate(`/orders-draft-1/${targetOrderId}/responses`)
+      navigate(`/orders/${targetOrderId}/responses`)
     } else if (!viewingAllResponses) {
-      navigate(`/orders-draft-1/${id}/responses`)
+      navigate(`/orders/${id}/responses`)
     }
   }
 
@@ -467,7 +467,7 @@ export default function OrdersDraft1Page() {
                 <OrderListItem
                   key={order.id}
                   order={order}
-                  onClick={() => navigate(`/orders-draft-1/${order.id}`)}
+                  onClick={() => navigate(`/orders/${order.id}`)}
                 />
               ))
             )}
