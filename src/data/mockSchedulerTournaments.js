@@ -214,7 +214,6 @@ export const TOURNAMENTS = [
       2: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'B' },
       3: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 1, roundLetter: 'C' },
     },
-    hideRosterCount: true,
     hideSettingsButton: true,
   },
   // Round Number linking's other ready-made example — two separate 2-way
@@ -232,7 +231,6 @@ export const TOURNAMENTS = [
       3: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 2, roundLetter: 'A' },
       4: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '1:00 PM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18, roundNumber: 2, roundLetter: 'B' },
     },
-    hideRosterCount: true,
     hideSettingsButton: true,
   },
   // Sequence's own ready-made example — no waves, no Round Number linking,
