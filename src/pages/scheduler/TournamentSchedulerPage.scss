@@ -387,6 +387,11 @@
 }
 
 .sched-col-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $medium-pad;
   font-size: $medium-font;
   font-weight: $bold-font-weight;
   color: $grey-800;
@@ -395,6 +400,65 @@
 
 .sched-col-count {
 
+}
+
+.sched-col-slots-available {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-600;
+  white-space: nowrap;
+}
+
+// ── Front 9 / Back 9 open-slot summary + Remove/Add All Slots ──────────────────
+// Sits between the (sticky) Assigned header and Hole 1, in normal document
+// flow rather than sticky itself — scrolls out of sight under the Assigned
+// header as soon as you scroll past it instead of staying pinned.
+
+.sched-nines-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $medium-large-pad;
+  padding: 0 $x-large-pad $x-large-pad;
+}
+
+.sched-nine-card {
+  flex: 1 0 0;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+  padding: $medium-large-pad;
+  background: $grey-50;
+  border-radius: $medium-radius;
+}
+
+.sched-nine-card-title {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+  line-height: $regular-line-height;
+}
+
+.sched-nine-card-count {
+  font-weight: $regular-font-weight;
+  color: $grey-600;
+}
+
+.sched-nine-card-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: $font-family;
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $cyan-700;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $cyan-800;
+  }
 }
 
 // ── Teams "displaying all" notice + filter link (legacyFilter tournaments only) ──
@@ -559,21 +623,10 @@
   padding: $medium-pad $medium-large-pad;
 }
 
-// Per-round roster badge on a RoundListCard — how many of that round's own
-// registered teams have been placed, so an incomplete round is obvious without
-// opening it.
-.sched-round-roster {
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: $small-pad;
-  font-size: $xx-small-font;
-  font-weight: $bold-font-weight;
-  color: $grey-500;
-
-  &--complete {
-    color: $green-700;
-  }
+// Separator between a RoundListCard's Holes count and its assigned-team
+// count, once a hole's actually been assigned (see RoundListCard).
+.sched-round-roster-sep {
+  opacity: 0.5;
 }
 
 .sched-filter-round-side {

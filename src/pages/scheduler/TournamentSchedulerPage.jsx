@@ -18,7 +18,6 @@ import {
   faFolderOpen,
   faPen,
   faClone,
-  faCircleCheck,
   faListOl,
   faWater,
   faShuffle,
@@ -59,6 +58,22 @@ function groupLetter(index) {
 function getSlotIds(holeNumber, groupCount) {
   return Array.from({ length: groupCount }, (_, i) => `${holeNumber}-${groupLetter(i)}`)
 }
+
+// Splits HOLE_DATA into its front/back nine for the Holes column header —
+// every round today plays a single course front-to-back, so these are
+// always labeled "Front 9"/"Back 9" rather than by course name. A 9-hole
+// course just yields the one (front) entry.
+const NINES = [
+  { key: 'front', label: 'Front 9', holes: HOLE_DATA.filter(h => h.number <= 9).map(h => h.number) },
+  { key: 'back', label: 'Back 9', holes: HOLE_DATA.filter(h => h.number > 9).map(h => h.number) },
+].filter(nine => nine.holes.length > 0)
+
+// The Front 9 / Back 9 tiles above Hole 1 (Remove/Add All Slots) are hidden
+// for now — still an undeveloped idea — while the rest of the Holes column
+// (including the total open-slot count in its header) stays as-is. The
+// feature underneath is otherwise fully wired up; flip this back on to
+// bring the tiles back.
+const SHOW_NINE_TILES = false
 
 // Auto Assign Holes' own Assignment Type choices — each sorts the round's
 // available teams before handing them out hole by hole (see
@@ -436,9 +451,8 @@ function FilterRoundCard({ name, roundMeta, courseName, activeRoundName, isActiv
 // "Edit Round" gives way to "Start Round" — the setup step is done, so editing the
 // round's own info no longer applies here and starting it becomes the live action.
 // Shares the info-block markup/classes with FilterRoundCard above.
-function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, assignedCount, rosterCount, hideRosterCount, onOpenHoleAssignments, onEditRound, onCloneRound }) {
+function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, assignedCount, hideRosterCount, onOpenHoleAssignments, onEditRound, onCloneRound }) {
   const meta = roundMeta
-  const isFullyAssigned = rosterCount > 0 && assignedCount === rosterCount
   // Draft until the round actually has a hole assignment — nobody sets this
   // by hand, it just reports whether that's happened yet.
   const status = hasAssignments ? 'Ready' : 'Draft'
@@ -456,7 +470,13 @@ function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, 
         <div className="sched-filter-round-sub">{meta.facilityName}</div>
         <div className="sched-filter-round-group">
           <div className="sched-filter-round-sub">{courseName}</div>
-          <div className="sched-filter-round-sub">{meta.holes} Holes</div>
+          {/* Holes sits where it always has, next to course — the assigned-
+              team count only joins it once a hole's actually been assigned. */}
+          <div className="sched-filter-round-sub">
+            {meta.holes} Holes{hasAssignments && !hideRosterCount && (
+              <> <span className="sched-round-roster-sep">|</span> {assignedCount} Teams Assigned</>
+            )}
+          </div>
         </div>
         {waveName && (
           <span className="sched-wave-badge">
@@ -464,12 +484,6 @@ function RoundListCard({ name, roundMeta, courseName, waveName, hasAssignments, 
           </span>
         )}
         <span className={`sched-round-status sched-round-status--${status.toLowerCase()}`}>{status}</span>
-        {!hideRosterCount && (
-          <div className={`sched-round-roster${isFullyAssigned ? ' sched-round-roster--complete' : ''}`}>
-            {isFullyAssigned && <FontAwesomeIcon icon={faCircleCheck} />}
-            {assignedCount}/{rosterCount} Teams Assigned
-          </div>
-        )}
       </div>
       <div className="sched-round-card-actions">
         <div className="sched-round-card-actions-group">
@@ -702,18 +716,42 @@ export default function TournamentSchedulerPage() {
     return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`
   }
 
-  // The group header's own description line below — a solo round reads as
-  // "All teams can play in Round 1", two rounds keep the Oxford "either A or
+  // The group header's own description line below, tracking three states as
+  // hole assignments come in:
+  //  - nobody assigned yet: "All teams can play in ..." (same phrasing as
+  //    before this tracked assignment progress at all)
+  //  - some assigned: "XX teams need ... hole assignment" — same round
+  //    phrasing/letter-list rules as the unassigned state, just naming how
+  //    many are still left instead of who's eligible
+  //  - everybody assigned: a single "All teams are assigned to a hole" line
+  //    regardless of how many rounds are in the group
+  // A solo round reads as "Round 1", two rounds keep the Oxford "either A or
   // B" phrasing, three to five spell every letter out slash-separated (an
   // Oxford list of that many stops reading well), and six or more collapse
   // to just the first and last letter as a range so the line doesn't run on
   // forever.
   function roundGroupDescription(rounds) {
-    if (rounds.length === 1) return `All teams can play in ${roundName(rounds[0])}`
+    // Round Number mates are exclusive alternatives for the same team pool
+    // (a team plays in only one of them), so the group's own roster is
+    // whichever single round's roster — they all share it.
+    const totalTeams = teamsForRound(rounds[0]).length
+    const assignedTeams = rounds.reduce((sum, r) => sum + Object.keys(assignmentsByRound[r] || {}).length, 0)
+    const remaining = totalTeams - assignedTeams
+
+    if (totalTeams > 0 && remaining <= 0) return 'All teams are assigned to a hole'
+
     const letters = rounds.map(roundGroupLetter)
-    if (rounds.length === 2) return `Teams can play in either Round ${formatOxfordList(letters)}`
-    if (rounds.length <= 5) return `Teams can play in one of the following rounds: ${letters.join('/')}`
-    return `Teams can play in one of the following rounds: ${letters[0]} - ${letters[letters.length - 1]}`
+    if (assignedTeams === 0) {
+      if (rounds.length === 1) return `All teams can play in ${roundName(rounds[0])}`
+      if (rounds.length === 2) return `Teams can play in either Round ${formatOxfordList(letters)}`
+      if (rounds.length <= 5) return `Teams can play in one of the following rounds: ${letters.join('/')}`
+      return `Teams can play in one of the following rounds: ${letters[0]} - ${letters[letters.length - 1]}`
+    }
+
+    if (rounds.length === 1) return `${remaining} teams need to be assigned to ${roundName(rounds[0])}`
+    if (rounds.length === 2) return `${remaining} teams need to be assigned to Round ${formatOxfordList(letters)}`
+    if (rounds.length <= 5) return `${remaining} teams need to be assigned to one of the following rounds: ${letters.join('/')}`
+    return `${remaining} teams need to be assigned to one of the following rounds: ${letters[0]} - ${letters[letters.length - 1]}`
   }
 
   function roundCourse(r) {
@@ -1365,6 +1403,95 @@ export default function TournamentSchedulerPage() {
     }))
   }
 
+  // Per-round memory of exactly how many groups a hole had right before
+  // "Remove All Slots" cleared some of them out — { [round]: { [holeNumber]:
+  // groupCount } } — so "Add All Slots" can put a hole back exactly where it
+  // was (C group included) instead of guessing. A hole is dropped from here
+  // as soon as it's restored.
+  const [removedGroupsByRound, setRemovedGroupsByRound] = useState(() => (
+    Object.fromEntries(ROUNDS.map(r => [r, {}]))
+  ))
+
+  const removedGroups = removedGroupsByRound[activeRound] ?? {}
+
+  // "Remove All Slots" under a nine's label, above Hole 1 — the trash button
+  // (see handleRemoveGroup) applied across every hole in the nine at once:
+  // for each hole, pops groups off the end for as long as the current last
+  // one is unassigned, same as clicking trash repeatedly. An assigned slot
+  // always blocks further removal past it, so this can never read as
+  // clearing a selection — it only ever removes rows nobody's in.
+  function removeAllInNine(nineHoles) {
+    const nextCounts = {}
+    const snapshot = {}
+    nineHoles.forEach(holeNumber => {
+      const current = groupCounts[holeNumber] ?? 2
+      let count = current
+      while (count > MIN_GROUPS_PER_HOLE && !assignments[`${holeNumber}-${groupLetter(count - 1)}`]) {
+        count--
+      }
+      if (count < current) {
+        nextCounts[holeNumber] = count
+        snapshot[holeNumber] = current
+      }
+    })
+    if (!Object.keys(nextCounts).length) return
+    setGroupCounts(prev => ({ ...prev, ...nextCounts }))
+    setRemovedGroupsByRound(prev => ({
+      ...prev,
+      [activeRound]: { ...(prev[activeRound] ?? {}), ...snapshot },
+    }))
+  }
+
+  // "Add All Slots" — the "+" button applied across every hole in the nine
+  // at once, restoring each hole to the group count it had before its last
+  // "Remove All Slots" (falling back to the standard A/B pair for a hole
+  // that was never bulk-removed, e.g. someone trashed a group by hand).
+  function addAllInNine(nineHoles) {
+    const nextCounts = {}
+    const restoredHoles = []
+    nineHoles.forEach(holeNumber => {
+      const current = groupCounts[holeNumber] ?? 2
+      const target = Math.min(removedGroups[holeNumber] ?? 2, MAX_GROUPS_PER_HOLE)
+      if (target > current) {
+        nextCounts[holeNumber] = target
+        restoredHoles.push(holeNumber)
+      }
+    })
+    if (!Object.keys(nextCounts).length) return
+    setGroupCounts(prev => ({ ...prev, ...nextCounts }))
+    setRemovedGroupsByRound(prev => {
+      const roundMap = { ...(prev[activeRound] ?? {}) }
+      restoredHoles.forEach(holeNumber => delete roundMap[holeNumber])
+      return { ...prev, [activeRound]: roundMap }
+    })
+  }
+
+  // Open (unassigned) slot count across a nine's holes — what the nine
+  // summary above Hole 1 shows next to that nine's label, and (whenever
+  // it's above zero) why it offers "Remove All Slots".
+  function nineOpenSlotCount(nineHoles) {
+    return nineHoles.reduce((count, holeNumber) => (
+      count + getSlotIds(holeNumber, groupCounts[holeNumber] ?? 2)
+        .filter(slotId => !assignments[slotId]).length
+    ), 0)
+  }
+
+  // Whether any hole in the nine has fewer groups than it should be
+  // restored to — what tells the nine summary whether "Add All Slots" (only
+  // offered once nineOpenSlotCount hits zero) actually has anything to add
+  // back, vs. the nine just being fully assigned already.
+  function nineHasRemovedSlots(nineHoles) {
+    return nineHoles.some(holeNumber => (
+      Math.min(removedGroups[holeNumber] ?? 2, MAX_GROUPS_PER_HOLE) > (groupCounts[holeNumber] ?? 2)
+    ))
+  }
+
+  // Open slot count across every nine — what the Assigned header shows on
+  // its right side, next to the count of who's already placed.
+  function totalOpenSlotCount() {
+    return NINES.reduce((sum, nine) => sum + nineOpenSlotCount(nine.holes), 0)
+  }
+
   function switchRound(round) {
     setActiveRound(round)
     setSelectedTeam(null)
@@ -1683,16 +1810,6 @@ export default function TournamentSchedulerPage() {
   function clearExcludedRounds() {
     setExcludedRoundsByRound(prev => ({ ...prev, [activeRound]: new Set() }))
   }
-
-  // Whether any teams are currently being hidden from the active round's pool —
-  // via the legacy per-round Filter panel, the newer global Settings toggle, or
-  // (independent of format) this round being linked to others by Round Number.
-  const hidingAnyTeams = (
-    !roundIsWaveExempt(activeRound) && (
-      (useLegacyFilter ? excludedRounds.size > 0 : (hideTeamsAssignedElsewhere || waveFormatExclusive))
-      || (hybridWaveScoped && waveMateRounds(activeRound).length > 0)
-    )
-  ) || roundNumberMates(activeRound).length > 0
 
   // How many teams would be available for each round, given that round's own
   // assignments plus whichever other rounds are currently hidden from it (legacy:
@@ -2115,13 +2232,22 @@ export default function TournamentSchedulerPage() {
     ? linkedGroupLabel(roundNumberOf(activeRound), `Round ${roundNumberOf(activeRound)}`)
     : ''
 
-  const autoAssignLinkedRounds = linkedRoundMates.map(r => ({
-    name: roundName(r),
-    groupLabel: autoAssignRoundNumberLabel,
-    meta: ROUND_META[r],
-    courseName: roundCourse(r),
-    status: Object.keys(assignmentsByRound[r] || {}).length > 0 ? 'Ready' : 'Draft',
-  }))
+  // "Auto Assign All" fills every mate against this same share cap (see
+  // runAutoAssignRemaining/autoAssignShareCap above) — a mate already
+  // sitting at or past it has nothing left to gain from that action, so it's
+  // left off this screen rather than listed alongside rounds that'll
+  // actually receive teams. Balance Assignments off means no cap at all
+  // (Infinity), so every mate still shows.
+  const autoAssignMateShareCap = autoAssignShareCap(autoAssignEvenlyDistribute, linkedRoundMates.length + 1, TOURNAMENT_TEAMS.length)
+  const autoAssignLinkedRounds = linkedRoundMates
+    .filter(r => Object.keys(assignmentsByRound[r] || {}).length < autoAssignMateShareCap)
+    .map(r => ({
+      name: roundName(r),
+      groupLabel: autoAssignRoundNumberLabel,
+      meta: ROUND_META[r],
+      courseName: roundCourse(r),
+      status: Object.keys(assignmentsByRound[r] || {}).length > 0 ? 'Ready' : 'Draft',
+    }))
 
   const autoAssignAssignedCount = activeRound !== undefined
     ? Object.keys(assignmentsByRound[activeRound] ?? {}).length
@@ -2493,17 +2619,47 @@ export default function TournamentSchedulerPage() {
               <div className="sched-col-scroll" ref={holesColScrollRef}>
                 <div ref={holesHeaderRef} className="sched-col-header">
                   <div className="sched-col-title">
-                    Assigned <span className="sched-col-count">({assignedCount}{!hidingAnyTeams ? `/${TOURNAMENT_TEAMS.length}` : ''})</span>
+                    <span>Assigned <span className="sched-col-count">({assignedCount})</span></span>
+                    <span className="sched-col-slots-available">
+                      {totalOpenSlotCount() > 0 ? `${totalOpenSlotCount()} Slots Available` : 'All Holes Assigned'}
+                    </span>
                   </div>
                   <GSinput
                     leftIcon={faMagnifyingGlass}
                     rightIcon={holeSearch ? faCircleXmark : undefined}
                     rightIconClick={() => setHoleSearch('')}
-                    placeholder="Search players & teams…"
+                    placeholder="Search Holes, Players & Teams…"
                     textValue={holeSearch}
                     onChange={e => setHoleSearch(e.target.value)}
                   />
                 </div>
+                {/* Not part of the sticky header above — sits in normal flow so it
+                    scrolls out of view under that header once you scroll past
+                    Hole 1, rather than staying pinned alongside it. */}
+                {SHOW_NINE_TILES && (
+                  <div className="sched-nines-bar">
+                    {NINES.map(nine => {
+                      const openCount = nineOpenSlotCount(nine.holes)
+                      const canRestore = nineHasRemovedSlots(nine.holes)
+                      return (
+                        <div key={nine.key} className="sched-nine-card">
+                          <div className="sched-nine-card-title">
+                            {nine.label} <span className="sched-nine-card-count">({openCount} Slots Available)</span>
+                          </div>
+                          {(openCount > 0 || canRestore) && (
+                            <button
+                              type="button"
+                              className="sched-nine-card-link"
+                              onClick={() => (openCount > 0 ? removeAllInNine(nine.holes) : addAllInNine(nine.holes))}
+                            >
+                              {openCount > 0 ? 'Remove All Slots' : 'Add All Slots'}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
                 {HOLE_DATA.map(hole => (
                   <HoleSection
                     key={hole.number}
@@ -2539,13 +2695,13 @@ export default function TournamentSchedulerPage() {
                 <div className="sched-col-scroll" ref={teamsColScrollRef}>
                   <div className="sched-col-header">
                     <div className="sched-col-title">
-                      Unassigned <span className="sched-col-count">({filteredAvailableTeams.length})</span>
+                      <span>Unassigned <span className="sched-col-count">({filteredAvailableTeams.length})</span></span>
                     </div>
                     <GSinput
                       leftIcon={faMagnifyingGlass}
                       rightIcon={teamSearch ? faCircleXmark : undefined}
                       rightIconClick={() => setTeamSearch('')}
-                      placeholder="Search players & teams…"
+                      placeholder="Search Players & Teams…"
                       textValue={teamSearch}
                       onChange={e => setTeamSearch(e.target.value)}
                     />
