@@ -40,6 +40,21 @@
   &:hover {
     background: $grey-50;
   }
+
+  // A picker row's own Add/Adding…/Added button is the only interactive
+  // part — the row itself doesn't act as a click target the way it does for
+  // the plain "open this form's overview" list.
+  &--picker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $medium-large-pad;
+    cursor: default;
+
+    &:hover {
+      background: none;
+    }
+  }
 }
 
 .fp-row-name {
@@ -52,6 +67,26 @@
   font-size: $small-font;
   color: $grey-800;
   opacity: 0.7;
+}
+
+.fp-row-action {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  flex-shrink: 0;
+}
+
+.fp-row-added {
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $green-700;
+}
+
+@keyframes fp-row-spin {
+  to { transform: rotate(360deg); }
 }
 
 .fp-list-empty {

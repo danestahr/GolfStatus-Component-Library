@@ -48,20 +48,22 @@ export default function OrderDetailPanelDraft1({ order, onViewAllResponses }) {
         </div>
       </OrderFormSection>
 
-      <OrderFormSection
-        title="Form Responses"
-        action={
-          <GSButton
-            title="View Responses"
-            type="black"
-            rightIcon={faArrowRight}
-            isFocusable
-            onClick={onViewAllResponses}
-          />
-        }
-      >
-        <OrderFormResponsesSummaryDraft1 responses={order.formResponses} onViewAll={onViewAllResponses} />
-      </OrderFormSection>
+      {order.formResponses?.length > 0 && (
+        <OrderFormSection
+          title="Form Responses"
+          action={
+            <GSButton
+              title="View Responses"
+              type="black"
+              rightIcon={faArrowRight}
+              isFocusable
+              onClick={onViewAllResponses}
+            />
+          }
+        >
+          <OrderFormResponsesSummaryDraft1 responses={order.formResponses} onViewAll={onViewAllResponses} />
+        </OrderFormSection>
+      )}
 
       <OrderFormSection title="Order Details">
         {order.lineItems.map((item, i) => (

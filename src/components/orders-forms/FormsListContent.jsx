@@ -1,24 +1,63 @@
 import { useState } from 'react'
-import { faMagnifyingGlass, faXmark, faPlus, faArrowCircleDown } from '@fortawesome/free-solid-svg-icons'
+import { faCheckCircle, faCircleNotch, faMagnifyingGlass, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
+import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSEmptyList from '../../gs-lib/components/gs-empty-list'
 import './FormsListPanel.scss'
 
 // Opens straight to that form's overview (OrderFormOverviewDraft1) — see
-// EventSitePackagesListPage's onSelectForm.
-function FormRow({ form, onClick }) {
+// EventSitePackagesListPage's onSelectForm — UNLESS `pickerStatus` is given
+// (see FormsListContent below), in which case the row itself does nothing
+// and its right-side button is the only way to act on it.
+function FormRow({ form, onClick, pickerStatus, onPickForm, onRemoveForm }) {
+  const isPicker = !!pickerStatus
+  const status = isPicker ? pickerStatus(form) : null
+
   return (
     <div
-      className="fp-row"
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onClick()}
+      className={`fp-row${isPicker ? ' fp-row--picker' : ''}`}
+      onClick={isPicker ? undefined : onClick}
+      role={isPicker ? undefined : 'button'}
+      tabIndex={isPicker ? undefined : 0}
+      onKeyDown={isPicker ? undefined : e => (e.key === 'Enter' || e.key === ' ') && onClick()}
     >
-      <div className="fp-row-name">{form.name}</div>
-      <div className="fp-row-sub">Created on {form.createdAt}</div>
+      <div className="fp-row-text">
+        <div className="fp-row-name">{form.name}</div>
+        <div className="fp-row-sub">Created on {form.createdAt}</div>
+      </div>
+      {isPicker && (
+        <div className="fp-row-action">
+          {status === 'pending' ? (
+            <GSButton
+              type="light-grey"
+              title="Adding…"
+              buttonIcon={faCircleNotch}
+              iconStyle={{ animation: 'fp-row-spin 0.9s linear infinite' }}
+              isDisabled
+              isFocusable
+            />
+          ) : status === 'done' ? (
+            <>
+              <div className="fp-row-added">
+                <FontAwesomeIcon icon={faCheckCircle} />
+                Added
+              </div>
+              <GSButton
+                type="transparent red icon"
+                size="secondary"
+                buttonIcon={faTrash}
+                isFocusable
+                onClick={() => onRemoveForm(form)}
+              />
+            </>
+          ) : (
+            <GSButton type="light-grey" title="+ Add" isFocusable onClick={() => onPickForm(form)} />
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -29,8 +68,22 @@ function FormRow({ form, onClick }) {
 // Plain content, not its own panel: the page that owns the single
 // AppSidePanel renders this in place, alongside whatever other screens
 // (Add Form, Form Overview) share that same panel.
-export default function FormsListContent({ forms, onAddForm, onSelectForm }) {
+//
+// Repurposed as a form PICKER (see TeamsListPage.jsx's/SponsorsListPage.jsx's
+// openFormsPicker) by passing `pickerStatus`/`onPickForm`/`onRemoveForm`
+// instead of `onSelectForm` — same list/search/empty-state shell, but each
+// row's own Add/Adding…/Added/Remove button becomes the point of the screen
+// rather than a click-through to that form's overview.
+export default function FormsListContent({
+  forms,
+  onAddForm,
+  onSelectForm,
+  pickerStatus = null,
+  onPickForm = null,
+  onRemoveForm = null,
+}) {
   const [search, setSearch] = useState('')
+  const isPicker = !!pickerStatus
 
   const query = search.trim().toLowerCase()
   const visibleForms = forms.filter(form => !query || form.name.toLowerCase().includes(query))
@@ -40,13 +93,17 @@ export default function FormsListContent({ forms, onAddForm, onSelectForm }) {
       <GSActionBar
         type="x-large-pad H3"
         header="Forms"
-        pageActions={[
-          { buttonTitle: 'Add Form', buttonIcon: faPlus, type: 'black', actionClick: onAddForm },
-          // Hidden for now — stubbed (no export exists for this prototype
-          // yet, same convention as ScorecardListPage's Upload/Download
-          // actions); uncomment to bring it back.
-          // { actionIcon: faArrowCircleDown, type: 'light-grey icon', actionClick: () => {} },
-        ]}
+        pageActions={
+          isPicker
+            ? []
+            : [
+                { buttonTitle: 'Add Form', buttonIcon: faPlus, type: 'black', actionClick: onAddForm },
+                // Hidden for now — stubbed (no export exists for this prototype
+                // yet, same convention as ScorecardListPage's Upload/Download
+                // actions); uncomment to bring it back.
+                // { actionIcon: faArrowCircleDown, type: 'light-grey icon', actionClick: () => {} },
+              ]
+        }
       />
 
       <div className="fp-list-search">
@@ -68,7 +125,16 @@ export default function FormsListContent({ forms, onAddForm, onSelectForm }) {
             <GSEmptyList title="No Forms Yet" detail="Add a form to collect additional registrant information." />
           )
         ) : (
-          visibleForms.map(form => <FormRow key={form.id} form={form} onClick={() => onSelectForm(form)} />)
+          visibleForms.map(form => (
+            <FormRow
+              key={form.id}
+              form={form}
+              onClick={() => onSelectForm(form)}
+              pickerStatus={pickerStatus}
+              onPickForm={onPickForm}
+              onRemoveForm={onRemoveForm}
+            />
+          ))
         )}
       </div>
     </div>

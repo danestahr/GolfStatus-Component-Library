@@ -396,4 +396,68 @@ export const registeredTeams = [
       { id: 'pl-30164', name: 'Leo Bianchi', email: 'leo.bianchi@email.com', handicap: 7.2, note: 'Vegan at the turn stand' },
     ],
   },
+  // Three fresh, order-less teams (orderId points at nothing in
+  // mockOrders.js, same "dangling on purpose" convention as the sponsors
+  // added alongside these below) — every player on these rosters has never
+  // answered a single form question anywhere in mockOrders.js, so they're
+  // clean candidates for the Form Responses page's own "Add Response" flow
+  // (AddResponseFields.jsx) without the confusing double-tile a team that
+  // already has real answers produces (its captain/players show up twice —
+  // once from their real answer, once from the manually-added one).
+  {
+    id: 'tm-2017',
+    orderId: 'ord-1026',
+    packageName: 'Team Registration',
+    teamName: 'Desert Hawks',
+    code: 'DH7QXM21',
+    round: 'Round 1',
+    checkedIn: false,
+    disqualified: false,
+    contactName: 'Vikram Rao',
+    email: 'vikram.rao@email.com',
+    phone: '(555) 340-1187',
+    players: [
+      { id: 'pl-30171', name: 'Vikram Rao', email: 'vikram.rao@email.com', handicap: 11.3 },
+      { id: 'pl-30172', name: 'Selena Ortiz', email: 'selena.ortiz@email.com', handicap: 14.9 },
+      { id: 'pl-30173', name: 'Marcus Reilly', email: 'marcus.reilly@email.com', handicap: 9.1 },
+      { id: 'pl-30174', name: 'Dana Kowalski', email: 'dana.kowalski@email.com', handicap: 17.4 },
+    ],
+  },
+  {
+    id: 'tm-2018',
+    orderId: 'ord-1027',
+    packageName: 'Team Registration',
+    teamName: 'Lakeside Legends',
+    code: 'LL4RPT88',
+    round: 'Round 2',
+    checkedIn: false,
+    disqualified: false,
+    contactName: 'Monique Fontaine',
+    email: 'monique.fontaine@email.com',
+    phone: '(555) 340-1198',
+    players: [
+      { id: 'pl-30181', name: 'Monique Fontaine', email: 'monique.fontaine@email.com', handicap: 12.7 },
+      { id: 'pl-30182', name: 'Isaac Bergman', email: 'isaac.bergman@email.com', handicap: 8.5 },
+      { id: 'pl-30183', name: 'Chloe Vasquez', email: 'chloe.vasquez@email.com', handicap: 15.2 },
+    ],
+  },
+  {
+    id: 'tm-2019',
+    orderId: 'ord-1028',
+    packageName: 'Team Registration',
+    teamName: 'Palmetto Pirates',
+    code: 'PP2WKS45',
+    round: 'Round 1',
+    checkedIn: false,
+    disqualified: false,
+    contactName: 'Derrick Boone',
+    email: 'derrick.boone@email.com',
+    phone: '(555) 340-1206',
+    players: [
+      { id: 'pl-30191', name: 'Derrick Boone', email: 'derrick.boone@email.com', handicap: 10.0 },
+      { id: 'pl-30192', name: 'Amara Nwosu', email: 'amara.nwosu@email.com', handicap: 13.6 },
+      { id: 'pl-30193', name: 'Trevor Lindqvist', email: 'trevor.lindqvist@email.com', handicap: 16.8 },
+      { id: 'pl-30194', name: 'Bianca Suarez', email: 'bianca.suarez@email.com', handicap: 7.9 },
+    ],
+  },
 ]

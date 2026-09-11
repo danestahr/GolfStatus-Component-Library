@@ -292,4 +292,53 @@ export const sponsors = [
     amount: 500.0,
     status: 'active',
   },
+  // Three fresh, order-less sponsors (orderId points at nothing in
+  // mockOrders.js, same "dangling on purpose" convention as the teams added
+  // alongside these in mockTeams.js) — none of these contacts has ever
+  // answered a Sponsor Details question in mockOrders.js, so they're clean
+  // candidates for the Form Responses page's own "Add Response" flow
+  // (AddResponseFields.jsx) without producing a confusing double tile for a
+  // sponsor that already has a real answer on file.
+  {
+    id: 'spn-1020',
+    orderId: 'ord-1029',
+    sponsorName: 'Boone & Associates Law',
+    contactName: 'Derrick Boone',
+    email: 'derrick.boone@booneassociates.com',
+    phone: '(555) 340-1214',
+    tier: 'Silver Tier',
+    package: 'Basic Hole Sponsor',
+    hole: 'Hole 5',
+    dateTime: '11:20 AM on Aug 14, 2026',
+    amount: 500.0,
+    status: 'active',
+  },
+  {
+    id: 'spn-1021',
+    orderId: 'ord-1030',
+    sponsorName: 'Fontaine Realty Group',
+    contactName: 'Monique Fontaine',
+    email: 'monique.fontaine@fontainerealty.com',
+    phone: '(555) 340-1225',
+    tier: 'Gold Tier',
+    package: 'Basic Hole Sponsor',
+    hole: 'Hole 9',
+    dateTime: '11:32 AM on Aug 14, 2026',
+    amount: 900.0,
+    status: 'active',
+  },
+  {
+    id: 'spn-1022',
+    orderId: 'ord-1031',
+    sponsorName: 'Rao Family Dentistry',
+    contactName: 'Vikram Rao',
+    email: 'vikram.rao@raofamilydentistry.com',
+    phone: '(555) 340-1236',
+    tier: 'Bronze Tier',
+    package: 'Basic Hole Sponsor',
+    hole: 'Hole 14',
+    dateTime: '11:47 AM on Aug 14, 2026',
+    amount: 350.0,
+    status: 'active',
+  },
 ]

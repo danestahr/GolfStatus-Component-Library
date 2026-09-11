@@ -70,7 +70,7 @@
 // Its own background so it reads as a fixed bar rather than inheriting the
 // body's padding/inset.
 .ordr1-list-search {
-  padding: 16px $x-large-pad;
+  padding: $x-large-pad;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
   gs-input {

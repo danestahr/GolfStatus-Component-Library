@@ -5,6 +5,7 @@ import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
+import GSEmptyList from '../../gs-lib/components/gs-empty-list'
 import UnsavedAnswerBanner from './UnsavedAnswerBanner.jsx'
 import {
   responsesForFormAcrossOrders,
@@ -322,7 +323,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
       <GSActionBar
         type="x-large-pad H3"
         header={
-          currentQuestion && (
+          currentQuestion ? (
             <>
               {currentQuestion.question}
               <div className="aof-answer-summary">
@@ -335,6 +336,8 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
                 {currentQuestion.answers.length} {occurrenceLabelFor(currentQuestion.fillLevel, currentQuestion.answers.length)} | {formName}
               </div>
             </>
+          ) : (
+            formName
           )
         }
         pageActions={[
@@ -420,7 +423,7 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
         </div>
       </div>
 
-      {currentQuestion && (
+      {currentQuestion ? (
         <div className="aof-response-list-wrap">
           {visibleAnswers.length === 0 ? (
             <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
@@ -429,6 +432,20 @@ export default function AllOrderResponsesForFormDraft1({ orders, formName, formI
               {visibleAnswers.map((answer, i) => renderAnswerTile(answer, i))}
             </div>
           )}
+        </div>
+      ) : (
+        // No question has ever been answered on this form (a brand new form,
+        // or every real order's response was deleted) — matches the Figma
+        // "Sponsor Questions" empty state (node 2804:11105): action bar and
+        // search stay put, an Empty List sits in the body instead of
+        // leaving it blank, same GSEmptyList convention as FormsListContent's
+        // "No Forms Yet".
+        <div className="aof-empty-wrap">
+          <GSEmptyList
+            title="No Forms Responses"
+            detail={`${formName} doesn't have any responses to show yet.`}
+            actions={onAddResponse ? [{ title: 'Add Response', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: onAddResponse }] : []}
+          />
         </div>
       )}
     </div>

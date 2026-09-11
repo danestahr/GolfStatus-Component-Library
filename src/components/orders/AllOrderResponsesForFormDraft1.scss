@@ -23,6 +23,14 @@
   padding: $x-large-pad;
 }
 
+// No question has ever been answered on this form at all (see the
+// GSEmptyList branch in AllOrderResponsesForFormDraft1.jsx) — same inset as
+// the response list it stands in for, plus a little extra top breathing
+// room since there's no quick filter/search bar above it here.
+.aof-empty-wrap {
+  padding: $xx-large-pad $x-large-pad;
+}
+
 // Taller top/bottom breathing room than the response list below it, plus its
 // own bottom border, so the quick filter reads as its own distinct section
 // of the page rather than blurring into the search bar right after it.

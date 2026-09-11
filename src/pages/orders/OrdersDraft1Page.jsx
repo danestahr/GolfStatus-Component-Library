@@ -363,6 +363,18 @@ export default function OrdersDraft1Page() {
     )
   }
 
+  // The trash button on every form's own section in OrderResponsesListDraft1
+  // — passed that form's exact entryIndex list (into order.formResponses,
+  // same indices onSaveAnswer already uses) rather than a name, so this
+  // never has to re-derive which entries belong to it.
+  function deleteForm(entryIndexes) {
+    setOrderList(prev =>
+      prev.map(o =>
+        o.id !== selectedOrder?.id ? o : { ...o, formResponses: o.formResponses.filter((_, i) => !entryIndexes.includes(i)) }
+      )
+    )
+  }
+
   // `entries` is every question in the form occurrence being edited together
   // (see OrderFormResponses.jsx's single "Edit All" per form card) — each
   // becomes its own group here so they can all be saved as one unit.
@@ -610,6 +622,7 @@ export default function OrdersDraft1Page() {
               initialPackageName={responsesPackageName}
               locked={!!responsesPackageName}
               onViewAllResponses={responsesPackageName ? openAllResponses : null}
+              onDeleteForm={deleteForm}
             />
           )
         ) : (

@@ -997,6 +997,64 @@ export const orders = [
       },
     ],
   },
+  // ord-1029 through ord-1031: one order per sponsor in mockSponsors.js
+  // deliberately left with no form responses (see the comment above
+  // spn-1020 in mockSponsors.js) — a real order still has to exist here for
+  // the Sponsor Overview panel's Order Details / Form Responses rows to
+  // have anything to open at all; an empty `formResponses` array is what
+  // actually exercises the Form Responses page's "No Responses" empty
+  // state and its own Add Response flow.
+  {
+    id: 'ord-1029',
+    buyerName: 'Derrick Boone',
+    businessName: 'Boone & Associates Law',
+    email: 'derrick.boone@booneassociates.com',
+    phone: '(555) 340-1214',
+    paymentType: 'Credit Card',
+    date: '2026-08-14',
+    dateTime: '11:20 AM on Aug 14, 2026',
+    orderType: 'Online Order',
+    packages: ['Basic Hole Sponsor'],
+    lineItems: [{ name: 'Basic Hole Sponsor', unitPrice: 500.0, quantity: 1 }],
+    fee: 15.0,
+    amount: 515.0,
+    status: 'paid',
+    formResponses: [],
+  },
+  {
+    id: 'ord-1030',
+    buyerName: 'Monique Fontaine',
+    businessName: 'Fontaine Realty Group',
+    email: 'monique.fontaine@fontainerealty.com',
+    phone: '(555) 340-1225',
+    paymentType: 'Credit Card',
+    date: '2026-08-14',
+    dateTime: '11:32 AM on Aug 14, 2026',
+    orderType: 'Online Order',
+    packages: ['Basic Hole Sponsor'],
+    lineItems: [{ name: 'Basic Hole Sponsor', unitPrice: 500.0, quantity: 1 }],
+    fee: 15.0,
+    amount: 515.0,
+    status: 'paid',
+    formResponses: [],
+  },
+  {
+    id: 'ord-1031',
+    buyerName: 'Vikram Rao',
+    businessName: 'Rao Family Dentistry',
+    email: 'vikram.rao@raofamilydentistry.com',
+    phone: '(555) 340-1236',
+    paymentType: 'Credit Card',
+    date: '2026-08-14',
+    dateTime: '11:47 AM on Aug 14, 2026',
+    orderType: 'Online Order',
+    packages: ['Basic Hole Sponsor'],
+    lineItems: [{ name: 'Basic Hole Sponsor', unitPrice: 500.0, quantity: 1 }],
+    fee: 15.0,
+    amount: 515.0,
+    status: 'paid',
+    formResponses: [],
+  },
   // ord-1021 and ord-1022: one order per registered team in mockTeams.js
   // that doesn't already share an order with a sponsor (linked via that
   // team's own `orderId`) — lets the Team Overview panel's Order Details
@@ -1104,6 +1162,62 @@ export const orders = [
         ],
       },
     ],
+  },
+  // ord-1026 through ord-1028: one order per team in mockTeams.js
+  // deliberately left with no form responses (see the comment above
+  // tm-2017 in mockTeams.js) — a real order still has to exist here for the
+  // Team Overview panel's Order Details / Form Responses rows to have
+  // anything to open at all; an empty `formResponses` array is what
+  // actually exercises the Form Responses page's "No Responses" empty
+  // state and its own Add Response flow (same reasoning as ord-1029
+  // through ord-1031 for the sponsors added alongside these teams).
+  {
+    id: 'ord-1026',
+    buyerName: 'Vikram Rao',
+    email: 'vikram.rao@email.com',
+    phone: '(555) 340-1187',
+    paymentType: 'Credit Card',
+    date: '2026-08-14',
+    dateTime: '10:05 AM on Aug 14, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration'],
+    lineItems: [{ name: 'Team Registration', unitPrice: 800.0, quantity: 1 }],
+    fee: 50.0,
+    amount: 850.0,
+    status: 'paid',
+    formResponses: [],
+  },
+  {
+    id: 'ord-1027',
+    buyerName: 'Monique Fontaine',
+    email: 'monique.fontaine@email.com',
+    phone: '(555) 340-1198',
+    paymentType: 'Credit Card',
+    date: '2026-08-14',
+    dateTime: '10:18 AM on Aug 14, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration'],
+    lineItems: [{ name: 'Team Registration', unitPrice: 800.0, quantity: 1 }],
+    fee: 50.0,
+    amount: 850.0,
+    status: 'paid',
+    formResponses: [],
+  },
+  {
+    id: 'ord-1028',
+    buyerName: 'Derrick Boone',
+    email: 'derrick.boone@email.com',
+    phone: '(555) 340-1206',
+    paymentType: 'Credit Card',
+    date: '2026-08-14',
+    dateTime: '10:31 AM on Aug 14, 2026',
+    orderType: 'Online Order',
+    packages: ['Team Registration'],
+    lineItems: [{ name: 'Team Registration', unitPrice: 800.0, quantity: 1 }],
+    fee: 50.0,
+    amount: 850.0,
+    status: 'paid',
+    formResponses: [],
   },
   // ord-1023 stacks all three packages in one order — Team Registration
   // (Nathan Cole's own foursome) plus a Premium Hole Sponsor (a second team,

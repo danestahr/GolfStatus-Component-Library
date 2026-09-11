@@ -5,6 +5,9 @@ import {
   faFlag,
   faMagnifyingGlass,
   faPen,
+  faPlus,
+  faTrash,
+  faTriangleExclamation,
   faUsers,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -13,6 +16,9 @@ import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSField from '../../gs-lib/components/gs-field'
+import GSEmptyList from '../../gs-lib/components/gs-empty-list'
+import GSPageBanner from '../../gs-lib/components/gs-page-banner'
+import GSItemInfo from '../../gs-lib/components/gs-item-info'
 import OrderResponsesFilterNav, { RESPONSE_CATEGORIES, CATEGORY_DESCRIPTIONS } from './OrderResponsesFilterNav.jsx'
 import UnsavedAnswerBanner from './UnsavedAnswerBanner.jsx'
 import { QUESTION_OPTIONS, isAnswerMissing, isNumberQuestion, occurrenceLabelFor, entityNameFor } from './orderUtils'
@@ -20,14 +26,13 @@ import './OrderFormResponses.scss'
 import './OrderResponsesListDraft1.scss'
 
 // Label for the button on the far right of a form tile's header — a player
-// rolls up under their team the same way a team-level question does, so it
-// reads "View Team"; a solo player on a package with no team component at
-// all (e.g. Individual Registration) has no team to roll up under, so it
-// reads "View Player" instead — there's nothing to view for a plain "Order
-// Response" (no fillLevel), so that's left out entirely.
-function viewLinkLabelFor(fillLevel, hasTeam) {
-  if (fillLevel === 'player') return hasTeam ? 'View Team' : 'View Player'
-  if (fillLevel === 'team') return 'View Team'
+// rolls up under their team the same way a team-level question does, so both
+// read as "View Team"; a sponsor-level form reads "View Sponsor". A plain
+// "Order Response" (no fillLevel) has no entity more specific than the order
+// itself, so it gets no link here at all — that's what the separate
+// "View Order" button (see `onViewOrder` below) is for instead.
+function viewLinkLabelFor(fillLevel) {
+  if (fillLevel === 'team' || fillLevel === 'player') return 'View Team'
   if (fillLevel === 'sponsor') return 'View Sponsor'
   return null
 }
@@ -122,13 +127,17 @@ export default function OrderResponsesListDraft1({
   // real handler whenever it's already scoped, which this omits the button
   // for entirely rather than leaving it clickable to nowhere.
   onViewFormAcrossOrders = null,
-  // The "View Order" button on the far right of each form tile — jumps to
-  // this order's own Order Details view. Only meaningful when this page
-  // isn't already showing that order's full context on its own (reached via
-  // a team's/sponsor's own "Form Responses" row rather than a plain Order
-  // Details); a caller passes `null` instead of a real handler whenever it
-  // is, which omits the button entirely rather than linking back to the
-  // screen already underneath it.
+  // The "View Order" button on the far right of a form tile's header — jumps
+  // to this order's own Order Details view. Only ever shown for a plain
+  // "Order Response" form (no fillLevel, i.e. a question asked per order
+  // rather than per team/sponsor/player) — a team/player/sponsor form always
+  // shows its own "View Team"/"View Sponsor" link instead (see
+  // `viewLinkLabelFor` above), never both at once. Also only meaningful when
+  // this page isn't already showing that order's full context on its own
+  // (reached via a team's/sponsor's own "Form Responses" row rather than a
+  // plain Order Details); a caller passes `null` instead of a real handler
+  // whenever it is, which omits the button entirely rather than linking back
+  // to the screen already underneath it.
   onViewOrder = null,
   initialSelectedName = null,
   initialCategory = null,
@@ -152,6 +161,23 @@ export default function OrderResponsesListDraft1({
   // given, adds a header action back to the unscoped, fully filterable view.
   locked = false,
   onViewAllResponses = null,
+  // The team/sponsor/player's own display name — passed directly by the
+  // caller (rather than reverse-engineered from `order.formResponses`,
+  // which has nothing to reverse-engineer from when this entity has zero
+  // responses yet) so the locked header and the "No Responses" empty state
+  // below can both name this entity even before it's answered anything.
+  entityDisplayName = null,
+  // The "+ Add Response" action — opens a form picker scoped to this same
+  // entity (see TeamsListPage.jsx's/SponsorsListPage.jsx's openFormsPicker).
+  // Only offered when `locked`, since "add a response to X" only makes
+  // sense once this page already knows which X.
+  onAddResponse = null,
+  // The trash button on the far right of every form tile's header — removes
+  // that whole form's entries from this order. Passed the entryIndex list
+  // for that form's own questions (into `order.formResponses`, same indices
+  // `onSaveAnswer` already uses) rather than a name/id, so the parent
+  // doesn't need to re-derive which entries belong to it.
+  onDeleteForm = null,
 }) {
   const [search, setSearch] = useState('')
   // A caller that already knows the category (e.g. landing here from a
@@ -166,7 +192,23 @@ export default function OrderResponsesListDraft1({
   const [isSaving, setIsSaving] = useState(false)
   const [flashedAnswers, setFlashedAnswers] = useState(new Set())
   const [showUnsavedBanner, setShowUnsavedBanner] = useState(false)
+  // Set to a form's name when its trash button is clicked but the form is a
+  // real, actually-submitted response (not `manuallyAdded`) — rather than
+  // silently doing nothing, this surfaces the "linked to an order, can't be
+  // deleted" warning banner below instead of calling onDeleteForm.
+  const [linkedDeleteWarning, setLinkedDeleteWarning] = useState(null)
   const editingTileRef = useRef(null)
+
+  // The trash button on a form section — a manually-added form is deleted
+  // outright, but a real response is left alone and explained instead of
+  // just being silently blocked by hiding the button.
+  function handleDeleteFormClick(isManual, entryIndexes, formName) {
+    if (isManual) {
+      onDeleteForm(entryIndexes)
+    } else {
+      setLinkedDeleteWarning(formName)
+    }
+  }
 
   function selectCategory(value) {
     setCategory(value)
@@ -228,12 +270,6 @@ export default function OrderResponsesListDraft1({
   const filteredResponses = fullResponses.filter(entry => matchesQuery(entry, query) && matchesCategory(entry, category))
   const packages = groupResponses(filteredResponses)
 
-  // Whether each package has a team-level form at all — checked against
-  // every response the order has, not the filtered/visible set, since a
-  // name filter (e.g. picking one player) hides the other forms entirely
-  // and would otherwise make a real team package look team-less.
-  const packageHasTeam = new Set(fullResponses.filter(entry => entry.fillLevel === 'team').map(entry => entry.packageName))
-
   // A name filter can leave a form with no visible answers at all (e.g.
   // picking a player from one team hides the other team's Player Details
   // entirely) — drop those empty forms, and the whole package if every one
@@ -280,22 +316,18 @@ export default function OrderResponsesListDraft1({
   const availableCategories = RESPONSE_CATEGORIES.filter(c => c.value === 'all' || presentFillLevels.has(c.value))
   const showFilter = !locked && presentFillLevels.size > 1
 
+  // Whether anything in scope here actually came from a real order fill-out
+  // rather than being added by hand (see TeamsListPage.jsx's/
+  // SponsorsListPage.jsx's pickForm, or EventSitePackagesListPage.jsx's
+  // handleAddResponseSave, which stamps a synthetic `manual-`-prefixed id in
+  // place of a real order entirely). When every response in scope is
+  // manually added, there's no real order behind any of it to jump out to —
+  // "View All" only ever makes sense once at least one response is.
+  const hasOrderLinkedResponse = !order.id.startsWith('manual-') && fullResponses.some(entry => !entry.manuallyAdded)
+
   const filterDescription = selectedName
     ? `${nameLabelsByCategory[category]?.[selectedName] ?? selectedName} Responses`
     : CATEGORY_DESCRIPTIONS[category]
-
-  // The "[Name] Form Responses" header for a directly-opened, single-entity
-  // view (a sponsor's/team's own Form Responses row, or one player's own) —
-  // resolves the same way `filterDescription` above does, just without that
-  // switcher-only "Responses" suffix. `category` can be an array here (see
-  // `initialCategory` above) for a team's own view, which also rolls up its
-  // players — 'team' is the name that actually identifies the entity there.
-  // Falls back to plain "Form Responses" when there's nothing to resolve (a
-  // locked category with no answers at all yet).
-  const primaryLockedCategory = Array.isArray(category) ? category.find(c => c !== 'player') ?? category[0] : category
-  const lockedRespondent = selectedName ?? namesByCategory[primaryLockedCategory]?.[0]
-  const lockedEntityName =
-    locked && lockedRespondent ? nameLabelsByCategory[primaryLockedCategory]?.[lockedRespondent] ?? lockedRespondent : null
 
   function cancelAnswerEdit() {
     if (isSaving) return
@@ -438,6 +470,20 @@ export default function OrderResponsesListDraft1({
 
   return (
     <div className="ordr1-list">
+      {linkedDeleteWarning && (
+        <GSPageBanner
+          type="warning"
+          title={
+            <GSItemInfo
+              icon={faTriangleExclamation}
+              description={`"${linkedDeleteWarning}" can't be deleted — it's linked to an order.`}
+            />
+          }
+          timeout={4000}
+          timeoutAction={() => setLinkedDeleteWarning(null)}
+        />
+      )}
+
       <GSActionBar
         type="x-large-pad H3"
         header={
@@ -456,15 +502,16 @@ export default function OrderResponsesListDraft1({
                 </button>
               </div>
             </>
-          ) : lockedEntityName ? (
-            `${lockedEntityName} Form Responses`
+          ) : entityDisplayName ? (
+            `${entityDisplayName} Form Responses`
           ) : (
             'Form Responses'
           )
         }
-        pageActions={
-          onViewAllResponses ? [{ buttonTitle: 'View All', type: 'light-grey', actionClick: onViewAllResponses }] : []
-        }
+        pageActions={[
+          ...(onAddResponse ? [{ buttonTitle: 'Add Response', buttonIcon: faPlus, type: 'black', actionClick: onAddResponse }] : []),
+          ...(onViewAllResponses && hasOrderLinkedResponse ? [{ buttonTitle: 'View All', type: 'light-grey', actionClick: onViewAllResponses }] : []),
+        ]}
       />
 
       {showFilter && (
@@ -498,21 +545,42 @@ export default function OrderResponsesListDraft1({
       </div>
 
       <div className="ordr1-list-body">
-        {visiblePackages.length === 0 ? (
+        {visiblePackages.length === 0 && !search && locked && onAddResponse ? (
+          <GSEmptyList
+            title="No Responses"
+            detail={`${entityDisplayName} has not responded to any form questions.`}
+            actions={[{ title: 'Add Response', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: onAddResponse }]}
+          />
+        ) : visiblePackages.length === 0 ? (
           <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
         ) : (
           <div className="ordr1-list-groups">
-            {visiblePackages.map(pkg => {
-              const hasTeam = packageHasTeam.has(pkg.packageName)
-              return (
+            {visiblePackages.map(pkg => (
               <div className="ordr1-package" key={pkg.packageName}>
                 <div className="ordr1-package-label">{pkg.packageName}</div>
 
                 <div className="ordr1-forms">
                   {pkg.forms.map(({ form, entries }) => {
-                    const viewLinkLabel = onViewFormAcrossOrders
-                      ? viewLinkLabelFor(form.questions[0]?.fillLevel, hasTeam)
+                    // A form added by hand (see TeamsListPage.jsx's/
+                    // SponsorsListPage.jsx's pickForm) rather than filled out
+                    // for real — every one of its questions carries the same
+                    // flag, so checking the first is enough. The trash button
+                    // below only ever shows for one of these — a real,
+                    // actually-submitted response is never deletable from
+                    // here. A manually-added form also has no real order/
+                    // team/sponsor of its own behind it to jump to (it only
+                    // exists here, hand-added straight onto this scope), so
+                    // it skips the cross-link buttons below entirely too.
+                    const isManual = !!entries[0]?.entry.manuallyAdded
+                    const viewLinkLabel = !isManual && onViewFormAcrossOrders
+                      ? viewLinkLabelFor(form.questions[0]?.fillLevel)
                       : null
+                    // "View Order" only ever shows up alongside a plain
+                    // order-level form (no viewLinkLabel) — a team/player/
+                    // sponsor form always has its own more specific
+                    // "View Team"/"View Sponsor" link instead of it, never
+                    // both at once.
+                    const showViewOrder = !isManual && !viewLinkLabel && !!onViewOrder
                     return (
                     <div className="ordr1-form-section" key={form.formName}>
                       <div className="ordr1-form-section-header">
@@ -524,7 +592,7 @@ export default function OrderResponsesListDraft1({
                             </span>
                           </div>
                         </div>
-                        {(viewLinkLabel || onViewOrder) && (
+                        {(viewLinkLabel || showViewOrder || onDeleteForm) && (
                           <div className="ordr1-form-section-actions">
                             {viewLinkLabel && (
                               <GSButton
@@ -536,7 +604,7 @@ export default function OrderResponsesListDraft1({
                                 onClick={() => onViewFormAcrossOrders(form.formName, pkg.packageName)}
                               />
                             )}
-                            {onViewOrder && (
+                            {showViewOrder && (
                               <GSButton
                                 type="light-grey"
                                 size="secondary"
@@ -544,6 +612,21 @@ export default function OrderResponsesListDraft1({
                                 title="View Order"
                                 isFocusable
                                 onClick={() => onViewOrder(order.id)}
+                              />
+                            )}
+                            {onDeleteForm && (
+                              <GSButton
+                                type="light-grey icon"
+                                size="secondary"
+                                buttonIcon={faTrash}
+                                isFocusable
+                                onClick={() =>
+                                  handleDeleteFormClick(
+                                    isManual,
+                                    entries.map(({ entryIndex }) => entryIndex),
+                                    form.formName
+                                  )
+                                }
                               />
                             )}
                           </div>
@@ -563,8 +646,7 @@ export default function OrderResponsesListDraft1({
                   })}
                 </div>
               </div>
-              )
-            })}
+            ))}
           </div>
         )}
       </div>
