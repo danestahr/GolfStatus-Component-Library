@@ -99,7 +99,7 @@ export default function FormsListContent({
           leftIcon={faMagnifyingGlass}
           rightIcon={search ? faXmark : null}
           rightIconClick={() => setSearch('')}
-          placeholder="Search Forms..."
+          placeholder="Search..."
           textValue={search}
           onChange={e => setSearch(e.target.value)}
         />
