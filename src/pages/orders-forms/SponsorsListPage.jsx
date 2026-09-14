@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { faPlus, faList, faFolderOpen } from '@fortawesome/free-solid-svg-icons'
 
 import AppSidePanel from '../../components/AppSidePanel.jsx'
+import GSLoadingSpinnerOverlay from '../../gs-lib/components/gs-loading-spinner-overlay'
 import EntityListPage from '../../components/orders-forms/EntityListPage.jsx'
 import SponsorTierSection from '../../components/orders-forms/SponsorTierSection.jsx'
 import SponsorOverviewPanel from '../../components/orders-forms/SponsorOverviewPanel.jsx'
@@ -21,9 +22,10 @@ import { orders as initialOrders } from '../../data/mockOrders.js'
 import { forms as formsCatalog } from '../../data/mockForms.js'
 import './SponsorsListPage.scss'
 
-// Simulated save latency for adding a form to a sponsor by hand — same beat
-// as OrderResponsesListDraft1's own SAVE_DELAY_MS for an answer edit.
-const ADD_FORM_DELAY_MS = 1000
+// A brief full-screen "Adding Form…" beat between the picker committing a
+// form and the Form Responses screen underneath reappearing — stands in for
+// a real save-and-reload round trip instead of snapping straight back.
+const ADD_FORM_LOADING_MS = 2000
 
 const UNASSIGNED_TIER = 'Sponsors'
 const TIER_KEYS = [...SPONSOR_TIERS, UNASSIGNED_TIER]
@@ -88,14 +90,16 @@ export default function SponsorsListPage() {
   const [editingQuestionKey, setEditingQuestionKey] = useState(null)
   const [showSponsorOverview, setShowSponsorOverview] = useState(false)
   // The "+ Add Response" flow on the sponsor's own locked Form Responses
-  // screen — opens FormsListContent as a picker (see pickForm/removeForm
-  // below) as another overlay on top of that screen, same convention as
-  // showSponsorOverview. `pendingFormIds` only ever tracks the transient
-  // "Adding…" beat mid-save — "Added" is derived straight from whether the
+  // screen — opens FormsListContent as a picker (see pickForm below) as
+  // another overlay on top of that screen, same convention as
+  // showSponsorOverview. "Added" is derived straight from whether the
   // order already has a manually-added entry for that form (see
   // formStatus), not tracked here at all.
   const [showFormsPicker, setShowFormsPicker] = useState(false)
-  const [pendingFormIds, setPendingFormIds] = useState(new Set())
+  // The full-screen "Adding Form…" beat (see ADD_FORM_LOADING_MS) that
+  // stands in for the picker for a moment once a form's actually been
+  // added, before the Form Responses screen underneath reappears.
+  const [showAddFormLoading, setShowAddFormLoading] = useState(false)
 
   // Scroll position of the AppSidePanel body, kept per "screen" so a forward
   // navigation always opens at the top, while stepping back with the panel's
@@ -108,6 +112,7 @@ export default function SponsorsListPage() {
   const pendingScrollAction = useRef(null)
 
   function currentScreenKey() {
+    if (showAddFormLoading) return 'addFormLoading'
     if (showFormsPicker) return `formsPicker:${viewingOrderId}`
     if (showSponsorOverview) return `sponsor-overlay:${selectedSponsor?.id}`
     if (editingResponse) return `edit:${editingResponse.orderId}`
@@ -184,6 +189,7 @@ export default function SponsorsListPage() {
     setAddingQuestion(false)
     setShowSponsorOverview(false)
     setShowFormsPicker(false)
+    setShowAddFormLoading(false)
   }
 
   function closeSponsorPanel() {
@@ -304,8 +310,8 @@ export default function SponsorsListPage() {
 
   // "+ Add Response" on the sponsor's own locked Form Responses screen —
   // opens the Forms list as a picker (see FormsListContent's
-  // pickerStatus/onPickForm/onRemoveForm) as another overlay on top of that
-  // screen, same convention as showSponsorOverview above.
+  // pickerStatus/onPickForm) as another overlay on top of that screen, same
+  // convention as showSponsorOverview above.
   function openFormsPicker() {
     saveCurrentScroll()
     setShowFormsPicker(true)
@@ -321,93 +327,65 @@ export default function SponsorsListPage() {
     )
   }
 
-  // Whether `form` has any sponsor-level question at all — a form like
-  // Member Number or Player Details only ever gets answered at the
-  // team/player level (see mockOrders.js), so it has nothing a sponsor could
-  // fill in. The picker (see the showFormsPicker render below) only offers
-  // forms this returns true for — otherwise "+ Add" would sit there doing
-  // nothing, since pickForm has no sponsor-level question to add.
-  function formHasSponsorQuestions(form) {
-    return formQuestionsFor(orderList, form).some(q => q.fillLevel === 'sponsor')
-  }
-
-  // Whether `form` is fully covered for this sponsor — every sponsor-level
-  // question formQuestionsFor knows about already has an entry (real or
-  // manually added), and there's at least one entry to point to (an empty
+  // Whether `form` is fully covered for this sponsor — every question
+  // formQuestionsFor knows about already has an entry (real or manually
+  // added) here, and there's at least one entry to point to (an empty
   // question list, e.g. a brand new form nothing's ever answered, never
-  // counts as "added" just because there's nothing to check). Drives the
-  // picker row's Add/Added state directly off the data itself (see
-  // pickForm/removeForm below) rather than a separate "already added" flag
-  // that could drift out of sync with it.
+  // counts as "added" just because there's nothing to check). Ignores each
+  // question's own recorded fillLevel — added from a sponsor's own screen,
+  // a form always answers as a single Sponsor Response (see pickForm below)
+  // regardless of which fillLevel it's normally seen at elsewhere. Drives
+  // the picker row's Add/Added state directly off the data itself rather
+  // than a separate "already added" flag that could drift out of sync
+  // with it.
   function isFormAdded(form) {
     const order = orderList.find(o => o.id === viewingOrderId)
     if (!order || !selectedSponsor) return false
     if (!order.formResponses.some(entry => entry.formId === form.id && entry.packageName === selectedSponsor.package)) return false
-    const questions = formQuestionsFor(orderList, form).filter(q => q.fillLevel === 'sponsor')
+    const questions = formQuestionsFor(orderList, form)
     if (!questions.length) return false
     return questions.every(q => questionAlreadyPresent(order, form.id, q.question, selectedSponsor.package))
   }
 
   function formStatus(form) {
-    if (pendingFormIds.has(form.id)) return 'pending'
     return isFormAdded(form) ? 'done' : 'idle'
   }
 
   // Adds a blank entry (this sponsor's own contact as the one respondent)
-  // for every one of `form`'s known sponsor-level questions that isn't
-  // already covered by a real or previously-added entry — so this only
-  // ever fills in what's actually missing, never duplicating a question
-  // this sponsor already answered for real.
+  // for every one of `form`'s known questions that isn't already covered by
+  // a real or previously-added entry — so this only ever fills in what's
+  // actually missing, never duplicating a question this sponsor already
+  // answered for real. Ignores each question's own recorded fillLevel — a
+  // form added here always becomes a single Sponsor Response, even one
+  // that's normally only ever seen at the team/player level elsewhere.
   function pickForm(form) {
     if (!selectedSponsor) return
-    setPendingFormIds(prev => new Set(prev).add(form.id))
-    window.setTimeout(() => {
-      const order = orderList.find(o => o.id === viewingOrderId)
-      const newEntries = formQuestionsFor(orderList, form)
-        .filter(q => q.fillLevel === 'sponsor')
-        .filter(q => !order || !questionAlreadyPresent(order, form.id, q.question, selectedSponsor.package))
-        .map(q => ({
-          formId: form.id,
-          formName: form.name,
-          packageName: selectedSponsor.package,
-          question: q.question,
-          fillLevel: 'sponsor',
-          manuallyAdded: true,
-          answers: [{ respondent: selectedSponsor.contactName, value: '' }],
-        }))
-      setOrderList(prev =>
-        prev.map(o => (o.id === viewingOrderId ? { ...o, formResponses: [...o.formResponses, ...newEntries] } : o))
-      )
-      setPendingFormIds(prev => {
-        const next = new Set(prev)
-        next.delete(form.id)
-        return next
-      })
-      // Added — head straight back to the Form Responses screen underneath
-      // rather than sitting on the picker, same "done, step back" beat as
-      // Save elsewhere in this panel.
-      saveCurrentScroll()
-      pendingScrollAction.current = 'restore'
-      setShowFormsPicker(false)
-    }, ADD_FORM_DELAY_MS)
-  }
-
-  // The picker row's own Remove button — undoes exactly what pickForm just
-  // added for this sponsor.
-  function removeForm(form) {
-    if (!selectedSponsor) return
+    const order = orderList.find(o => o.id === viewingOrderId)
+    const newEntries = formQuestionsFor(orderList, form)
+      .filter(q => !order || !questionAlreadyPresent(order, form.id, q.question, selectedSponsor.package))
+      .map(q => ({
+        formId: form.id,
+        formName: form.name,
+        packageName: selectedSponsor.package,
+        question: q.question,
+        fillLevel: 'sponsor',
+        manuallyAdded: true,
+        answers: [{ respondent: selectedSponsor.contactName, value: '' }],
+      }))
     setOrderList(prev =>
-      prev.map(o =>
-        o.id !== viewingOrderId
-          ? o
-          : {
-              ...o,
-              formResponses: o.formResponses.filter(
-                entry => !(entry.formId === form.id && entry.manuallyAdded && entry.packageName === selectedSponsor.package)
-              ),
-            }
-      )
+      prev.map(o => (o.id === viewingOrderId ? { ...o, formResponses: [...o.formResponses, ...newEntries] } : o))
     )
+    // Added — hold on a brief full-screen "Adding Form…" beat (see
+    // ADD_FORM_LOADING_MS) in place of the picker before the Form
+    // Responses screen underneath reappears, rather than snapping
+    // straight back to it.
+    saveCurrentScroll()
+    setShowFormsPicker(false)
+    setShowAddFormLoading(true)
+    window.setTimeout(() => {
+      pendingScrollAction.current = 'restore'
+      setShowAddFormLoading(false)
+    }, ADD_FORM_LOADING_MS)
   }
 
   // The trash button on every form's own section in OrderResponsesListDraft1
@@ -466,7 +444,9 @@ export default function SponsorsListPage() {
   function handlePanelBack() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
-    if (showFormsPicker) {
+    if (showAddFormLoading) {
+      setShowAddFormLoading(false)
+    } else if (showFormsPicker) {
       setShowFormsPicker(false)
     } else if (showSponsorOverview) {
       setShowSponsorOverview(false)
@@ -567,7 +547,9 @@ export default function SponsorsListPage() {
     setEditingResponse(null)
   }
 
-  const screenTitle = showFormsPicker
+  const screenTitle = showAddFormLoading
+    ? 'Forms'
+    : showFormsPicker
     ? 'Forms'
     : showSponsorOverview
     ? 'Sponsor Overview'
@@ -585,7 +567,9 @@ export default function SponsorsListPage() {
     ? 'Order Details'
     : 'Sponsor Overview'
 
-  const screenActions = showFormsPicker
+  const screenActions = showAddFormLoading
+    ? []
+    : showFormsPicker
     ? []
     : showSponsorOverview
     ? [{ name: 'Delete', type: 'red', action: () => {} }]
@@ -656,12 +640,17 @@ export default function SponsorsListPage() {
         title={screenTitle}
         actions={screenActions}
       >
-        {showFormsPicker ? (
+        {showAddFormLoading ? (
+          <GSLoadingSpinnerOverlay
+            spinnerSize="large"
+            mainText="Adding Form…"
+            style={{ display: 'block', height: '100%' }}
+          />
+        ) : showFormsPicker ? (
           <FormsListContent
-            forms={formsCatalog.filter(formHasSponsorQuestions)}
+            forms={formsCatalog}
             pickerStatus={formStatus}
             onPickForm={pickForm}
-            onRemoveForm={removeForm}
           />
         ) : showSponsorOverview ? (
           selectedSponsor && (
@@ -720,7 +709,14 @@ export default function SponsorsListPage() {
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(viewingOrder.id, responseIndex, answerIndex, value)
               }
-              onViewFormAcrossOrders={responsesOpenedDirectly ? null : viewFormEntity}
+              // Not gated on `responsesOpenedDirectly` — viewFormEntity/
+              // viewEntityAcrossOrders resolve the team/sponsor straight
+              // from `viewingOrder`, not from anything only the unscoped
+              // view has, so this sponsor's own locked screen gets the
+              // exact same "View Team"/"View Sponsor" link as the
+              // unscoped one instead of falling back to a generic
+              // "View Order".
+              onViewFormAcrossOrders={viewFormEntity}
               onViewOrder={openOrderDetails}
               initialCategory={responsesCategory}
               initialSelectedName={responsesNameFilter}
@@ -729,6 +725,7 @@ export default function SponsorsListPage() {
               onViewAllResponses={responsesOpenedDirectly ? () => viewAllOrderResponses(viewingOrder.id) : null}
               entityDisplayName={selectedSponsor?.sponsorName ?? null}
               onAddResponse={responsesOpenedDirectly ? openFormsPicker : null}
+              addResponseLabel="Add Sponsor Form"
               onDeleteForm={deleteManualForm}
             />
           )

@@ -616,7 +616,14 @@ export default function OrdersDraft1Page() {
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(selectedOrder.id, responseIndex, answerIndex, value)
               }
-              onViewFormAcrossOrders={responsesPackageName ? null : viewFormAcrossOrders}
+              // Not gated on `responsesPackageName` — viewFormAcrossOrders/
+              // viewEntityAcrossOrders resolve the team/sponsor straight
+              // from `selectedOrder`, not from anything only the unscoped
+              // view has, so a locked (re-scoped to one team/sponsor)
+              // screen gets the exact same "View Team"/"View Sponsor" link
+              // as the unscoped one instead of falling back to a generic
+              // "View Order".
+              onViewFormAcrossOrders={viewFormAcrossOrders}
               initialSelectedName={responsesNameFilter}
               initialCategory={responsesCategory}
               initialPackageName={responsesPackageName}

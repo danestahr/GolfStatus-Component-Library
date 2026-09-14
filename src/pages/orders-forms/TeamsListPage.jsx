@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { faPlus, faCircleArrowUp, faFolderOpen, faBan } from '@fortawesome/free-solid-svg-icons'
 
 import AppSidePanel from '../../components/AppSidePanel.jsx'
+import GSLoadingSpinnerOverlay from '../../gs-lib/components/gs-loading-spinner-overlay'
 import EntityListPage from '../../components/orders-forms/EntityListPage.jsx'
 import TeamRosterSection from '../../components/orders-forms/TeamRosterSection.jsx'
 import RegisteredTeamsSection from '../../components/orders-forms/RegisteredTeamsSection.jsx'
@@ -28,9 +29,10 @@ import { orders as initialOrders } from '../../data/mockOrders.js'
 import { forms as formsCatalog } from '../../data/mockForms.js'
 import './TeamsListPage.scss'
 
-// Simulated save latency for adding a form to a team/player by hand — same
-// beat as OrderResponsesListDraft1's own SAVE_DELAY_MS for an answer edit.
-const ADD_FORM_DELAY_MS = 1000
+// A brief full-screen "Adding Form…" beat between the picker committing a
+// form and the Form Responses screen underneath reappearing — stands in for
+// a real save-and-reload round trip instead of snapping straight back.
+const ADD_FORM_LOADING_MS = 2000
 
 // The Team Overview panel's Order Details row opens that team's linked
 // order (see mockTeams.js's `orderId`) right in this same panel, reusing
@@ -106,14 +108,15 @@ export default function TeamsListPage() {
   const [editingPlayer, setEditingPlayer] = useState(null)
   // The "+ Add Response" flow on a locked Form Responses screen (a team's
   // own, or one player's own) — opens FormsListContent as a picker (see
-  // pickForm/removeForm below) as another overlay on top of that screen,
-  // same convention as showTeamOverview/editingPlayer. `pendingFormIds`
-  // only ever tracks the transient "Adding…" beat mid-save — once
-  // committed, "Added" is derived straight from whether the order already
-  // has a manually-added entry for that form (see formStatus), not tracked
-  // here at all.
+  // pickForm below) as another overlay on top of that screen, same
+  // convention as showTeamOverview/editingPlayer. "Added" is derived
+  // straight from whether the order already has a manually-added entry for
+  // that form (see formStatus), not tracked here at all.
   const [showFormsPicker, setShowFormsPicker] = useState(false)
-  const [pendingFormIds, setPendingFormIds] = useState(new Set())
+  // The full-screen "Adding Form…" beat (see ADD_FORM_LOADING_MS) that
+  // stands in for the picker for a moment once a form's actually been
+  // added, before the Form Responses screen underneath reappears.
+  const [showAddFormLoading, setShowAddFormLoading] = useState(false)
 
   // Scroll position of the AppSidePanel body, kept per "screen" so a forward
   // navigation always opens at the top, while stepping back with the panel's
@@ -135,6 +138,7 @@ export default function TeamsListPage() {
   }
 
   function currentScreenKey() {
+    if (showAddFormLoading) return 'addFormLoading'
     if (showFormsPicker) return `formsPicker:${viewingOrderId}`
     if (pickingOrderForTeam) return `pickOrder:${pickingOrderForTeam.id}`
     if (editingPlayer) return `editPlayer:${editingPlayer.personId}`
@@ -214,6 +218,7 @@ export default function TeamsListPage() {
     setPickingOrderForTeam(null)
     setEditingPlayer(null)
     setShowFormsPicker(false)
+    setShowAddFormLoading(false)
   }
 
   function closeTeamPanel() {
@@ -382,29 +387,34 @@ export default function TeamsListPage() {
 
   // "+ Add Response" on a locked Form Responses screen (a team's own, one
   // of its player's, or an unassigned player's own) — opens the Forms list
-  // as a picker (see FormsListContent's pickerStatus/onPickForm/
-  // onRemoveForm) as another overlay on top of that screen, same
-  // convention as showTeamOverview/editingPlayer above.
+  // as a picker (see FormsListContent's pickerStatus/onPickForm) as another
+  // overlay on top of that screen, same convention as
+  // showTeamOverview/editingPlayer above.
   function openFormsPicker() {
     saveCurrentScroll()
     setShowFormsPicker(true)
   }
 
   // Which respondent(s) a newly-added form's questions get blank answers
-  // for, grouped by fillLevel — a single player's own locked view
-  // (`responsesPlayerFilter` set, whether or not they're on a team) only
-  // answers as that one player; a team's own locked view answers as the
-  // team itself AND every one of its players, same as a real team
-  // registration's answers already do.
+  // for — always exactly one group, whichever fillLevel this scope implies,
+  // regardless of which fillLevel the form's own real questions elsewhere
+  // happen to use (see pickForm/isFormAdded below, which both ignore each
+  // question's own recorded fillLevel in favor of this one). A single
+  // player's own locked view (`responsesPlayerFilter` set) always answers
+  // as EVERY one of that player's teammates — same "whole roster answers"
+  // shape as a real Player Details form, so it's still visible on the
+  // team's own aggregate Form Responses via the shared packageName, not
+  // just that one player's — falling back to just the one player when
+  // they're not on a team at all (an unassigned player's own card). A
+  // team's own locked view (not locked to one player) always answers as
+  // the team itself, a single Team Response.
   function addResponseGroups() {
     if (responsesPlayerFilter) {
-      return [{ fillLevel: 'player', respondents: [responsesPlayerFilter] }]
+      const respondents = selectedTeam ? selectedTeam.players.map(p => p.name) : [responsesPlayerFilter]
+      return [{ fillLevel: 'player', respondents }]
     }
     if (!selectedTeam) return []
-    return [
-      { fillLevel: 'team', respondents: [selectedTeam.contactName] },
-      { fillLevel: 'player', respondents: selectedTeam.players.map(p => p.name) },
-    ]
+    return [{ fillLevel: 'team', respondents: [selectedTeam.contactName] }]
   }
 
   // Whether this order already carries an entry for this exact question —
@@ -418,116 +428,74 @@ export default function TeamsListPage() {
     )
   }
 
-  // Whether `form` has any question at all for the current scope's
-  // fillLevel(s) — a team-only form like Course Selection has nothing a
-  // single player's own locked view could ever fill in, and vice versa for
-  // a player-only form like Member Number viewed from a team's own locked
-  // view with no player rolled into scope. The picker (see the
-  // showFormsPicker render below) only offers forms this returns true for —
-  // otherwise "+ Add" would sit there doing nothing, since pickForm has no
-  // matching question to add.
-  function formIsRelevant(form) {
-    const relevantFillLevels = new Set(addResponseGroups().filter(g => g.respondents.length).map(g => g.fillLevel))
-    return formQuestionsFor(orderList, form).some(q => relevantFillLevels.has(q.fillLevel))
-  }
-
   // Whether `form` is fully covered for the current scope — every question
-  // formQuestionsFor knows about for whichever of the scope's fillLevel(s)
-  // this form actually has questions at already has an entry (real or
-  // manually added). A fillLevel this form has zero questions for at all
-  // (e.g. a team-only form like Course Selection, checked against a single
-  // player's own scope) is skipped rather than treated as "covered" — and
-  // if EVERY fillLevel skips that way, the form has nothing relevant to
-  // this scope at all, so it never counts as "added". Drives the picker
-  // row's Add/Added state directly off the data itself (see pickForm/
-  // removeForm below) rather than a separate "already added" flag that
-  // could drift out of sync with it.
+  // formQuestionsFor knows about already has an entry (real or manually
+  // added) here, tagged with whichever fillLevel this scope implies (see
+  // addResponseGroups above) regardless of which fillLevel the question is
+  // normally recorded at elsewhere. A form with zero known questions at all
+  // never counts as "added" just because there's nothing to check. Drives
+  // the picker row's Add/Added state directly off the data itself (see
+  // pickForm below) rather than a separate "already added" flag that could
+  // drift out of sync with it.
   function isFormAdded(form) {
     const order = orderList.find(o => o.id === viewingOrderId)
     if (!order) return false
     const packageName = selectedTeam?.packageName ?? null
     const questions = formQuestionsFor(orderList, form)
-    const relevantGroups = addResponseGroups()
-      .filter(g => g.respondents.length)
-      .map(({ fillLevel }) => ({ fillLevel, questions: questions.filter(q => q.fillLevel === fillLevel) }))
-      .filter(g => g.questions.length > 0)
-    if (!relevantGroups.length) return false
-    return relevantGroups.every(({ fillLevel, questions: qs }) =>
-      qs.every(q => questionAlreadyPresent(order, form.id, q.question, fillLevel, packageName))
-    )
+    if (!questions.length) return false
+    const [group] = addResponseGroups().filter(g => g.respondents.length)
+    if (!group) return false
+    return questions.every(q => questionAlreadyPresent(order, form.id, q.question, group.fillLevel, packageName))
   }
 
   function formStatus(form) {
-    if (pendingFormIds.has(form.id)) return 'pending'
     return isFormAdded(form) ? 'done' : 'idle'
   }
 
   // Adds a blank entry for every one of `form`'s known questions (see
-  // formQuestionsFor) that matches the current scope's fillLevel(s) AND
-  // isn't already covered by a real or previously-added entry — so this
-  // only ever fills in what's actually missing, never duplicating a
-  // question this team/player already answered for real.
+  // formQuestionsFor) that isn't already covered by a real or
+  // previously-added entry — so this only ever fills in what's actually
+  // missing, never duplicating a question this team/player already
+  // answered for real. Ignores each question's own recorded fillLevel —
+  // tags every entry with whichever fillLevel this scope implies instead
+  // (see addResponseGroups above), so a form added here always becomes a
+  // single Team Response or a Player Response for the whole roster, even
+  // one that's normally only ever seen at the sponsor level elsewhere.
   function pickForm(form) {
-    setPendingFormIds(prev => new Set(prev).add(form.id))
-    window.setTimeout(() => {
-      const packageName = selectedTeam?.packageName ?? null
-      const order = orderList.find(o => o.id === viewingOrderId)
-      const questions = formQuestionsFor(orderList, form)
-      const newEntries = []
-      addResponseGroups().forEach(({ fillLevel, respondents }) => {
-        if (!respondents.length) return
-        questions
-          .filter(q => q.fillLevel === fillLevel)
-          .filter(q => !order || !questionAlreadyPresent(order, form.id, q.question, fillLevel, packageName))
-          .forEach(q => {
-            newEntries.push({
-              formId: form.id,
-              formName: form.name,
-              packageName,
-              question: q.question,
-              fillLevel,
-              manuallyAdded: true,
-              answers: respondents.map(respondent => ({ respondent, value: '' })),
-            })
+    const packageName = selectedTeam?.packageName ?? null
+    const order = orderList.find(o => o.id === viewingOrderId)
+    const questions = formQuestionsFor(orderList, form)
+    const newEntries = []
+    addResponseGroups().forEach(({ fillLevel, respondents }) => {
+      if (!respondents.length) return
+      questions
+        .filter(q => !order || !questionAlreadyPresent(order, form.id, q.question, fillLevel, packageName))
+        .forEach(q => {
+          newEntries.push({
+            formId: form.id,
+            formName: form.name,
+            packageName,
+            question: q.question,
+            fillLevel,
+            manuallyAdded: true,
+            answers: respondents.map(respondent => ({ respondent, value: '' })),
           })
-      })
-      setOrderList(prev =>
-        prev.map(o => (o.id === viewingOrderId ? { ...o, formResponses: [...o.formResponses, ...newEntries] } : o))
-      )
-      setPendingFormIds(prev => {
-        const next = new Set(prev)
-        next.delete(form.id)
-        return next
-      })
-      // Added — head straight back to the Form Responses screen underneath
-      // rather than sitting on the picker, same "done, step back" beat as
-      // Save elsewhere in this panel.
-      saveCurrentScroll()
-      pendingScrollAction.current = 'restore'
-      setShowFormsPicker(false)
-    }, ADD_FORM_DELAY_MS)
-  }
-
-  // The picker row's own Remove button — undoes exactly what pickForm just
-  // added for the current scope (one player's own entries only, or the
-  // whole team's), leaving any other respondent's entries for the same
-  // form (e.g. a different player who already has it) untouched.
-  function removeForm(form) {
+        })
+    })
     setOrderList(prev =>
-      prev.map(o => {
-        if (o.id !== viewingOrderId) return o
-        return {
-          ...o,
-          formResponses: o.formResponses.filter(entry => {
-            if (entry.formId !== form.id || !entry.manuallyAdded) return true
-            if (responsesPlayerFilter) {
-              return !(entry.fillLevel === 'player' && entry.answers.some(a => a.respondent === responsesPlayerFilter))
-            }
-            return entry.packageName !== selectedTeam?.packageName
-          }),
-        }
-      })
+      prev.map(o => (o.id === viewingOrderId ? { ...o, formResponses: [...o.formResponses, ...newEntries] } : o))
     )
+    // Added — hold on a brief full-screen "Adding Form…" beat (see
+    // ADD_FORM_LOADING_MS) in place of the picker before the Form
+    // Responses screen underneath reappears, rather than snapping
+    // straight back to it.
+    saveCurrentScroll()
+    setShowFormsPicker(false)
+    setShowAddFormLoading(true)
+    window.setTimeout(() => {
+      pendingScrollAction.current = 'restore'
+      setShowAddFormLoading(false)
+    }, ADD_FORM_LOADING_MS)
   }
 
   // The trash button on every form's own section in OrderResponsesListDraft1
@@ -663,7 +631,9 @@ export default function TeamsListPage() {
   function handlePanelBack() {
     saveCurrentScroll()
     pendingScrollAction.current = 'restore'
-    if (showFormsPicker) {
+    if (showAddFormLoading) {
+      setShowAddFormLoading(false)
+    } else if (showFormsPicker) {
       setShowFormsPicker(false)
     } else if (pickingOrderForTeam) {
       setPickingOrderForTeam(null)
@@ -768,7 +738,9 @@ export default function TeamsListPage() {
     setEditingResponse(null)
   }
 
-  const screenTitle = showFormsPicker
+  const screenTitle = showAddFormLoading
+    ? 'Forms'
+    : showFormsPicker
     ? 'Forms'
     : pickingOrderForTeam
     ? 'Order Details'
@@ -790,7 +762,9 @@ export default function TeamsListPage() {
     ? 'Order Details'
     : 'Team Overview'
 
-  const screenActions = showFormsPicker
+  const screenActions = showAddFormLoading
+    ? []
+    : showFormsPicker
     ? []
     : pickingOrderForTeam
     ? []
@@ -907,12 +881,17 @@ export default function TeamsListPage() {
         title={screenTitle}
         actions={screenActions}
       >
-        {showFormsPicker ? (
+        {showAddFormLoading ? (
+          <GSLoadingSpinnerOverlay
+            spinnerSize="large"
+            mainText="Adding Form…"
+            style={{ display: 'block', height: '100%' }}
+          />
+        ) : showFormsPicker ? (
           <FormsListContent
-            forms={formsCatalog.filter(formIsRelevant)}
+            forms={formsCatalog}
             pickerStatus={formStatus}
             onPickForm={pickForm}
-            onRemoveForm={removeForm}
           />
         ) : pickingOrderForTeam ? (
           <TeamOrderPicker orders={associatedOrdersFor(pickingOrderForTeam)} onSelect={openOrderDetails} />
@@ -977,7 +956,14 @@ export default function TeamsListPage() {
               onSaveAnswer={(responseIndex, answerIndex, value) =>
                 saveResponseAnswer(viewingOrder.id, responseIndex, answerIndex, value)
               }
-              onViewFormAcrossOrders={responsesOpenedDirectly ? null : viewFormEntity}
+              // Not gated on `responsesOpenedDirectly` — viewFormEntity/
+              // viewEntityAcrossOrders resolve the team/sponsor straight
+              // from `viewingOrder`, not from anything only the unscoped
+              // view has, so a locked screen (this team's own, or one
+              // player's own) gets the exact same "View Team"/"View
+              // Sponsor" link as the unscoped one instead of falling back
+              // to a generic "View Order".
+              onViewFormAcrossOrders={viewFormEntity}
               onViewOrder={openOrderDetails}
               initialSelectedName={responsesPlayerFilter}
               initialCategory={responsesCategory}
@@ -986,6 +972,7 @@ export default function TeamsListPage() {
               onViewAllResponses={responsesOpenedDirectly ? () => viewAllOrderResponses(viewingOrder.id) : null}
               entityDisplayName={responsesPlayerFilter ?? selectedTeam?.teamName ?? null}
               onAddResponse={responsesOpenedDirectly ? openFormsPicker : null}
+              addResponseLabel={responsesPlayerFilter ? 'Add Player Form' : 'Add Team Form'}
               onDeleteForm={deleteManualForm}
             />
           )

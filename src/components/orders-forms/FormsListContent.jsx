@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { faCheckCircle, faCircleNotch, faMagnifyingGlass, faPlus, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheckCircle, faMagnifyingGlass, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
 
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
@@ -12,7 +11,7 @@ import './FormsListPanel.scss'
 // EventSitePackagesListPage's onSelectForm — UNLESS `pickerStatus` is given
 // (see FormsListContent below), in which case the row itself does nothing
 // and its right-side button is the only way to act on it.
-function FormRow({ form, onClick, pickerStatus, onPickForm, onRemoveForm }) {
+function FormRow({ form, onClick, pickerStatus, onPickForm }) {
   const isPicker = !!pickerStatus
   const status = isPicker ? pickerStatus(form) : null
 
@@ -27,35 +26,22 @@ function FormRow({ form, onClick, pickerStatus, onPickForm, onRemoveForm }) {
       <div className="fp-row-text">
         <div className="fp-row-name">{form.name}</div>
         <div className="fp-row-sub">Created on {form.createdAt}</div>
+        {status === 'done' && (
+          <div className="fp-row-added">
+            <GSButton type="green" size="secondary" isPill title="Added" buttonIcon={faCheckCircle} />
+          </div>
+        )}
       </div>
-      {isPicker && (
+      {isPicker && status !== 'done' && (
         <div className="fp-row-action">
-          {status === 'pending' ? (
-            <GSButton
-              type="light-grey"
-              title="Adding…"
-              buttonIcon={faCircleNotch}
-              iconStyle={{ animation: 'fp-row-spin 0.9s linear infinite' }}
-              isDisabled
-              isFocusable
-            />
-          ) : status === 'done' ? (
-            <>
-              <div className="fp-row-added">
-                <FontAwesomeIcon icon={faCheckCircle} />
-                Added
-              </div>
-              <GSButton
-                type="transparent red icon"
-                size="secondary"
-                buttonIcon={faTrash}
-                isFocusable
-                onClick={() => onRemoveForm(form)}
-              />
-            </>
-          ) : (
-            <GSButton type="light-grey" title="+ Add" isFocusable onClick={() => onPickForm(form)} />
-          )}
+          <GSButton
+            type="light-grey"
+            size="primary"
+            title="Add"
+            buttonIcon={faPlus}
+            isFocusable
+            onClick={() => onPickForm(form)}
+          />
         </div>
       )}
     </div>
@@ -70,17 +56,19 @@ function FormRow({ form, onClick, pickerStatus, onPickForm, onRemoveForm }) {
 // (Add Form, Form Overview) share that same panel.
 //
 // Repurposed as a form PICKER (see TeamsListPage.jsx's/SponsorsListPage.jsx's
-// openFormsPicker) by passing `pickerStatus`/`onPickForm`/`onRemoveForm`
-// instead of `onSelectForm` — same list/search/empty-state shell, but each
-// row's own Add/Adding…/Added/Remove button becomes the point of the screen
-// rather than a click-through to that form's overview.
+// openFormsPicker) by passing `pickerStatus`/`onPickForm` instead of
+// `onSelectForm` — same list/search/empty-state shell, but each row's own
+// Add/Adding…/Added button becomes the point of the screen rather than a
+// click-through to that form's overview. Once added, a form stays added —
+// this screen offers no way to remove it (that only ever happens from the
+// Form Responses page's own trash, which knows to block/explain removing a
+// real, linked response instead of just silently doing nothing).
 export default function FormsListContent({
   forms,
   onAddForm,
   onSelectForm,
   pickerStatus = null,
   onPickForm = null,
-  onRemoveForm = null,
 }) {
   const [search, setSearch] = useState('')
   const isPicker = !!pickerStatus
@@ -132,7 +120,6 @@ export default function FormsListContent({
               onClick={() => onSelectForm(form)}
               pickerStatus={pickerStatus}
               onPickForm={onPickForm}
-              onRemoveForm={onRemoveForm}
             />
           ))
         )}

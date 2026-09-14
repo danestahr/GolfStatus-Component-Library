@@ -69,24 +69,15 @@
   opacity: 0.7;
 }
 
+.fp-row-added {
+  margin-top: 12px;
+}
+
 .fp-row-action {
   display: flex;
   align-items: center;
   gap: $medium-pad;
   flex-shrink: 0;
-}
-
-.fp-row-added {
-  display: flex;
-  align-items: center;
-  gap: $small-pad;
-  font-size: $small-font;
-  font-weight: $bold-font-weight;
-  color: $green-700;
-}
-
-@keyframes fp-row-spin {
-  to { transform: rotate(360deg); }
 }
 
 .fp-list-empty {

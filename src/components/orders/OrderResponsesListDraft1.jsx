@@ -69,6 +69,17 @@ function groupResponses(responses) {
     }
     form.questions.push(entry)
   })
+  // A manually-added form's entries are always appended to the end of
+  // order.formResponses (see TeamsListPage.jsx's/SponsorsListPage.jsx's
+  // pickForm), so among manual forms, later encounter order here means more
+  // recently added — float those to the top of their package's form list,
+  // most-recent first, ahead of the real, order-linked forms (which keep
+  // their own original relative order beneath them).
+  packages.forEach(pkg => {
+    const manual = pkg.forms.filter(f => f.questions[0]?.manuallyAdded)
+    const real = pkg.forms.filter(f => !f.questions[0]?.manuallyAdded)
+    pkg.forms = [...manual.reverse(), ...real]
+  })
   return packages
 }
 
@@ -172,6 +183,10 @@ export default function OrderResponsesListDraft1({
   // Only offered when `locked`, since "add a response to X" only makes
   // sense once this page already knows which X.
   onAddResponse = null,
+  // Label for the `onAddResponse` button — a caller scoped to one entity
+  // type names it accordingly ("Add Sponsor Form", "Add Player Form", "Add
+  // Team Form"); left generic for a caller not scoped that way.
+  addResponseLabel = 'Add Response',
   // The trash button on the far right of every form tile's header — removes
   // that whole form's entries from this order. Passed the entryIndex list
   // for that form's own questions (into `order.formResponses`, same indices
@@ -509,7 +524,7 @@ export default function OrderResponsesListDraft1({
           )
         }
         pageActions={[
-          ...(onAddResponse ? [{ buttonTitle: 'Add Response', buttonIcon: faPlus, type: 'black', actionClick: onAddResponse }] : []),
+          ...(onAddResponse ? [{ buttonTitle: addResponseLabel, buttonIcon: faPlus, type: 'black', actionClick: onAddResponse }] : []),
           ...(onViewAllResponses && hasOrderLinkedResponse ? [{ buttonTitle: 'View All', type: 'light-grey', actionClick: onViewAllResponses }] : []),
         ]}
       />
@@ -549,15 +564,26 @@ export default function OrderResponsesListDraft1({
           <GSEmptyList
             title="No Responses"
             detail={`${entityDisplayName} has not responded to any form questions.`}
-            actions={[{ title: 'Add Response', buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: onAddResponse }]}
+            actions={[{ title: addResponseLabel, buttonIcon: faPlus, type: 'black', isFocusable: true, onClick: onAddResponse }]}
           />
         ) : visiblePackages.length === 0 ? (
           <div className="ordr1-list-empty">{search ? `No results for "${search}"` : 'No responses match this filter.'}</div>
         ) : (
           <div className="ordr1-list-groups">
-            {visiblePackages.map(pkg => (
-              <div className="ordr1-package" key={pkg.packageName}>
-                <div className="ordr1-package-label">{pkg.packageName}</div>
+            {visiblePackages.map(pkg => {
+              // A manually-added form isn't really part of any purchased
+              // package — `packageName` on it is just a convenient grouping
+              // key (see TeamsListPage.jsx's/SponsorsListPage.jsx's
+              // pickForm), so labeling the group with it would wrongly
+              // imply it came from that real purchase. Skipped whenever
+              // every form in the group is manually added — one with no
+              // real team/sponsor package behind it at all (an unassigned
+              // player) carries no packageName either, which already skips
+              // this on its own.
+              const hasRealForm = pkg.forms.some(({ entries }) => !entries[0]?.entry.manuallyAdded)
+              return (
+              <div className="ordr1-package" key={pkg.packageName ?? 'no-package'}>
+                {pkg.packageName && hasRealForm && <div className="ordr1-package-label">{pkg.packageName}</div>}
 
                 <div className="ordr1-forms">
                   {pkg.forms.map(({ form, entries }) => {
@@ -567,19 +593,21 @@ export default function OrderResponsesListDraft1({
                     // flag, so checking the first is enough. The trash button
                     // below only ever shows for one of these — a real,
                     // actually-submitted response is never deletable from
-                    // here. A manually-added form also has no real order/
-                    // team/sponsor of its own behind it to jump to (it only
-                    // exists here, hand-added straight onto this scope), so
-                    // it skips the cross-link buttons below entirely too.
+                    // here. It still has a real team/sponsor behind it (see
+                    // pickForm's own fillLevel/packageName), so it gets the
+                    // exact same "View Team"/"View Sponsor" cross-link as a
+                    // real form below rather than skipping it.
                     const isManual = !!entries[0]?.entry.manuallyAdded
-                    const viewLinkLabel = !isManual && onViewFormAcrossOrders
+                    const viewLinkLabel = onViewFormAcrossOrders
                       ? viewLinkLabelFor(form.questions[0]?.fillLevel)
                       : null
                     // "View Order" only ever shows up alongside a plain
                     // order-level form (no viewLinkLabel) — a team/player/
                     // sponsor form always has its own more specific
                     // "View Team"/"View Sponsor" link instead of it, never
-                    // both at once.
+                    // both at once. A manually-added form is always one of
+                    // those (pickForm never adds a plain order-level one), so
+                    // this never actually applies to it.
                     const showViewOrder = !isManual && !viewLinkLabel && !!onViewOrder
                     return (
                     <div className="ordr1-form-section" key={form.formName}>
@@ -596,8 +624,8 @@ export default function OrderResponsesListDraft1({
                           <div className="ordr1-form-section-actions">
                             {viewLinkLabel && (
                               <GSButton
-                                type="light-grey"
-                                size="secondary"
+                                type="white"
+                                size="primary"
                                 buttonIcon={viewLinkLabel === 'View Sponsor' ? faFlag : faUsers}
                                 title={viewLinkLabel}
                                 isFocusable
@@ -606,8 +634,8 @@ export default function OrderResponsesListDraft1({
                             )}
                             {showViewOrder && (
                               <GSButton
-                                type="light-grey"
-                                size="secondary"
+                                type="white"
+                                size="primary"
                                 buttonIcon={faFileInvoiceDollar}
                                 title="View Order"
                                 isFocusable
@@ -616,8 +644,8 @@ export default function OrderResponsesListDraft1({
                             )}
                             {onDeleteForm && (
                               <GSButton
-                                type="light-grey icon"
-                                size="secondary"
+                                type="white icon"
+                                size="primary"
                                 buttonIcon={faTrash}
                                 isFocusable
                                 onClick={() =>
@@ -646,7 +674,8 @@ export default function OrderResponsesListDraft1({
                   })}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
