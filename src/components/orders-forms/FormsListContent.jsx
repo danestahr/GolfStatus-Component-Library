@@ -37,7 +37,7 @@ function FormRow({ form, onClick, pickerStatus, onPickForm }) {
           <GSButton
             type="light-grey"
             size="primary"
-            title="Add"
+            title="Add Form"
             buttonIcon={faPlus}
             isFocusable
             onClick={() => onPickForm(form)}
