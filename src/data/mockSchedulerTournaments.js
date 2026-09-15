@@ -1,12 +1,44 @@
 // ── Shared hole + team mock data for the Hole Assignments prototype ────────────
 
+// "key" is the unique grouping/slot-id key TournamentSchedulerPage.jsx reads
+// off every section (hole or tee time) — for a hole it's just its number,
+// but a merged Two Tee Interval board needs something more specific (two
+// starts can land on the same tee time), so every section carries its own
+// key rather than the code assuming "number" is always unique.
 export const HOLE_DATA = [
   { number: 1, par: 4 }, { number: 2, par: 3 }, { number: 3, par: 5 }, { number: 4, par: 4 },
   { number: 5, par: 4 }, { number: 6, par: 3 }, { number: 7, par: 4 }, { number: 8, par: 5 },
   { number: 9, par: 4 }, { number: 10, par: 4 }, { number: 11, par: 3 }, { number: 12, par: 4 },
   { number: 13, par: 5 }, { number: 14, par: 4 }, { number: 15, par: 3 }, { number: 16, par: 4 },
   { number: 17, par: 5 }, { number: 18, par: 4 },
-]
+].map(h => ({ ...h, key: h.number }))
+
+// A Tee Time Start round's own version of HOLE_DATA — same {number, par}
+// shape (so it drops into the same grouping/slot-id/group-count code as
+// HOLE_DATA) but "number" is a tee time and "par" is repurposed to hold the
+// hole this start tees off from (1 for a single Tee Time Start, or 1/10 for
+// Two Tee Interval's Front 9/Back 9 pair). "minutes" is the raw sort key
+// TournamentSchedulerPage.jsx uses to merge more than one start's tee times
+// into one chronological list.
+export function buildTeeTimeSlots(startMinutes, endMinutes, hole = 1) {
+  const slots = []
+  for (let minutes = startMinutes; minutes <= endMinutes; minutes += 15) {
+    const hour24 = Math.floor(minutes / 60)
+    const hour12 = ((hour24 + 11) % 12) + 1
+    const period = hour24 >= 12 ? 'PM' : 'AM'
+    const label = `${hour12}:${String(minutes % 60).padStart(2, '0')} ${period}`
+    slots.push({ number: label, par: hole, minutes })
+  }
+  return slots
+}
+
+// Default Tee Time board: every 15 minutes from 8:00 AM to 2:00 PM. "Add Tee
+// Times" (see handleAddTeeTimeHour in TournamentSchedulerPage.jsx) tacks
+// another hour onto TEE_TIME_END_MINUTES for that round rather than touching
+// this shared default.
+export const TEE_TIME_START_MINUTES = 8 * 60
+export const TEE_TIME_END_MINUTES = 14 * 60
+export const TEE_TIME_DATA = buildTeeTimeSlots(TEE_TIME_START_MINUTES, TEE_TIME_END_MINUTES)
 
 const TEAM_DATA = [
   { name: 'Team 1', handicap: 12, players: 'Mike Johnson (8), Sarah Williams (15), Tom Chen (10), Lisa Davis (16)', flight: 'Flight A' },
@@ -263,6 +295,43 @@ export const TOURNAMENTS = [
     savedRoundFormat: 'single',
     rounds: {
       1: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Shotgun Start', facilityName: 'Heritage Golf Club', holes: 18 },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Single Round's Tee Time variant — same one-round shape as
+  // heritage-classic-invitational-single just above, but its round is a Tee
+  // Time Start, so its Hole Assignments page renders tee times (every 15
+  // minutes, 8:00 AM–2:00 PM) instead of holes 1–18 — see TEE_TIME_DATA and
+  // roundIsTeeTime in TournamentSchedulerPage.jsx.
+  {
+    id: 'heritage-classic-invitational-single-tee-time',
+    name: '2026 Heritage Classic Invitational (Single Round, Tee Times)',
+    courseName: 'Heritage Golf Club',
+    savedRoundFormat: 'single',
+    rounds: {
+      1: { course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026', startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18 },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Single Round's Two Tee Interval variant — teams start on the front and
+  // back nine at the same time, so its Hole Assignments page merges both
+  // starts' tee times into one chronological list (Hole 1 and Hole 10
+  // alternating). Both starts share this round's one course, so the "Add
+  // Tee Times" buttons below the list read "Front 9"/"Back 9" rather than a
+  // course name — see teeStartLabel in TournamentSchedulerPage.jsx.
+  {
+    id: 'heritage-classic-invitational-single-two-tee',
+    name: '2026 Heritage Classic Invitational (Single Round, Two Tee Interval)',
+    courseName: 'Heritage Golf Club',
+    savedRoundFormat: 'single',
+    rounds: {
+      1: {
+        course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026',
+        startType: 'Two Tee Interval', facilityName: 'Heritage Golf Club', holes: 18,
+        teeStarts: [{ hole: 1 }, { hole: 10 }],
+      },
     },
     hideRosterCount: true,
     hideSettingsButton: true,

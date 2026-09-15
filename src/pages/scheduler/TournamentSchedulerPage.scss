@@ -820,6 +820,41 @@
   }
 }
 
+// ── Add More Tee Times (Tee Time round footer) ──────────────────────────────
+
+.sched-add-tee-times {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+
+  > gs-button {
+    width: 100%;
+  }
+}
+
+.sched-add-tee-times-description {
+  font-size: $xx-small-font;
+  font-weight: $bold-font-weight;
+  color: rgba(35, 35, 35, 0.7);
+  letter-spacing: $small-medium-letter-spacing;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+// Two Tee Interval's per-start buttons (e.g. Front 9 / Back 9) sit side by
+// side, splitting the row evenly, instead of the single full-width button a
+// plain Tee Time Start round gets.
+.sched-add-tee-times-buttons {
+  display: flex;
+  gap: $medium-large-pad;
+
+  gs-button {
+    flex: 1;
+  }
+}
+
 // ── Assignment slot ───────────────────────────────────────────────────────────
 
 .sched-slot {

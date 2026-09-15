@@ -45,7 +45,10 @@ import WaveRoundNav from './WaveRoundNav'
 import LinkedRoundLabelPanel from './LinkedRoundLabelPanel'
 import AutoAssignFields from './AutoAssignFields'
 import AutoAssignSuccessFields from './AutoAssignSuccessFields'
-import { HOLE_DATA, TEAM_DATA, SORTED_TEAMS, TOURNAMENTS } from '../../data/mockSchedulerTournaments'
+import {
+  HOLE_DATA, TEAM_DATA, SORTED_TEAMS, TOURNAMENTS,
+  buildTeeTimeSlots, TEE_TIME_START_MINUTES, TEE_TIME_END_MINUTES,
+} from '../../data/mockSchedulerTournaments'
 import './TournamentSchedulerPage.scss'
 
 const MIN_GROUPS_PER_HOLE = 0
@@ -112,18 +115,20 @@ function sortTeamsForAutoAssign(teams, assignmentType) {
 
 const AUTO_ASSIGN_MS = 1200
 
-// Fills a single round's empty slots hole-by-hole from `pool`, starting at
+// Fills a single round's empty slots hole-by-hole (or, for a Tee Time round,
+// tee-time-by-tee-time — see `sections`) from `pool`, starting at
 // `startIndex`, placing at most `maxCount` teams — the shared building block
 // behind every Auto Assign outcome (a full fill just passes Infinity). A Par
 // 3's B slot is always left empty — Auto Assign never doubles up a Par 3,
-// full fill or capped, on or off Balance Assignments.
-function fillRoundSlots(groupCounts, existingAssignments, pool, startIndex, maxCount) {
+// full fill or capped, on or off Balance Assignments (Tee Time's `par` is
+// always 1, so this never trips for a Tee Time round).
+function fillRoundSlots(sections, groupCounts, existingAssignments, pool, startIndex, maxCount) {
   const placements = {}
   let poolIndex = startIndex
   let placed = 0
-  for (const hole of HOLE_DATA) {
+  for (const hole of sections) {
     if (placed >= maxCount || poolIndex >= pool.length) break
-    for (const slotId of getSlotIds(hole.number, groupCounts[hole.number] ?? 2)) {
+    for (const slotId of getSlotIds(hole.key, groupCounts[hole.key] ?? 2)) {
       if (placed >= maxCount || poolIndex >= pool.length) break
       if (existingAssignments[slotId]) continue
       if (hole.par === 3 && slotId.endsWith('-B')) continue
@@ -320,10 +325,10 @@ function AssignmentSlot({ slotId, assignment, isSelected, isHighlighted, hasActi
   )
 }
 
-function HoleGrouping({ label, slotIds, assignments, selectedSlot, highlightedSlots, hasActiveSelection, flashSlots, pendingSlots, onSlotClick, onSwap, isOccupied, canRemoveGroup, onRemoveGroup }) {
+function HoleGrouping({ label, showLabel, slotIds, assignments, selectedSlot, highlightedSlots, hasActiveSelection, flashSlots, pendingSlots, onSlotClick, onSwap, isOccupied, canRemoveGroup, onRemoveGroup }) {
   return (
     <div className="sched-grouping">
-      <div className="sched-grouping-label">{label}</div>
+      {showLabel && <div className="sched-grouping-label">{label}</div>}
       <div className="sched-grouping-slots">
         {slotIds.map(id => (
           <AssignmentSlot
@@ -356,44 +361,50 @@ function HoleGrouping({ label, slotIds, assignments, selectedSlot, highlightedSl
   )
 }
 
-function HoleSection({ hole, courseName, assignments, groupCount, selectedSlot, highlightedSlots, hasActiveSelection, flashSlots, pendingSlots, onSlotClick, onSwap, onAddGroup, onRemoveGroup, isVisible }) {
+function HoleSection({ hole, isTeeTime, courseName, assignments, groupCount, selectedSlot, highlightedSlots, hasActiveSelection, flashSlots, pendingSlots, onSlotClick, onSwap, onAddGroup, onRemoveGroup, isVisible }) {
   if (!isVisible) return null
   const groupLabels = Array.from({ length: groupCount }, (_, i) => groupLetter(i))
   return (
     <div className="sched-hole-section">
       <div className="sched-hole-header">
         <div className="sched-hole-info">
-          <span className="sched-hole-title">Hole {hole.number}</span>
-          <span className="sched-hole-par">Par {hole.par}</span>
+          {/* A Tee Time/Two Tee Interval section's "hole" is a start time, and
+              its "par" is repurposed (see buildTeeTimeSlots) to hold the hole
+              this particular start tees off from. */}
+          <span className="sched-hole-title">{isTeeTime ? hole.number : `Hole ${hole.number}`}</span>
+          <span className="sched-hole-par">{isTeeTime ? `Hole ${hole.par}` : `Par ${hole.par}`}</span>
         </div>
         <span className="sched-hole-course">{courseName}</span>
       </div>
       <div className="sched-grouping-list">
         {groupLabels.map((label, i) => {
-          const slotId = `${hole.number}-${label}`
+          const slotId = `${hole.key}-${label}`
           const isLastGroup = i === groupCount - 1
           const isOccupied = !!assignments[slotId]
           const canRemoveGroup = isLastGroup && groupCount > MIN_GROUPS_PER_HOLE && !isOccupied
           return (
             <HoleGrouping
               key={label}
-              label={label} slotIds={[slotId]} assignments={assignments}
+              label={label} showLabel={!isTeeTime} slotIds={[slotId]} assignments={assignments}
               selectedSlot={selectedSlot} highlightedSlots={highlightedSlots}
               hasActiveSelection={hasActiveSelection} flashSlots={flashSlots} pendingSlots={pendingSlots}
               onSlotClick={onSlotClick} onSwap={onSwap}
               isOccupied={isOccupied}
-              canRemoveGroup={canRemoveGroup} onRemoveGroup={() => onRemoveGroup(hole.number, slotId)}
+              canRemoveGroup={canRemoveGroup} onRemoveGroup={() => onRemoveGroup(hole.key, slotId)}
             />
           )
         })}
-        {groupCount < MAX_GROUPS_PER_HOLE && (
+        {/* A Tee Time round's tee times don't offer multiple groups yet — see
+            the section going in below the tee time list for that — but a
+            trashed tee time still needs this to bring its one slot back. */}
+        {groupCount < (isTeeTime ? 1 : MAX_GROUPS_PER_HOLE) && (
           <div className="sched-add-group">
             <GSButton
               type={groupCount === 0 ? 'light-grey' : 'transparent icon'}
               size={groupCount === 0 ? 'primary' : 'secondary'}
               isFocusable
               buttonIcon={faPlus}
-              onClick={() => onAddGroup(hole.number)}
+              onClick={() => onAddGroup(hole.key)}
             />
           </div>
         )}
@@ -561,6 +572,79 @@ export default function TournamentSchedulerPage() {
   const ROUNDS = Object.keys(ROUND_META).map(Number).sort((a, b) => a - b)
   const hasRounds = ROUNDS.length > 0
   const hasMultipleRounds = ROUNDS.length >= 2
+
+  // A Tee Time Start round assigns groups to tee times (buildTeeTimeSlots)
+  // rather than holes (HOLE_DATA) — every other round format still plays out
+  // hole by hole, so this is the one branch point the whole Hole Assignments
+  // board (grouping/slot ids, group counts, search, open-slot counts) reads
+  // off of. Two Tee Interval is the same idea with more than one tee time
+  // going simultaneously (see teeStartsForRound) — its sections are every
+  // start's own tee times merged into one list, ordered by time then by
+  // which start (so ties land start-1-before-start-2, e.g. Front 9 before
+  // Back 9 at the same time).
+  function roundIsTeeTime(r) {
+    return ROUND_META[r]?.startType === 'Tee Time Start'
+  }
+  function roundIsTwoTeeInterval(r) {
+    return ROUND_META[r]?.startType === 'Two Tee Interval'
+  }
+  // Whether a round's Hole Assignments board is keyed off tee times at all
+  // (Tee Time Start or Two Tee Interval) rather than holes.
+  function roundUsesTeeTimes(r) {
+    return roundIsTeeTime(r) || roundIsTwoTeeInterval(r)
+  }
+
+  // A round's simultaneous starting points — Tee Time Start always has just
+  // the one (Hole 1); Two Tee Interval defines its own (see the tournament's
+  // round meta), defaulting to the standard Front 9/Back 9 pair (Hole 1 and
+  // Hole 10 of the round's own course) when a round doesn't spell it out.
+  function teeStartsForRound(r) {
+    if (ROUND_META[r]?.teeStarts) return ROUND_META[r].teeStarts
+    return roundIsTwoTeeInterval(r) ? [{ hole: 1 }, { hole: 10 }] : [{ hole: 1 }]
+  }
+  function teeStartCourse(r, teeStart) {
+    return teeStart.course ?? roundCourse(r)
+  }
+  // What a start's own "Add Tee Times" button (and, once there's more than
+  // one course involved, each row's course badge) is labeled — course name
+  // once two starts land on different courses (nothing else would tell them
+  // apart), otherwise Front 9/Back 9 off the hole each one starts on, since
+  // that's the everyday way to refer to two starts sharing one course.
+  function teeStartLabel(r, teeStart) {
+    const starts = teeStartsForRound(r)
+    const distinctCourses = new Set(starts.map(s => teeStartCourse(r, s)))
+    if (distinctCourses.size > 1) return teeStartCourse(r, teeStart)
+    return teeStart.hole === 10 ? 'Back 9' : 'Front 9'
+  }
+
+  // extraHoursByStart tacks whole hours onto a start's default 8:00 AM–2:00
+  // PM range — { [startIndex]: extraHours } — one round's Add Tee Times
+  // buttons can grow independently of each other.
+  function sectionsForStartType(startType, teeStarts, extraHoursByStart = {}) {
+    if (startType !== 'Tee Time Start' && startType !== 'Two Tee Interval') return HOLE_DATA
+    const merged = teeStarts.flatMap((teeStart, i) => (
+      buildTeeTimeSlots(TEE_TIME_START_MINUTES, TEE_TIME_END_MINUTES + (extraHoursByStart[i] ?? 0) * 60, teeStart.hole)
+        .map(slot => ({ ...slot, key: `${slot.number}|${i}`, startIndex: i, course: teeStart.course }))
+    ))
+    merged.sort((a, b) => a.minutes - b.minutes || a.startIndex - b.startIndex)
+    return merged
+  }
+  function sectionsForRound(r) {
+    return sectionsForStartType(ROUND_META[r]?.startType, teeStartsForRound(r), teeTimeExtraHoursByRound[r] ?? {})
+  }
+
+  // How many extra hours "Add Tee Times" has tacked onto each of a round's
+  // starts — { [round]: { [startIndex]: extraHours } }, falling back to 0
+  // for a start that's never used it.
+  const [teeTimeExtraHoursByRound, setTeeTimeExtraHoursByRound] = useState({})
+
+  // A Tee Time/Two Tee Interval round starts one group per tee time (no A/B
+  // pair) until the section below the tee time list adds a real way to grow
+  // that — every other round format still starts each hole with the
+  // standard pair.
+  function defaultGroupCount(startType) {
+    return startType === 'Tee Time Start' || startType === 'Two Tee Interval' ? 1 : 2
+  }
 
   // Older tournaments keep the original per-round Unassigned Filter panel; newer
   // ones use the Rounds & Scorecards Settings toggle instead.
@@ -1066,7 +1150,12 @@ export default function TournamentSchedulerPage() {
     const roundLetter = nextAvailableRoundLetter(roundMeta.roundNumber, null)
     setCustomRounds(prev => ({ ...prev, [nextRound]: { ...roundMeta, roundLetter } }))
     setAssignmentsByRound(prev => ({ ...prev, [nextRound]: {} }))
-    setGroupCountsByRound(prev => ({ ...prev, [nextRound]: Object.fromEntries(HOLE_DATA.map(h => [h.number, 2])) }))
+    setGroupCountsByRound(prev => ({
+      ...prev,
+      [nextRound]: Object.fromEntries(
+        sectionsForStartType(roundMeta.startType, [{ hole: 1 }]).map(h => [h.key, defaultGroupCount(roundMeta.startType)])
+      ),
+    }))
     setExcludedRoundsByRound(prev => ({ ...prev, [nextRound]: new Set() }))
     if (createRoundTargetWaveId) {
       setWaves(prev => prev.map(w => (
@@ -1486,10 +1575,13 @@ export default function TournamentSchedulerPage() {
     ))
   }
 
-  // Open slot count across every nine — what the Assigned header shows on
-  // its right side, next to the count of who's already placed.
+  // Open slot count across the active round's whole board (holes, or a Tee
+  // Time round's tee times) — what the Assigned header shows on its right
+  // side, next to the count of who's already placed.
   function totalOpenSlotCount() {
-    return NINES.reduce((sum, nine) => sum + nineOpenSlotCount(nine.holes), 0)
+    return sectionsForRound(activeRound).reduce((sum, h) => (
+      sum + getSlotIds(h.key, groupCounts[h.key] ?? 2).filter(sid => !assignments[sid]).length
+    ), 0)
   }
 
   function switchRound(round) {
@@ -1534,7 +1626,7 @@ export default function TournamentSchedulerPage() {
   // Every hole starts with the standard A/B pair; the "+" control lets each hole
   // grow additional groups (C, D, …) independently, per round.
   const [groupCountsByRound, setGroupCountsByRound] = useState(() => (
-    Object.fromEntries(ROUNDS.map(r => [r, Object.fromEntries(HOLE_DATA.map(h => [h.number, 2]))]))
+    Object.fromEntries(ROUNDS.map(r => [r, Object.fromEntries(sectionsForRound(r).map(h => [h.key, defaultGroupCount(ROUND_META[r]?.startType)]))]))
   ))
 
   // Falls back to {} when the tournament has no rounds yet (activeRound is undefined).
@@ -1893,9 +1985,9 @@ export default function TournamentSchedulerPage() {
 
   // Which slots are currently empty
   const emptySlotIds = useMemo(() => {
-    const all = HOLE_DATA.flatMap(h => getSlotIds(h.number, groupCounts[h.number] ?? 2))
+    const all = sectionsForRound(activeRound).flatMap(h => getSlotIds(h.key, groupCounts[h.key] ?? 2))
     return new Set(all.filter(id => !assignments[id]))
-  }, [assignments, groupCounts])
+  }, [assignments, groupCounts, activeRound])
 
   // Highlighted targets: when a team is selected, highlight empty slots;
   // when a slot is selected, highlight available teams
@@ -1915,24 +2007,27 @@ export default function TournamentSchedulerPage() {
   const teamsHighlighted = !!selectedSlot
   const hasActiveSelection = !!(selectedTeam || selectedSlot)
 
-  // Hole search — match hole number/par or any assigned team name/players
+  // Hole search — match hole/tee time number/par or any assigned team name/players
   const holeVisible = useMemo(() => {
+    const isTeeTime = roundUsesTeeTimes(activeRound)
+    const sections = sectionsForRound(activeRound)
     const q = holeSearch.trim().toLowerCase()
-    if (!q) return new Set(HOLE_DATA.map(h => h.number))
+    if (!q) return new Set(sections.map(h => h.key))
     return new Set(
-      HOLE_DATA
+      sections
         .filter(h => {
-          if (`hole ${h.number} par ${h.par}`.includes(q)) return true
-          return getSlotIds(h.number, groupCounts[h.number] ?? 2).some(sid => {
+          const label = isTeeTime ? `${h.number} hole ${h.par}` : `hole ${h.number} par ${h.par}`
+          if (label.toLowerCase().includes(q)) return true
+          return getSlotIds(h.key, groupCounts[h.key] ?? 2).some(sid => {
             const team = assignments[sid]
             if (!team) return false
             const td = TEAM_DATA.find(t => t.name === team)
             return `${team} ${td?.players ?? ''}`.toLowerCase().includes(q)
           })
         })
-        .map(h => h.number)
+        .map(h => h.key)
     )
-  }, [holeSearch, assignments, groupCounts])
+  }, [holeSearch, assignments, groupCounts, activeRound])
 
   const assignedCount = Object.keys(assignments).length
   const roundAssignedCounts = useMemo(
@@ -2126,6 +2221,29 @@ export default function TournamentSchedulerPage() {
     })
   }
 
+  // "Add Tee Times" — tacks another hour (four 15-minute slots) onto one
+  // start (startIndex into teeStartsForRound) of the active round's board,
+  // each new tee time starting with its own single slot (defaultGroupCount)
+  // just like the start's existing tee times. A plain Tee Time Start round
+  // only ever has the one start (index 0); Two Tee Interval's Front 9/Back 9
+  // (or two-course) starts grow independently of each other.
+  function handleAddTeeTimeHour(startIndex) {
+    const round = activeRound
+    const startType = ROUND_META[round]?.startType
+    const starts = teeStartsForRound(round)
+    const currentExtraHours = teeTimeExtraHoursByRound[round] ?? {}
+    const nextExtraHours = { ...currentExtraHours, [startIndex]: (currentExtraHours[startIndex] ?? 0) + 1 }
+    const nextSections = sectionsForStartType(startType, starts, nextExtraHours)
+    setTeeTimeExtraHoursByRound(prev => ({ ...prev, [round]: nextExtraHours }))
+    setGroupCountsByRound(prev => {
+      const roundCounts = { ...(prev[round] ?? {}) }
+      nextSections.forEach(section => {
+        if (!(section.key in roundCounts)) roundCounts[section.key] = defaultGroupCount(startType)
+      })
+      return { ...prev, [round]: roundCounts }
+    })
+  }
+
   function doAssign(teamName, slotId) {
     if (pendingSlots.has(slotId)) return
     setSelectedTeam(null)
@@ -2308,7 +2426,7 @@ export default function TournamentSchedulerPage() {
       const needed = Math.max(0, shareCap - alreadyAssigned)
       const toAdd = Math.min(needed, pool.length - poolIndex)
       const { placements: roundPlacements, nextIndex } = fillRoundSlots(
-        groupCountsByRound[r] ?? {}, assignmentsByRound[r] ?? {}, pool, poolIndex, toAdd
+        sectionsForRound(r), groupCountsByRound[r] ?? {}, assignmentsByRound[r] ?? {}, pool, poolIndex, toAdd
       )
       placements[r] = roundPlacements
       poolIndex = nextIndex
@@ -2621,14 +2739,16 @@ export default function TournamentSchedulerPage() {
                   <div className="sched-col-title">
                     <span>Assigned <span className="sched-col-count">({assignedCount})</span></span>
                     <span className="sched-col-slots-available">
-                      {totalOpenSlotCount() > 0 ? `${totalOpenSlotCount()} Slots Available` : 'All Holes Assigned'}
+                      {totalOpenSlotCount() > 0
+                        ? `${totalOpenSlotCount()} Slots Available`
+                        : roundUsesTeeTimes(activeRound) ? 'All Tee Times Assigned' : 'All Holes Assigned'}
                     </span>
                   </div>
                   <GSinput
                     leftIcon={faMagnifyingGlass}
                     rightIcon={holeSearch ? faCircleXmark : undefined}
                     rightIconClick={() => setHoleSearch('')}
-                    placeholder="Search Holes, Players & Teams…"
+                    placeholder={roundUsesTeeTimes(activeRound) ? 'Search Tee Times, Players & Teams…' : 'Search Holes, Players & Teams…'}
                     textValue={holeSearch}
                     onChange={e => setHoleSearch(e.target.value)}
                   />
@@ -2660,13 +2780,14 @@ export default function TournamentSchedulerPage() {
                     })}
                   </div>
                 )}
-                {HOLE_DATA.map(hole => (
+                {sectionsForRound(activeRound).map(hole => (
                   <HoleSection
-                    key={hole.number}
+                    key={hole.key}
                     hole={hole}
-                    courseName={roundCourse(activeRound)}
+                    isTeeTime={roundUsesTeeTimes(activeRound)}
+                    courseName={hole.course ?? roundCourse(activeRound)}
                     assignments={assignments}
-                    groupCount={groupCounts[hole.number] ?? 2}
+                    groupCount={groupCounts[hole.key] ?? 2}
                     selectedSlot={activeSlot}
                     highlightedSlots={highlightedSlots}
                     hasActiveSelection={hasActiveSelection}
@@ -2676,11 +2797,39 @@ export default function TournamentSchedulerPage() {
                     onSwap={handleSlotSwap}
                     onAddGroup={handleAddGroup}
                     onRemoveGroup={handleRemoveGroup}
-                    isVisible={holeVisible.has(hole.number)}
+                    isVisible={holeVisible.has(hole.key)}
                   />
                 ))}
                 {holeVisible.size === 0 && (
                   <div className="sched-empty-msg">No results for "{holeSearch}"</div>
+                )}
+                {/* "Add Tee Times" — a single icon-only button for a plain Tee
+                    Time Start round (just the one start), or one labeled
+                    button per start (Front 9/Back 9, or each start's own
+                    course once more than one course is involved) for Two Tee
+                    Interval, so you pick which start's board to grow. */}
+                {roundUsesTeeTimes(activeRound) && !holeSearch && (
+                  roundIsTwoTeeInterval(activeRound) ? (
+                    <div className="sched-add-tee-times">
+                      <span className="sched-add-tee-times-description">Add tee times to</span>
+                      <div className="sched-add-tee-times-buttons">
+                        {teeStartsForRound(activeRound).map((teeStart, i) => (
+                          <GSButton
+                            key={i}
+                            type="black" size="primary" isFocusable
+                            buttonIcon={faPlus}
+                            title={teeStartLabel(activeRound, teeStart)}
+                            onClick={() => handleAddTeeTimeHour(i)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="sched-add-tee-times">
+                      <span className="sched-add-tee-times-description">Add another hour of tee times</span>
+                      <GSButton type="black" size="primary" isFocusable buttonIcon={faPlus} onClick={() => handleAddTeeTimeHour(0)} />
+                    </div>
+                  )
                 )}
               </div>
             </div>
