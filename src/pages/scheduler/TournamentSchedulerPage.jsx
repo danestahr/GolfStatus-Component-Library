@@ -617,26 +617,39 @@ export default function TournamentSchedulerPage() {
     return teeStart.hole === 10 ? 'Back 9' : 'Front 9'
   }
 
-  // extraHoursByStart tacks whole hours onto a start's default 8:00 AM–2:00
-  // PM range — { [startIndex]: extraHours } — one round's Add Tee Times
+  // extraMinutesByStart tacks minutes onto a start's default 8:00 AM–2:00 PM
+  // range — { [startIndex]: extraMinutes } — one round's Add Tee Times
   // buttons can grow independently of each other.
-  function sectionsForStartType(startType, teeStarts, extraHoursByStart = {}) {
+  function sectionsForStartType(startType, teeStarts, extraMinutesByStart = {}) {
     if (startType !== 'Tee Time Start' && startType !== 'Two Tee Interval') return HOLE_DATA
     const merged = teeStarts.flatMap((teeStart, i) => (
-      buildTeeTimeSlots(TEE_TIME_START_MINUTES, TEE_TIME_END_MINUTES + (extraHoursByStart[i] ?? 0) * 60, teeStart.hole)
+      buildTeeTimeSlots(TEE_TIME_START_MINUTES, TEE_TIME_END_MINUTES + (extraMinutesByStart[i] ?? 0), teeStart.hole)
         .map(slot => ({ ...slot, key: `${slot.number}|${i}`, startIndex: i, course: teeStart.course }))
     ))
     merged.sort((a, b) => a.minutes - b.minutes || a.startIndex - b.startIndex)
     return merged
   }
   function sectionsForRound(r) {
-    return sectionsForStartType(ROUND_META[r]?.startType, teeStartsForRound(r), teeTimeExtraHoursByRound[r] ?? {})
+    return sectionsForStartType(ROUND_META[r]?.startType, teeStartsForRound(r), teeTimeExtraMinutesByRound[r] ?? {})
   }
 
-  // How many extra hours "Add Tee Times" has tacked onto each of a round's
-  // starts — { [round]: { [startIndex]: extraHours } }, falling back to 0
+  // How many extra minutes "Add Tee Times" has tacked onto each of a round's
+  // starts — { [round]: { [startIndex]: extraMinutes } }, falling back to 0
   // for a start that's never used it.
-  const [teeTimeExtraHoursByRound, setTeeTimeExtraHoursByRound] = useState({})
+  const [teeTimeExtraMinutesByRound, setTeeTimeExtraMinutesByRound] = useState({})
+
+  // How much "Add Tee Times" grows a start by on each tap — a full hour
+  // (four 15-minute tee times) by default, or just the one tee time for a
+  // round whose meta opts into it (see teeTimeAddOneAtATime in the
+  // tournament data).
+  function teeTimeAddIncrementMinutes(r) {
+    return ROUND_META[r]?.teeTimeAddOneAtATime ? 15 : 60
+  }
+  // A Two Tee Interval round can share one "Add Tee Times" button across
+  // every start instead of giving each its own (see teeTimeSharedAddButton).
+  function roundHasSharedTeeTimeButton(r) {
+    return !!ROUND_META[r]?.teeTimeSharedAddButton
+  }
 
   // A Tee Time/Two Tee Interval round starts one group per tee time (no A/B
   // pair) until the section below the tee time list adds a real way to grow
@@ -2221,20 +2234,27 @@ export default function TournamentSchedulerPage() {
     })
   }
 
-  // "Add Tee Times" — tacks another hour (four 15-minute slots) onto one
-  // start (startIndex into teeStartsForRound) of the active round's board,
-  // each new tee time starting with its own single slot (defaultGroupCount)
-  // just like the start's existing tee times. A plain Tee Time Start round
-  // only ever has the one start (index 0); Two Tee Interval's Front 9/Back 9
-  // (or two-course) starts grow independently of each other.
-  function handleAddTeeTimeHour(startIndex) {
+  // "Add Tee Times" — grows one or more starts (startIndex/es into
+  // teeStartsForRound) of the active round's board by
+  // teeTimeAddIncrementMinutes (a full hour by default, or just one
+  // 15-minute tee time for a round opted into that — see
+  // teeTimeAddOneAtATime), each new tee time starting with its own single
+  // slot (defaultGroupCount) just like the start's existing tee times. A
+  // plain Tee Time Start round only ever has the one start (index 0); Two
+  // Tee Interval's starts normally grow independently of each other (one
+  // index at a time), except a round with teeTimeSharedAddButton, whose one
+  // button passes every start's index at once so they grow in lockstep.
+  function handleAddTeeTime(startIndexOrIndexes) {
+    const indexes = Array.isArray(startIndexOrIndexes) ? startIndexOrIndexes : [startIndexOrIndexes]
     const round = activeRound
     const startType = ROUND_META[round]?.startType
     const starts = teeStartsForRound(round)
-    const currentExtraHours = teeTimeExtraHoursByRound[round] ?? {}
-    const nextExtraHours = { ...currentExtraHours, [startIndex]: (currentExtraHours[startIndex] ?? 0) + 1 }
-    const nextSections = sectionsForStartType(startType, starts, nextExtraHours)
-    setTeeTimeExtraHoursByRound(prev => ({ ...prev, [round]: nextExtraHours }))
+    const currentExtraMinutes = teeTimeExtraMinutesByRound[round] ?? {}
+    const increment = teeTimeAddIncrementMinutes(round)
+    const nextExtraMinutes = { ...currentExtraMinutes }
+    indexes.forEach(i => { nextExtraMinutes[i] = (currentExtraMinutes[i] ?? 0) + increment })
+    const nextSections = sectionsForStartType(startType, starts, nextExtraMinutes)
+    setTeeTimeExtraMinutesByRound(prev => ({ ...prev, [round]: nextExtraMinutes }))
     setGroupCountsByRound(prev => {
       const roundCounts = { ...(prev[round] ?? {}) }
       nextSections.forEach(section => {
@@ -2803,31 +2823,37 @@ export default function TournamentSchedulerPage() {
                 {holeVisible.size === 0 && (
                   <div className="sched-empty-msg">No results for "{holeSearch}"</div>
                 )}
-                {/* "Add Tee Times" — a single icon-only button for a plain Tee
-                    Time Start round (just the one start), or one labeled
-                    button per start (Front 9/Back 9, or each start's own
-                    course once more than one course is involved) for Two Tee
-                    Interval, so you pick which start's board to grow. */}
+                {/* "Add Tee Times" — a plain Tee Time Start round (just the
+                    one start) gets a single icon-only button, no label. Two
+                    Tee Interval either shares that one button across every
+                    start (teeTimeSharedAddButton — one click grows all of
+                    them together) or gives each its own labeled button
+                    ("Add to Front 9"/"Add to Back 9", or each start's own
+                    course once more than one is involved) split by a
+                    divider, so you pick which start's board to grow. */}
                 {roundUsesTeeTimes(activeRound) && !holeSearch && (
                   roundIsTwoTeeInterval(activeRound) ? (
-                    <div className="sched-add-tee-times">
-                      <span className="sched-add-tee-times-description">Add tee times to</span>
-                      <div className="sched-add-tee-times-buttons">
-                        {teeStartsForRound(activeRound).map((teeStart, i) => (
-                          <GSButton
-                            key={i}
-                            type="black" size="primary" isFocusable
-                            buttonIcon={faPlus}
-                            title={teeStartLabel(activeRound, teeStart)}
-                            onClick={() => handleAddTeeTimeHour(i)}
-                          />
-                        ))}
+                    roundHasSharedTeeTimeButton(activeRound) ? (
+                      <div className="sched-add-tee-times">
+                        <GSButton
+                          type="light-grey" size="primary" isFocusable buttonIcon={faPlus}
+                          onClick={() => handleAddTeeTime(teeStartsForRound(activeRound).map((_, i) => i))}
+                        />
                       </div>
-                    </div>
+                    ) : (
+                      <div className="sched-add-tee-times sched-add-tee-times--split">
+                        {teeStartsForRound(activeRound).flatMap((teeStart, i) => [
+                          i > 0 && <div key={`divider-${i}`} className="sched-add-tee-times-divider" />,
+                          <div key={`group-${i}`} className="sched-add-tee-times-group">
+                            <span className="sched-add-tee-times-description">Add to {teeStartLabel(activeRound, teeStart)}</span>
+                            <GSButton type="light-grey" size="primary" isFocusable buttonIcon={faPlus} onClick={() => handleAddTeeTime(i)} />
+                          </div>,
+                        ])}
+                      </div>
+                    )
                   ) : (
                     <div className="sched-add-tee-times">
-                      <span className="sched-add-tee-times-description">Add another hour of tee times</span>
-                      <GSButton type="black" size="primary" isFocusable buttonIcon={faPlus} onClick={() => handleAddTeeTimeHour(0)} />
+                      <GSButton type="light-grey" size="primary" isFocusable buttonIcon={faPlus} onClick={() => handleAddTeeTime(0)} />
                     </div>
                   )
                 )}

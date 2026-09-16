@@ -318,9 +318,10 @@ export const TOURNAMENTS = [
   // Single Round's Two Tee Interval variant — teams start on the front and
   // back nine at the same time, so its Hole Assignments page merges both
   // starts' tee times into one chronological list (Hole 1 and Hole 10
-  // alternating). Both starts share this round's one course, so the "Add
-  // Tee Times" buttons below the list read "Front 9"/"Back 9" rather than a
-  // course name — see teeStartLabel in TournamentSchedulerPage.jsx.
+  // alternating). Both starts share this round's one course, so its two
+  // "Add to X" buttons (split by a divider — each start grows on its own)
+  // read "Add to Front 9"/"Add to Back 9" rather than a course name — see
+  // teeStartLabel in TournamentSchedulerPage.jsx.
   {
     id: 'heritage-classic-invitational-single-two-tee',
     name: '2026 Heritage Classic Invitational (Single Round, Two Tee Interval)',
@@ -331,6 +332,68 @@ export const TOURNAMENTS = [
         course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026',
         startType: 'Two Tee Interval', facilityName: 'Heritage Golf Club', holes: 18,
         teeStarts: [{ hole: 1 }, { hole: 10 }],
+      },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Single Round's Tee Time variant that grows one tee time at a time —
+  // same as heritage-classic-invitational-single-tee-time, but its "Add Tee
+  // Times" button (teeTimeAddOneAtATime) adds just the next 15-minute tee
+  // time instead of a whole hour — see teeTimeAddIncrementMinutes in
+  // TournamentSchedulerPage.jsx.
+  {
+    id: 'heritage-classic-invitational-single-tee-time-one-at-a-time',
+    name: '2026 Heritage Classic Invitational (Single Round, Tee Times One at a Time)',
+    courseName: 'Heritage Golf Club',
+    savedRoundFormat: 'single',
+    rounds: {
+      1: {
+        course: 'Championship Course', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026',
+        startType: 'Tee Time Start', facilityName: 'Heritage Golf Club', holes: 18,
+        teeTimeAddOneAtATime: true,
+      },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Two Tee Interval across two separate 9-hole courses (rather than one
+  // course's own front/back nine) — each start tees off Hole 1 of its own
+  // course, so teeStartLabel has nothing to derive a Front 9/Back 9 label
+  // from and falls back to each start's course name: its two "Add to X"
+  // buttons read "Add to Mako"/"Add to Great White".
+  {
+    id: 'shark-bay-two-tee-interval',
+    name: '2026 Shark Bay Invitational (Two Tee Interval, Mako & Great White)',
+    courseName: 'Shark Bay Golf Club',
+    savedRoundFormat: 'single',
+    rounds: {
+      1: {
+        course: 'Mako & Great White', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026',
+        startType: 'Two Tee Interval', facilityName: 'Shark Bay Golf Club', holes: 18,
+        teeStarts: [{ hole: 1, course: 'Mako' }, { hole: 1, course: 'Great White' }],
+      },
+    },
+    hideRosterCount: true,
+    hideSettingsButton: true,
+  },
+  // Same Mako/Great White two-course Two Tee Interval as shark-bay-two-tee-
+  // interval just above, but with one shared "Add Tee Times" button
+  // (teeTimeSharedAddButton) instead of one per course — a single tap grows
+  // both courses' tee times together (one 15-minute tee time apiece, via
+  // teeTimeAddOneAtATime) rather than picking a course to grow on its own.
+  {
+    id: 'shark-bay-two-tee-interval-shared-add',
+    name: '2026 Shark Bay Invitational (Two Tee Interval, Shared Add)',
+    courseName: 'Shark Bay Golf Club',
+    savedRoundFormat: 'single',
+    rounds: {
+      1: {
+        course: 'Mako & Great White', format: 'Four-Person Scramble', dateTime: '8:00 AM on Sat Aug 15, 2026',
+        startType: 'Two Tee Interval', facilityName: 'Shark Bay Golf Club', holes: 18,
+        teeStarts: [{ hole: 1, course: 'Mako' }, { hole: 1, course: 'Great White' }],
+        teeTimeAddOneAtATime: true,
+        teeTimeSharedAddButton: true,
       },
     },
     hideRosterCount: true,

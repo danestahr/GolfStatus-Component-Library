@@ -822,16 +822,44 @@
 
 // ── Add More Tee Times (Tee Time round footer) ──────────────────────────────
 
+// Plain container: a single icon-only button, no label (Tee Time Start, and
+// Two Tee Interval's teeTimeSharedAddButton — one button growing every
+// start together).
 .sched-add-tee-times {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: $medium-large-pad;
   padding: $x-large-pad;
 
   > gs-button {
     width: 100%;
   }
+}
+
+// Two Tee Interval's per-start buttons split the row evenly, each with its
+// own "Add to X" label over its own button, separated by a divider — used
+// instead of the plain container above once each start grows on its own.
+.sched-add-tee-times--split {
+  align-items: stretch;
+  gap: $large-pad;
+}
+
+.sched-add-tee-times-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: $medium-large-pad;
+  min-width: 0;
+
+  gs-button {
+    width: 100%;
+  }
+}
+
+.sched-add-tee-times-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .sched-add-tee-times-description {
@@ -841,18 +869,6 @@
   letter-spacing: $small-medium-letter-spacing;
   text-transform: uppercase;
   text-align: center;
-}
-
-// Two Tee Interval's per-start buttons (e.g. Front 9 / Back 9) sit side by
-// side, splitting the row evenly, instead of the single full-width button a
-// plain Tee Time Start round gets.
-.sched-add-tee-times-buttons {
-  display: flex;
-  gap: $medium-large-pad;
-
-  gs-button {
-    flex: 1;
-  }
 }
 
 // ── Assignment slot ───────────────────────────────────────────────────────────
