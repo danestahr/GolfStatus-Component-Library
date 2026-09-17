@@ -45,6 +45,32 @@ export function monochromatize(hex, scale) {
   return step ? scale[step] : hex;
 }
 
+// Resolves a Theme Definitions swatch override — { family, step, label }
+// as WebsiteDesignStyleFields.jsx's parseColorRef produces it from typed
+// text like "Primary 700" — into a live hex against the CURRENT primary/
+// secondary scales, never a hex frozen at the moment it was typed. That's
+// the whole point: if the Primary/Secondary color picker changes later,
+// every "Primary N"/"Secondary N" override keeps tracking it instead of
+// going stale. Shared between the editor (WebsiteDesignStyleFields.jsx)
+// and the live site (EventWebsitePage.jsx) so the two can't drift apart.
+export function resolveOverrideHex(override, { primaryScale, secondaryScale }) {
+  if (!override) return null;
+  switch (override.family) {
+    case "white":
+      return WHITE;
+    case "black":
+      return BLACK;
+    case "primary":
+      return primaryScale[override.step];
+    case "secondary":
+      return secondaryScale[override.step];
+    case "grey":
+      return golfstatusColors[`grey${override.step}`];
+    default:
+      return null;
+  }
+}
+
 // Outline Variant is pinned to this step under Monochromatic instead of
 // going through monochromatize() above — its own Neutral hex differs by
 // mode (grey-100 light -> would resolve to 100, grey-800 dark -> 800),

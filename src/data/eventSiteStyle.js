@@ -14,9 +14,12 @@ export const DEFAULT_EVENT_SITE_STYLE = {
   // Per-swatch riffs typed into the GolfStatus (default) theme's Theme
   // Definitions row (WebsiteDesignStyleFields.jsx's wds-swatch-hex-input) —
   // keyed by "mode-monochromatic-role" (e.g. "dark-true-background"), each
-  // a { hex, label } pair. Only the default theme's roles are ever keyed
-  // here — Winter/Lavender aren't derived from this style, so their own
-  // Theme Definitions edits stay local-preview-only, never saved here.
+  // a { family, step, label } symbolic reference (see monochromatic.js's
+  // resolveOverrideHex) rather than a frozen hex, so a "Primary 700"
+  // override keeps tracking primaryColor below if it's edited again later.
+  // Only the default theme's roles are ever keyed here — Winter/Lavender
+  // aren't derived from this style, so their own Theme Definitions edits
+  // stay local-preview-only, never saved here.
   themeOverrides: {},
 }
 

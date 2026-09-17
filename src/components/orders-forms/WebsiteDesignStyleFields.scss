@@ -57,11 +57,39 @@
   }
 }
 
+// Wraps a Light/Dark Mode swatch row (ScaleSwatches and ThemeDefinitionRow's
+// own swatches both use it — see WebsiteDesignStyleFields.jsx) in a literal
+// white/black backdrop, so the swatches actually sit against the light or
+// dark page they're named for instead of floating on this panel's own bg.
+.wds-swatches-container {
+  width: 100%;
+  padding: 36px;
+  border-radius: $small-medium-radius;
+  box-sizing: border-box;
+}
+
+.wds-swatches-container--light {
+  background: $white;
+}
+
+.wds-swatches-container--dark {
+  background: $black;
+  color: $white;
+}
+
 .wds-swatches {
   @include h-stack(flex-start, stretch);
   gap: $x-small-pad;
   width: 100%;
   overflow-x: auto;
+}
+
+// Primary/Secondary/Neutral's own rows (ScaleSwatches's `fit` prop) —
+// unlike Theme Definitions' rows, which scroll (wds-swatches--synced),
+// these shrink every swatch to fit the panel's width instead, so all 12
+// (White, 50-900, Black) stay visible with no scrollbar.
+.wds-swatches--fit {
+  overflow-x: visible;
 }
 
 // The 6 useSyncedSwatchScroll rows (WebsiteDesignStyleFields.jsx) scroll
@@ -84,11 +112,25 @@
   gap: $x-small-pad;
 }
 
+// See ScaleSwatches's `fit` prop / .wds-swatches--fit above — shrinks each
+// swatch to an equal share of the row's width instead of a fixed 120px, and
+// the swatch color back to a flexible-width rectangle instead of a fixed
+// 100px square (which wouldn't fit 12 of them without scrolling).
+.wds-swatch--fit {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+
+  .wds-swatch-color {
+    width: 100%;
+    height: 48px;
+  }
+}
+
 // The 400 step is the one editable value driving the rest of the row (see
 // ColorScaleRow) — ring it so it reads as the source, not just another stop.
 .wds-swatch--base {
   .wds-swatch-color {
-    border: 2px solid $grey-800;
     box-shadow: 0 0 0 2px $white;
     outline: 2px solid $grey-800;
   }
@@ -98,12 +140,6 @@
   width: 100px;
   height: 100px;
   border-radius: $small-medium-radius;
-  border: $light-border;
-}
-
-// The plain $light-border above all but disappears against pure black.
-.wds-swatch-color--outline {
-  border: 1px solid rgba($grey-400, 0.5);
 }
 
 .wds-swatch-step {
@@ -153,7 +189,10 @@
   &:focus {
     outline: none;
     opacity: 1;
-    background: $white;
+    // No background here — a forced light/dark color would clash with
+    // whichever text color this input inherits (wds-swatches-container's
+    // white-on-black Dark Mode text included), sometimes hiding it outright.
+    background: transparent;
     box-shadow: 0 0 0 1px $grey-400;
   }
 }

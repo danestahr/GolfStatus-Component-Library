@@ -6,7 +6,7 @@ import GSinput from '../../gs-lib/components/gs-input'
 import { generateScale, SCALE_STEPS } from '../../gs-lib/helpers/colorScale'
 import { defaultTheme, mergedTheme, golfstatusColors } from '../../gs-lib/helpers/Theme'
 import { colorThemes, colorThemeKeys } from '../../gs-lib/helpers/colorThemes'
-import { monochromatize, normalizeHex, NEUTRAL_STEP_BY_HEX, OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
+import { monochromatize, normalizeHex, NEUTRAL_STEP_BY_HEX, OUTLINE_VARIANT_MONO_STEP, resolveOverrideHex } from '../../gs-lib/helpers/monochromatic'
 import './WebsiteDesignStyleFields.scss'
 
 // White/black bookend every row (not generated — 50/900 already approach
@@ -48,26 +48,31 @@ const NEUTRAL_SWATCHES = [
 // Grey) — shown under the hex as e.g. "Primary 800" so a swatch is
 // identifiable on its own once copied out of this screen. Only numeric
 // steps get it; White/Black are absolute, not a tint of any one family.
-// syncScroll marks a row as one of the 6 Primary/Secondary/Neutral Light+
-// Dark rows useSyncedSwatchScroll (below) scrolls together — they're all
-// the same White->50->900->Black sequence (mirrored for Dark), just split
-// across three fields, so scrolling one scrolls all six to the same offset.
-function ScaleSwatches({ swatches, familyLabel, syncScroll }) {
+// fit marks the Primary/Secondary/Neutral rows — unlike Theme Definitions'
+// own swatches (which scroll, see wds-swatches--synced), these shrink to
+// fit the panel's width instead, so all 12 stay visible with no scrollbar.
+// mode wraps the row in wds-swatches-container, a literal white ("light")
+// or black ("dark") backdrop — not a theme token, since this is showing
+// what the swatches themselves look like against a real light/dark page,
+// not reading a role's own color.
+function ScaleSwatches({ swatches, familyLabel, fit, mode }) {
   return (
-    <div className={`wds-swatches${syncScroll ? ' wds-swatches--synced' : ''}`}>
-      {swatches.map(({ key, label, hex, isBase, isOutlined }) => (
-        <div className={`wds-swatch${isBase ? ' wds-swatch--base' : ''}`} key={key}>
-          <div className={`wds-swatch-color${isOutlined ? ' wds-swatch-color--outline' : ''}`} style={{ backgroundColor: hex }} />
-          <div className="wds-swatch-step">
-            {label}
-            {isBase && <span className="wds-swatch-base-tag">Base</span>}
+    <div className={`wds-swatches-container wds-swatches-container--${mode}`}>
+      <div className={`wds-swatches${fit ? ' wds-swatches--fit' : ''}`}>
+        {swatches.map(({ key, label, hex, isBase, isOutlined }) => (
+          <div className={`wds-swatch${fit ? ' wds-swatch--fit' : ''}${isBase ? ' wds-swatch--base' : ''}`} key={key}>
+            <div className={`wds-swatch-color${isOutlined ? ' wds-swatch-color--outline' : ''}`} style={{ backgroundColor: hex }} />
+            <div className="wds-swatch-step">
+              {label}
+              {isBase && <span className="wds-swatch-base-tag">Base</span>}
+            </div>
+            <div className="wds-swatch-hex">{hex}</div>
+            {familyLabel && typeof key === 'number' && (
+              <div className="wds-swatch-family">{familyLabel} {label}</div>
+            )}
           </div>
-          <div className="wds-swatch-hex">{hex}</div>
-          {familyLabel && typeof key === 'number' && (
-            <div className="wds-swatch-family">{familyLabel} {label}</div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
@@ -110,18 +115,18 @@ function ColorScaleRow({ color, onChangeColor, colorName }) {
         </div>
       </div>
       <div className="wds-mode-label">Light Mode</div>
-      <ScaleSwatches swatches={swatches} familyLabel={colorName} syncScroll />
+      <ScaleSwatches swatches={swatches} familyLabel={colorName} fit mode="light" />
       <div className="wds-mode-label">Dark Mode</div>
-      <ScaleSwatches swatches={[...swatches].reverse()} familyLabel={colorName} syncScroll />
+      <ScaleSwatches swatches={[...swatches].reverse()} familyLabel={colorName} fit mode="dark" />
     </div>
   )
 }
 
-// Attaches a scroll listener to each of the 6 syncScroll rows (Primary/
-// Secondary/Neutral x Light/Dark) so dragging any one of them scrolls the
-// rest to match. Queried by class rather than threaded through refs since
-// the 6 rows live under three separate GSFormSections, not one shared
-// parent short of the whole page.
+// Attaches a scroll listener to each Theme Definitions role-swatch row
+// (wds-swatches--synced — see ThemeDefinitionRow) so dragging any one of
+// them scrolls the rest to match. Queried by class rather than threaded
+// through refs since the rows live under three separate ThemeDefinitionRow
+// instances, not one shared parent short of the whole page.
 function useSyncedSwatchScroll() {
   useEffect(() => {
     const rows = Array.from(document.querySelectorAll('.wds-swatches--synced'))
@@ -272,17 +277,21 @@ function roleColor(mergedRoles, roleKey, mode) {
 }
 
 // What a role swatch's color actually *is*, named instead of hex-dumped —
-// primaryContainer/secondaryContainer are always the 400 step of their
-// scale, Secondary High the 600 step (see containerFromScale/
-// containerHighFromScale above — default theme only, since Winter/Lavender
-// give it a fixed hex of its own with no scale to name a step from); a
-// neutral role is either plain Grey/White/Black, or — under Monochromatic —
-// whatever step of the Primary scale monochromatize() substituted in for
-// it. Tertiary/Error/Scrim are each theme's own fixed brand color, with no
-// scale to name a step from either, so they fall back to their raw hex.
+// primaryContainer/secondaryContainer are the 400 step of their scale,
+// Secondary High the 600 step (see containerFromScale/
+// containerHighFromScale above) — but only for the "default" (GolfStatus)
+// theme, whose Primary/Secondary Container roles are actually computed from
+// this screen's own color pickers. Winter/Lavender give these roles a fixed
+// hex of their own instead (see colorThemes.js), with no scale to name a
+// step from, so they fall back to their raw hex like Tertiary/Error/Scrim
+// below — labeling them "Primary 400"/"Secondary 400" regardless of theme
+// would claim they equal this screen's own Primary/Secondary color at that
+// step, which for Winter/Lavender simply isn't true. A neutral role is
+// either plain Grey/White/Black, or — under Monochromatic — whatever step
+// of the Primary scale monochromatize() substituted in for it.
 function roleColorLabel(key, roleHex, monochromatic, isDefaultTheme) {
-  if (key === 'primaryContainer') return 'Primary 400'
-  if (key === 'secondaryContainer') return 'Secondary 400'
+  if (key === 'primaryContainer') return isDefaultTheme ? 'Primary 400' : roleHex
+  if (key === 'secondaryContainer') return isDefaultTheme ? 'Secondary 400' : roleHex
   if (key === 'secondaryContainerHigh') return isDefaultTheme ? 'Secondary 600' : roleHex
   if (NEUTRAL_ROLE_KEYS.includes(key)) {
     if (monochromatic) {
@@ -296,23 +305,26 @@ function roleColorLabel(key, roleHex, monochromatic, isDefaultTheme) {
 }
 
 // Parses a typed reference like "Primary 900", "grey 50", or "White" back
-// into { hex, label } — the inverse of roleColorLabel/GREY_LABEL_BY_HEX
-// above, so a Theme Definitions swatch's own text can be edited in place
-// (see wds-swatch-hex-input below) instead of only ever being read from.
-// Returns null for anything that doesn't match a real family+step.
-function parseColorRef(text, { primaryScale, secondaryScale }) {
+// into { family, step, label } — the inverse of roleColorLabel/
+// GREY_LABEL_BY_HEX above, so a Theme Definitions swatch's own text can be
+// edited in place (see wds-swatch-hex-input below) instead of only ever
+// being read from. Deliberately a *symbolic* reference, not a resolved hex
+// — resolveOverrideHex (monochromatic.js) looks it up against whatever the
+// Primary/Secondary scales currently are, every render, so a saved
+// "Primary 700" override keeps tracking that picker if it's edited again
+// later instead of freezing at today's color. Returns null for anything
+// that doesn't match a real family+step.
+function parseColorRef(text) {
   const trimmed = text.trim()
-  if (/^white$/i.test(trimmed)) return { hex: WHITE, label: 'White' }
-  if (/^black$/i.test(trimmed)) return { hex: BLACK, label: 'Black' }
+  if (/^white$/i.test(trimmed)) return { family: 'white', label: 'White' }
+  if (/^black$/i.test(trimmed)) return { family: 'black', label: 'Black' }
   const match = trimmed.match(/^(primary|secondary|grey)\s*(\d{2,3})$/i)
   if (!match) return null
   const step = Number(match[2])
   if (!SCALE_STEPS.includes(step)) return null
   const family = match[1].toLowerCase()
   const label = `${family[0].toUpperCase()}${family.slice(1)} ${step}`
-  if (family === 'primary') return { hex: primaryScale[step], label }
-  if (family === 'secondary') return { hex: secondaryScale[step], label }
-  return { hex: golfstatusColors[`grey${step}`], label }
+  return { family, step, label }
 }
 
 // Primary/Secondary are represented by the 400 step in both modes here —
@@ -342,9 +354,9 @@ function containerHighFromScale(scale) {
   }
 }
 
-// One theme's Light/Dark role swatches, Neutral and Monochromatic stacked
-// on top of each other for each mode (no toggle — both are always visible
-// so the two can be compared directly). For "default" specifically, Primary/
+// One theme's Light/Dark role swatches, grouped Neutral (Light then Dark)
+// followed by Monochromatic (Light then Dark) — no toggle, both variants
+// are always visible so they can be compared directly. For "default" specifically, Primary/
 // Secondary are regenerated live from this screen's own color pickers
 // instead of reading the (empty) colorThemes.default.overrides — this is
 // the "update the theme[] with the new colors" behavior. Background/
@@ -387,7 +399,7 @@ function ThemeDefinitionRow({ themeKey, primaryScale, secondaryScale, overrides:
       })
       return
     }
-    const parsed = parseColorRef(trimmed, { primaryScale, secondaryScale })
+    const parsed = parseColorRef(trimmed)
     if (parsed) setOverrides(o => ({ ...o, [cellKey]: parsed }))
     // Unparseable text is simply discarded (draft above already cleared),
     // reverting the input back to whatever it showed before the edit.
@@ -420,48 +432,50 @@ function ThemeDefinitionRow({ themeKey, primaryScale, secondaryScale, overrides:
   return (
     <div className="wds-theme-def">
       <div className="wds-theme-def-name">{preset.name}</div>
-      {['light', 'dark'].map(mode => (
-        <div key={mode}>
-          <div className="wds-mode-label">{mode === 'light' ? 'Light Mode' : 'Dark Mode'}</div>
-          {[false, true].map(monochromatic => (
-            <div key={String(monochromatic)}>
-              <div className="wds-variant-label">{monochromatic ? 'Monochromatic' : 'Neutral'}</div>
-              <div className="wds-swatches wds-swatches--synced">
-                {THEME_ROLES.map(({ key, label }) => {
-                  const roleHex = roleColor(merged, key, mode)
-                  // Surface Bright stays plain white in light mode regardless
-                  // of Monochromatic — every other Neutral role is fair game
-                  // for the Primary re-tint, but this one role is pinned so
-                  // there's always at least one guaranteed-white surface.
-                  const forceWhite = key === 'surfaceBright' && mode === 'light'
-                  const computedLabel = forceWhite ? 'White' : roleColorLabel(key, roleHex, monochromatic, themeKey === 'default')
-                  const computedHex = forceWhite
-                    ? WHITE
-                    : monochromatic && NEUTRAL_ROLE_KEYS.includes(key)
-                      ? key === 'outlineVariant' ? monoScale[OUTLINE_VARIANT_MONO_STEP] : monochromatize(roleHex, monoScale)
-                      : roleHex
-                  const cellKey = `${mode}-${monochromatic}-${key}`
-                  const override = overrides[cellKey]
-                  const hex = override?.hex ?? computedHex
-                  const displayLabel = draft[cellKey] ?? override?.label ?? computedLabel
-                  return (
-                    <div className="wds-swatch" key={key}>
-                      <div className="wds-swatch-color" style={{ backgroundColor: hex }} />
-                      <div className="wds-swatch-step">{label}</div>
-                      <input
-                        className="wds-swatch-hex wds-swatch-hex-input"
-                        value={displayLabel}
-                        onChange={e => setDraft(d => ({ ...d, [cellKey]: e.target.value }))}
-                        onFocus={e => e.target.select()}
-                        onBlur={e => commitEdit(cellKey, e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') e.currentTarget.blur()
-                        }}
-                        aria-label={`${label} color reference — type e.g. "Primary 900" to change it`}
-                      />
-                    </div>
-                  )
-                })}
+      {[false, true].map(monochromatic => (
+        <div key={String(monochromatic)}>
+          <div className="wds-variant-label">{monochromatic ? 'Monochromatic' : 'Neutral'}</div>
+          {['light', 'dark'].map(mode => (
+            <div key={mode}>
+              <div className="wds-mode-label">{mode === 'light' ? 'Light Mode' : 'Dark Mode'}</div>
+              <div className={`wds-swatches-container wds-swatches-container--${mode}`}>
+                <div className="wds-swatches wds-swatches--synced">
+                  {THEME_ROLES.map(({ key, label }) => {
+                    const roleHex = roleColor(merged, key, mode)
+                    // Surface Bright stays plain white in light mode regardless
+                    // of Monochromatic — every other Neutral role is fair game
+                    // for the Primary re-tint, but this one role is pinned so
+                    // there's always at least one guaranteed-white surface.
+                    const forceWhite = key === 'surfaceBright' && mode === 'light'
+                    const computedLabel = forceWhite ? 'White' : roleColorLabel(key, roleHex, monochromatic, themeKey === 'default')
+                    const computedHex = forceWhite
+                      ? WHITE
+                      : monochromatic && NEUTRAL_ROLE_KEYS.includes(key)
+                        ? key === 'outlineVariant' ? monoScale[OUTLINE_VARIANT_MONO_STEP] : monochromatize(roleHex, monoScale)
+                        : roleHex
+                    const cellKey = `${mode}-${monochromatic}-${key}`
+                    const override = overrides[cellKey]
+                    const hex = resolveOverrideHex(override, { primaryScale, secondaryScale }) ?? computedHex
+                    const displayLabel = draft[cellKey] ?? override?.label ?? computedLabel
+                    return (
+                      <div className="wds-swatch" key={key}>
+                        <div className="wds-swatch-color" style={{ backgroundColor: hex }} />
+                        <div className="wds-swatch-step">{label}</div>
+                        <input
+                          className="wds-swatch-hex wds-swatch-hex-input"
+                          value={displayLabel}
+                          onChange={e => setDraft(d => ({ ...d, [cellKey]: e.target.value }))}
+                          onFocus={e => e.target.select()}
+                          onBlur={e => commitEdit(cellKey, e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') e.currentTarget.blur()
+                          }}
+                          aria-label={`${label} color reference — type e.g. "Primary 900" to change it`}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           ))}
@@ -494,6 +508,25 @@ export default function WebsiteDesignStyleFields({
   return (
     <div className="ordr1-list">
       <GSActionBar type="form-header H3" header="Website Design and Style" />
+
+      <GSFormSection
+        title="Neutral"
+        type="vertical xx-large-gap"
+        fields={[
+          {
+            label: 'Fixed palette — not editable',
+            isEditable: false,
+            value: (
+              <div className="wds-scale-row">
+                <div className="wds-mode-label">Light Mode</div>
+                <ScaleSwatches swatches={NEUTRAL_SWATCHES} familyLabel="Grey" fit mode="light" />
+                <div className="wds-mode-label">Dark Mode</div>
+                <ScaleSwatches swatches={[...NEUTRAL_SWATCHES].reverse()} familyLabel="Grey" fit mode="dark" />
+              </div>
+            ),
+          },
+        ]}
+      />
 
       <GSFormSection
         title="Primary Color"
@@ -535,25 +568,6 @@ export default function WebsiteDesignStyleFields({
                 <ButtonPreviewRow primaryScale={primaryScale} secondaryScale={secondaryScale} mode="light" />
                 <div className="wds-mode-label">Dark Mode</div>
                 <ButtonPreviewRow primaryScale={primaryScale} secondaryScale={secondaryScale} mode="dark" />
-              </div>
-            ),
-          },
-        ]}
-      />
-
-      <GSFormSection
-        title="Neutral"
-        type="vertical xx-large-gap"
-        fields={[
-          {
-            label: 'Fixed palette — not editable',
-            isEditable: false,
-            value: (
-              <div className="wds-scale-row">
-                <div className="wds-mode-label">Light Mode</div>
-                <ScaleSwatches swatches={NEUTRAL_SWATCHES} familyLabel="Grey" syncScroll />
-                <div className="wds-mode-label">Dark Mode</div>
-                <ScaleSwatches swatches={[...NEUTRAL_SWATCHES].reverse()} familyLabel="Grey" syncScroll />
               </div>
             ),
           },

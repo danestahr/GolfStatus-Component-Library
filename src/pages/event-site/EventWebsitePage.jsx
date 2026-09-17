@@ -26,7 +26,7 @@ import GSImage from '../../gs-lib/components/gs-image'
 import GSSplitView from '../../gs-lib/components/gs-split-view'
 import { defaultPadding, golfstatusColors } from '../../gs-lib/helpers/Theme'
 import { generateScale } from '../../gs-lib/helpers/colorScale'
-import { monochromatize, OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
+import { monochromatize, OUTLINE_VARIANT_MONO_STEP, resolveOverrideHex } from '../../gs-lib/helpers/monochromatic'
 import { pickAccessibleTextColor } from '../../gs-lib/helpers/contrast'
 import { formatMoney } from '../../components/orders/orderUtils'
 import { eventSite } from '../../data/mockEventSite.js'
@@ -260,7 +260,8 @@ export default function EventWebsitePage() {
       Object.entries(ROLE_TO_CSS_VAR)
         .map(([roleKey, cssVar]) => {
           const override = siteStyle.themeOverrides?.[`${themeMode}-${monochromatic}-${roleKey}`]
-          return override ? [cssVar, override.hex] : null
+          const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
+          return hex ? [cssVar, hex] : null
         })
         .filter(Boolean)
     ),
