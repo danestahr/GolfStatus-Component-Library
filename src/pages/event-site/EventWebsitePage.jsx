@@ -302,7 +302,15 @@ export default function EventWebsitePage() {
           <div className="es-brand-row">
             <div
               className="es-brand-logo"
-              style={{ WebkitMaskImage: `url(${golfstatusLogo})`, maskImage: `url(${golfstatusLogo})` }}
+              // Quoted url() — a *production build* only bug: this SVG is
+              // small enough that Vite inlines it as a data: URI, and that
+              // encoded SVG keeps its own attributes' quotes literally
+              // (e.g. width='50') un-percent-encoded. An unquoted url() is
+              // invalid CSS once it contains a literal quote character, so
+              // the browser silently drops the whole mask-image declaration
+              // — worked in `vite dev` (served as a plain file URL there),
+              // broke only after `vite build` / in production.
+              style={{ WebkitMaskImage: `url("${golfstatusLogo}")`, maskImage: `url("${golfstatusLogo}")` }}
             />
             <GSAppNavigationHeader title={eventSite.tournamentName} />
           </div>
