@@ -10,7 +10,7 @@ import {
   getScorecardFrontNine,
   getMappedGridHoles,
   getMatchPlayGridHoles
-} from "../../helpers/ScorecardHelper.jsx";
+} from "../../helpers/ScorecardHelper";
 
 export default function GSScorecard(props) {
   const {

@@ -27,12 +27,12 @@ import GSButton from "./gs-button";
  */
 
 const GSPager = (props) => {
-  const { items, listItem, nextButton, previousButton, style } = props;
+  const { items, listItem, nextButton, previousButton, style, contentStyle, itemStyle, pagerStyle } = props;
   const [currentIndex, setCurrentIndex] = useState(0);
 
   return (
     <gs-pager style={style}>
-      <div className="content">
+      <div className="content" style={contentStyle}>
         {items?.map((item, index) => {
           const position =
             index > currentIndex
@@ -40,11 +40,11 @@ const GSPager = (props) => {
               : index < currentIndex
               ? "left"
               : "center";
-          return <div key={index} className={`item page-${position}`}>{listItem(item)}</div>;
+          return <div key={index} style={itemStyle} className={`item page-${position}`}>{listItem(item)}</div>;
         })}
       </div>
 
-      <div className="pager">
+      <div className="pager" style={pagerStyle}>
         {currentIndex > 0 ? (
           <GSButton
             type="grey"

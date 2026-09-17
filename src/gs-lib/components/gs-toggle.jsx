@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import "./gs-toggle.scss";
 import { handleEnterKey } from "../helpers/Utilities";
+import {  green400, grey600 } from "../helpers/Theme";
 
 
 /**
@@ -22,7 +23,7 @@ import { handleEnterKey } from "../helpers/Utilities";
  * 
  * @property {Boolean} disabled disable toggle
  * 
- * @property {boolean} rowReverse mirror the layout: moves the label to the other side of the toggle, and swaps the order of the switch and its description
+ * @property {boolean} rowReverse reverse the layout so the label is left of the toggl
  * 
  * @property {object} style styling fo rthe component
 
@@ -55,12 +56,14 @@ export default class GStoggle extends Component {
       disabled,
       rowReverse,
       style,
-      descriptionStyle
+      descriptionStyle, 
+      trueColor = green400,
+      falseColor = grey600
     } = this.props;
+    const color = value ? trueColor : falseColor
     return (
       <gs-toggle
         tabindex={0}
-        className={rowReverse ? "rowReverse" : ""}
         onClick={disabled ? null : onClick}
         onKeyPress={e => {
           if(!disabled) {
@@ -72,8 +75,8 @@ export default class GStoggle extends Component {
       >
         {label && <div className=" toggle-label">{label}</div>}
         <div className={`toggle-action ${disabled ? "disabled" : ""} ${rowReverse ? "rowReverse" : ""}` }>
-          <div className={`toggle-container ${value}`}>
-            <div className={`toggle-track ${value}`}>
+          <div style={{backgroundColor: color, borderColor: color}} className={`toggle-container ${value}`}>
+            <div style={{backgroundColor: color}} className={`toggle-track ${value}`}>
               <div className="toggle-indicator"></div>
             </div>
           </div>

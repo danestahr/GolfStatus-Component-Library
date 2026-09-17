@@ -1,4 +1,4 @@
-$font-family: "Roboto", sans-serif;
+$font-family: roboto, filson-soft, sans-serif;
 
 //App font sizes
 $xxx-small-font: 8px;
@@ -37,7 +37,6 @@ $spacious-line-height: 1.6;
 
 //mixins
 @mixin gs-font($size,$weight,$spacing){
-    font-family: $font-family;
     font-size: $size;
     font-weight: $weight;
     letter-spacing: $spacing;

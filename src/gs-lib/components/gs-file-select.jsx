@@ -65,7 +65,9 @@ export default function GSFileSelect(props) {
     setSelectedFiles,
     failedValidation,
     required,
+    disabled,
     style,
+    inputTouched,
     ...rest
   } = props;
 
@@ -94,6 +96,7 @@ export default function GSFileSelect(props) {
   };
   const removeItem = item => {
     const newList = fileList.filter(file => file !== item);
+    setValid(true);
     setFileList(newList);
     if (removeSourceItem) {
       removeSourceItem(item);
@@ -129,6 +132,10 @@ export default function GSFileSelect(props) {
   };
 
   const elementClicked = e => {
+    if (disabled) {
+      e?.stopPropagation?.();
+      return;
+    }
     const input = document.getElementById(
       `file-input-select-target-${id ?? ""}`
     );
@@ -142,11 +149,12 @@ export default function GSFileSelect(props) {
     <gs-file-select
       style={style}
       tabIndex={0}
+      onBlur={() => inputTouched?.()}
       onKeyDown={keyPress}
-      class={`${valid ? "valid" : "invalid"}`}
+      class={`${valid ? "valid" : "invalid"} ${disabled ? "disabled" : ""}`}
     >
       <div
-        className={`select-input-container ${required ? "required" : ""}`}
+        className={`select-input-container ${required ? "required" : ""} ${disabled ? "disabled" : ""}`}
         onClick={elementClicked}
       >
         {!hasItems() ? (
@@ -163,6 +171,8 @@ export default function GSFileSelect(props) {
                 item={item}
                 removeItem={removeItem}
                 failedValidation={imageFailedValidation}
+                disabled={disabled}
+                fieldValid={valid}
                 {...rest}
               ></GSFileSelectItem>
             )}
@@ -170,16 +180,20 @@ export default function GSFileSelect(props) {
           ></GSItemList>
         )}
         {description && <div className="description">{description}</div>}
-        <input
-          id={`file-input-select-target-${id ?? ""}`}
-          type="file"
-          accept={accept}
-          multiple={multiple}
-          onClick={e => {
-            e?.stopPropagation?.();
-          }}
-          onChange={onChange}
-        ></input>
+        {!disabled && (
+          <input
+            id={`file-input-select-target-${id ?? ""}`}
+            type="file"
+            accept={accept}
+            multiple={multiple}
+            disabled={disabled}
+            onClick={e => {
+              inputTouched?.()
+              e?.stopPropagation?.();
+            }}
+            onChange={onChange}
+          ></input>
+        )}
       </div>
       {inValid() && (
         <GSItemInfo

@@ -16,7 +16,7 @@ gs-split-view {
       @include v-stack(flex-start, flex-start);
     }
     .divider {
-      background: $grey-200;
+      background: transparent;
       width: 1px;
       display: inline-flex;
       @include large-phone {
@@ -30,14 +30,14 @@ gs-split-view {
 .dark {
   .split-view-content {
     .divider {
-      background: $grey-700;
+      background: transparent;
     }
   }
 }
 .light {
   .split-view-content {
     .divider {
-      background: $grey-200;
+      background: transparent;
     }
   }
 }

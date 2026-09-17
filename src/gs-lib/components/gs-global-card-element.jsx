@@ -33,6 +33,10 @@ export default class GSGlobalCardElement extends Component {
     })
 
     let oldBtn = document.querySelector(this.props.saveBtnQueryStr);
+    if(oldBtn === null){
+      console.log("Could not find global submit element")
+      return
+    }
     oldBtn.style.display = 'none';
     oldBtn.parentNode.appendChild(newBtn);
     this.setState({newBtn, oldBtn})

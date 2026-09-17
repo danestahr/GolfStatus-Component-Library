@@ -41,6 +41,19 @@ gs-file-select {
         background-color: rgba($orange, .1);
       }
     }
+
+    &.disabled{
+      border: none;
+      cursor: default;
+      &:hover{
+        background-color: unset;
+        border-color: unset;
+      }
+      input[type="file"]{
+        pointer-events: none;
+        display: none;
+      }
+    }
   }
 
   .description{

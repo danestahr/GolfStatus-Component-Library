@@ -45,7 +45,8 @@ export default function AddressForm(props) {
     address,
     city,
     state,
-    postal
+    postal,
+    selectStyles
   } = props;
 
   useEffect(() => {
@@ -101,6 +102,7 @@ export default function AddressForm(props) {
             selectOption(inputValue, action, "country")
           }
           style={style}
+          customStyles={selectStyles}
         ></GSSelect>
       </div>
       <div className="address">
@@ -145,6 +147,7 @@ export default function AddressForm(props) {
               selectOption(inputValue, action, "state")
             }
             style={style}
+            customStyles={selectStyles}
             filterOption={stateFilter}
           ></GSSelect>
         ) : (

@@ -1,0 +1,256 @@
+@import './colors.scss';
+
+// Semantic theme tokens — the seam for building out color themes.
+//
+// colors.scss holds the raw palette ($grey-800, $cyan-700, etc). This file
+// maps that palette onto *roles* (surface, on-surface, primary-container...),
+// mirroring the shape of `defaultTheme` in gs-lib/helpers/Theme.js and the
+// "Default Theme (Web)" variables in the Figma file. A component should
+// reach for these CSS custom properties instead of a raw palette color, so a
+// future theme is a new class of role -> color assignments below (or a
+// swapped set of values on this same class), not a find/replace across every
+// component that used a color.
+//
+// Only .gs-theme-default exists today — nothing consumes these tokens yet
+// except the Event Website page, which is the first page built against this
+// system rather than raw palette colors.
+.gs-theme-default {
+  --gs-color-primary: #{$grey-800};
+  --gs-color-on-primary: #{$white};
+  --gs-color-secondary: #{$cyan-700};
+  --gs-color-on-secondary: #{$white};
+
+  // Fill buttons' text — scale step 50, distinct from --gs-color-on-primary/
+  // secondary above (which the header bar's bg/fg pairing also reads and
+  // needs to stay AA-picked independently; see EventWebsitePage.jsx).
+  --gs-color-on-primary-fill: #{$white};
+  --gs-color-on-secondary-fill: #{$white};
+
+  // "Subtle" fill for Primary/Secondary Subtle buttons — a step lighter
+  // than the base primary/secondary, not the neutral surface-variant.
+  --gs-color-primary-subtle: #{$grey-200};
+  --gs-color-on-primary-subtle: #{$grey-800};
+  --gs-color-secondary-subtle: #{$cyan-200};
+  --gs-color-on-secondary-subtle: #{$cyan-800};
+
+  --gs-color-background: #{$white};
+  --gs-color-on-background: #{$grey-800};
+
+  --gs-color-surface: #{$white};
+  --gs-color-on-surface: #{$grey-800};
+  --gs-color-surface-variant: #{$grey-50};
+  --gs-color-on-surface-variant: #{$grey-800};
+  --gs-color-surface-container-low: #{$white};
+  --gs-color-surface-container-high: #{$grey-50};
+  --gs-color-surface-container-highest: #{$grey-100};
+  --gs-color-surface-bright: #{$white};
+
+  --gs-color-outline: #{$grey-700};
+  --gs-color-outline-variant: #{$grey-100};
+
+  --gs-color-tertiary-container: #{$green-200};
+  --gs-color-on-tertiary-container: #{$grey-800};
+
+  --gs-color-placeholder: #{$grey-300};
+}
+
+// Winter and Lavender are alternate color themes for the Event Website
+// preview's theme picker (see EventWebsitePage.jsx's `themeName` state) —
+// same role names as .gs-theme-default, just re-pointed to a different base
+// palette, per the "swap the values, not the call sites" seam described
+// above.
+//
+// Values below are transcribed from gs-lib/helpers/winterTheme.js and
+// lavenderTheme.js (sourced from ~/Downloads/{winter,lavender}Theme.js on
+// 2026-09-16) — those are the actual source of truth (full M3-shaped role
+// objects for use with mergedTheme()/useTheme()), also used as-is by
+// "GolfStatus Event Website" (src/hooks/themeHooks.jsx, via
+// helpers/colorThemes.js) — these CSS custom properties are a second,
+// static-value rendering of the same palette for this page's own
+// hand-styled chrome (header/sub-nav/tiles), which reads CSS vars rather
+// than the JS theme engine. Mapping: --gs-color-primary/on-primary <-
+// primaryContainer (bg/color), --gs-color-secondary <- secondary.color,
+// --gs-color-on-secondary <- secondaryContainer.color, background/surface/
+// surfaceVariant/surfaceContainer* <- their same-named role's bg/color,
+// outline/outline-variant <- outline/outlineVariant's borderColor,
+// tertiary-container <- tertiaryContainer (bg/color). --gs-color-placeholder
+// has no equivalent role in those files, so it reuses outlineVariant's
+// (subtle/low-contrast by design) color, same as before.
+.gs-theme-winter {
+  --gs-color-primary: #5DADE2;
+  --gs-color-on-primary: #1B2631;
+  --gs-color-secondary: #20699A;
+  --gs-color-on-secondary: #FFFFFF;
+
+  --gs-color-on-primary-fill: #1B2631;
+  --gs-color-on-secondary-fill: #FFFFFF;
+
+  --gs-color-primary-subtle: #D6EAF8;
+  --gs-color-on-primary-subtle: #1B2631;
+  --gs-color-secondary-subtle: #AED6F1;
+  --gs-color-on-secondary-subtle: #1B2631;
+
+  --gs-color-background: #EBF5FB;
+  --gs-color-on-background: #1B2631;
+
+  --gs-color-surface: #FFFFFF;
+  --gs-color-on-surface: #1B2631;
+  --gs-color-surface-variant: #D4E6F1;
+  --gs-color-on-surface-variant: #1B2631;
+  --gs-color-surface-container-low: #F7FBFE;
+  --gs-color-surface-container-high: #E3F0FA;
+  --gs-color-surface-container-highest: #D6EAF8;
+  --gs-color-surface-bright: #F0F8FF;
+
+  --gs-color-outline: #2980B9;
+  --gs-color-outline-variant: #BBD9EC;
+
+  --gs-color-tertiary-container: #D6EAF8;
+  --gs-color-on-tertiary-container: #1B2631;
+
+  --gs-color-placeholder: #BBD9EC;
+}
+
+.gs-theme-winter.dark {
+  --gs-color-primary: #AED6F1;
+  --gs-color-on-primary: #1B2631;
+  --gs-color-secondary: #85C1E9;
+  --gs-color-on-secondary: #1B2631;
+
+  --gs-color-on-primary-fill: #1B2631;
+  --gs-color-on-secondary-fill: #1B2631;
+
+  --gs-color-primary-subtle: #2E4053;
+  --gs-color-on-primary-subtle: #AED6F1;
+  --gs-color-secondary-subtle: #34495E;
+  --gs-color-on-secondary-subtle: #85C1E9;
+
+  --gs-color-background: #17202A;
+  --gs-color-on-background: #AED6F1;
+
+  --gs-color-surface: #1C2833;
+  --gs-color-on-surface: #AED6F1;
+  --gs-color-surface-variant: #34495E;
+  --gs-color-on-surface-variant: #D4E6F1;
+  --gs-color-surface-container-low: #17202A;
+  --gs-color-surface-container-high: #22303D;
+  --gs-color-surface-container-highest: #2E4053;
+  --gs-color-surface-bright: #2E4053;
+
+  --gs-color-outline: #AED6F1;
+  --gs-color-outline-variant: #34495E;
+
+  --gs-color-tertiary-container: #7FB3D5;
+  --gs-color-on-tertiary-container: #1B2631;
+
+  --gs-color-placeholder: #34495E;
+}
+
+.gs-theme-lavender {
+  --gs-color-primary: #B57EDC;
+  --gs-color-on-primary: #331C3B;
+  --gs-color-secondary: #8E44AD;
+  --gs-color-on-secondary: #FFFFFF;
+
+  --gs-color-on-primary-fill: #331C3B;
+  --gs-color-on-secondary-fill: #FFFFFF;
+
+  --gs-color-primary-subtle: #EAD1F5;
+  --gs-color-on-primary-subtle: #512E5F;
+  --gs-color-secondary-subtle: #E8DAEF;
+  --gs-color-on-secondary-subtle: #512E5F;
+
+  --gs-color-background: #F5EEF8;
+  --gs-color-on-background: #512E5F;
+
+  --gs-color-surface: #FFFFFF;
+  --gs-color-on-surface: #512E5F;
+  --gs-color-surface-variant: #E8DAEF;
+  --gs-color-on-surface-variant: #512E5F;
+  --gs-color-surface-container-low: #FBF6FD;
+  --gs-color-surface-container-high: #F0E4F6;
+  --gs-color-surface-container-highest: #EAD1F5;
+  --gs-color-surface-bright: #FDF2FF;
+
+  --gs-color-outline: #8E44AD;
+  --gs-color-outline-variant: #DCC8E8;
+
+  --gs-color-tertiary-container: #F5EEF8;
+  --gs-color-on-tertiary-container: #512E5F;
+
+  --gs-color-placeholder: #DCC8E8;
+}
+
+.gs-theme-lavender.dark {
+  --gs-color-primary: #E8DAEF;
+  --gs-color-on-primary: #512E5F;
+  --gs-color-secondary: #D2B4DE;
+  --gs-color-on-secondary: #512E5F;
+
+  --gs-color-on-primary-fill: #512E5F;
+  --gs-color-on-secondary-fill: #512E5F;
+
+  --gs-color-primary-subtle: #462654;
+  --gs-color-on-primary-subtle: #E8DAEF;
+  --gs-color-secondary-subtle: #532F63;
+  --gs-color-on-secondary-subtle: #D2B4DE;
+
+  --gs-color-background: #1F1026;
+  --gs-color-on-background: #E8DAEF;
+
+  --gs-color-surface: #341C3E;
+  --gs-color-on-surface: #E8DAEF;
+  --gs-color-surface-variant: #532F63;
+  --gs-color-on-surface-variant: #E8DAEF;
+  --gs-color-surface-container-low: #1F1026;
+  --gs-color-surface-container-high: #3D2249;
+  --gs-color-surface-container-highest: #462654;
+  --gs-color-surface-bright: #462654;
+
+  --gs-color-outline: #D2B4DE;
+  --gs-color-outline-variant: #532F63;
+
+  --gs-color-tertiary-container: #D7BDE2;
+  --gs-color-on-tertiary-container: #512E5F;
+
+  --gs-color-placeholder: #532F63;
+}
+
+// Dark variant of the same role names — applying `.dark` to a subtree (e.g.
+// just the header bar, or the whole page via a light/dark toggle) re-points
+// every token to its dark value, same "swap the values, not the call sites"
+// seam described above. Matches gs-lib's own real `.light`/`.dark`
+// ancestor-class convention (see gs-page-section.scss, gs-image.scss, etc)
+// and mirrors `defaultTheme`'s own light/dark pairs in Theme.js (already
+// authored, just not previously wired into these CSS custom properties).
+.dark {
+  --gs-color-primary: #{$white};
+  --gs-color-on-primary: #{$grey-800};
+  --gs-color-secondary: #{$cyan-200};
+
+  --gs-color-on-primary-fill: #{$grey-800};
+  --gs-color-on-secondary-fill: #{$white};
+
+  --gs-color-primary-subtle: #{$grey-700};
+  --gs-color-on-primary-subtle: #{$white};
+  --gs-color-secondary-subtle: #{$cyan-800};
+  --gs-color-on-secondary-subtle: #{$cyan-100};
+
+  --gs-color-background: #{$black};
+  --gs-color-on-background: #{$white};
+
+  --gs-color-surface: #{$grey-900};
+  --gs-color-on-surface: #{$white};
+  --gs-color-surface-variant: #{$grey-800};
+  --gs-color-on-surface-variant: #{$grey-100};
+  --gs-color-surface-container-low: #{$grey-900};
+  --gs-color-surface-container-high: #{$grey-800};
+  --gs-color-surface-container-highest: #{$grey-700};
+  --gs-color-surface-bright: #{$grey-700};
+
+  --gs-color-outline: #{$white};
+  --gs-color-outline-variant: #{$grey-700};
+
+  --gs-color-tertiary-container: #{$green-400};
+  --gs-color-on-tertiary-container: #{$grey-800};
+}

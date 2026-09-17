@@ -9,7 +9,7 @@ gs-side-panel{
   top: 0;
   right: 0;
   box-shadow: $third-layer-shadow;
-  transition: transform $fast, opacity $fast;
+  transition: $fast;
   overflow-y: auto;
   overflow-x: hidden;
   transform: translateX(100%);
@@ -24,15 +24,5 @@ gs-side-panel{
   &:has(>.full-screen-side-panel){
     min-width: 100%;
     z-index: 100 !important;
-  }
-
-  &.no-transition{
-    transition: none;
-  }
-
-  // Applied only briefly around a deliberate width toggle (e.g. an expand button),
-  // so viewport resizes — which also change the calc()-based width — stay instant.
-  &.animate-width{
-    transition: transform $fast, opacity $fast, width $fast, min-width $fast;
   }
 }

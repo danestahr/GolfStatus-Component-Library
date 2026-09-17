@@ -14,7 +14,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import GSButton from "./gs-button";
 import GSLoadingSpinnerOverlay from "./gs-loading-spinner-overlay";
-import { width } from "@fortawesome/free-solid-svg-icons/fa0";
+
 
 /**
  * View to display items in a list. This also allows for those items to be sorted, turned into checkboxes and displayed in vertical, horizontal, or grid layouts
@@ -210,7 +210,7 @@ export default class GSItemList extends Component {
       );
       const style = window.getComputedStyle(sortableLayout);
 
-      if (sortElement && this.props.type.includes("vertical")) {
+      if (sortElement && this.props.type.includes?.("vertical")) {
         const itemOffset = (sortElement?.clientHeight ?? 0) / 2;
         const cursor = e?.clientY - itemOffset + this.state.dragOffset;
         sortElement.style.top = `${cursor}px`;
@@ -227,7 +227,7 @@ export default class GSItemList extends Component {
         if (e.clientY - scrollerBr?.top < (this.props.topScrollMargin ?? 0)) {
           this.state.autoScroller.scrollBy?.(0, -10);
         }
-      } else if (sortElement && this.props.type.includes("horizontal")) {
+      } else if (sortElement && this.props.type.includes?.("horizontal")) {
         const cursor = e?.clientX - br?.left + this.state.dragOffset;
         sortElement.style.left = `${cursor}px`;
         sortElement.style.position = "absolute";
@@ -314,7 +314,7 @@ export default class GSItemList extends Component {
   itemSelected = (e, item) => {
     if (this.props.itemSelected) {
       if (!this.state.sorting) {
-        this.props.itemSelected(item);
+        this.props.itemSelected?.(item);
       } else {
         this.setState({
           sortingItem: {},
@@ -328,7 +328,7 @@ export default class GSItemList extends Component {
   };
 
   keyPressed = (e, item, index) => {
-    if (this.props.type.includes("selectable")) {
+    if (this.props.type?.includes?.("selectable")) {
       const key = e.key;
       if (key === "Enter") {
         this.itemSelected(e, item);
@@ -337,7 +337,7 @@ export default class GSItemList extends Component {
   };
 
   checkKeyPressed = (e, item, index) => {
-    if (this.props.type.includes("check-key-handle")) {
+    if (this.props.type?.includes?.("check-key-handle")) {
       const key = e.key;
       if (key === "Enter") {
         this.itemClicked(item);
@@ -356,7 +356,7 @@ export default class GSItemList extends Component {
   };
 
   isVerticalList = () => {
-    return this.props.type.includes("vertical");
+    return this.props.type.includes?.("vertical");
   };
 
   //Views
@@ -436,8 +436,8 @@ export default class GSItemList extends Component {
       style = { width: `calc(100% / ${this.props.columns})` };
     }
 
-    if (item?.style) {
-      style = { ...style, ...item.style };
+    if (item?.listItemStyle) {
+      style = { ...style, ...item.listItemStyle };
     }
 
     const { type, isCheckList, listItem, isSortable } = this.props;
@@ -448,7 +448,7 @@ export default class GSItemList extends Component {
         class={`${isSortable ? "sortable-item" : ""} item${index} ${item?.fit ??
           ""} ${isCheckList ? "check-list-item" : ""} `}
         id={`${index === -1 ? "sortee" : index}`}
-        style={style}
+        style={{ ...style, ...this.props?.itemStyle }}
         onClick={e => this.itemSelected(e, item)}
         onMouseUp={e => {
           this.dropItem(e, false);
@@ -469,8 +469,8 @@ export default class GSItemList extends Component {
             onKeyDown={e => {
               this.checkKeyPressed(e, item, index);
             }}
-            tabIndex={this.props.type.includes("check-key-handle") ? 0 : -1}
-            onClick={() => this.itemClicked(item)}
+            tabIndex={this.props.type.includes?.("check-key-handle") ? 0 : -1}
+            onClick={(e) => {this.itemClicked(item); e?.stopPropagation?.()}}
           >
             {this.isSelected(item) ? (
               <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
@@ -495,12 +495,14 @@ export default class GSItemList extends Component {
     const indexItem = this.getIndexItem(index);
 
     return (
-      <React.Fragment key={index}>
-        {this.props.dropList === undefined || !this.state.sorting
-          ? indexItem
-          : ""}
-        {this.getListItem(item, index)}
-      </React.Fragment>
+
+        <React.Fragment key={index}>
+          {this.props.dropList === undefined || !this.state.sorting
+            ? indexItem
+            : ""}
+          {this.getListItem(item, index)}
+        </React.Fragment>
+
     );
   };
 
@@ -586,9 +588,7 @@ export default class GSItemList extends Component {
         </div>
 
         {this.state.sortingItem && (
-          <div className={type} >
-            {this.getItem(this.state.sortingItem, -1)}
-          </div>
+          <div className={type}>{this.getItem(this.state.sortingItem, -1)}</div>
         )}
       </gs-item-list>
     );

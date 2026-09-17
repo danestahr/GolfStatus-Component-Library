@@ -1,0 +1,204 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.wds-scale-row {
+  @include v-stack(flex-start, stretch);
+  gap: $medium-pad;
+  width: 100%;
+
+  // Beats gs-field.scss's `.field-value gs-input { width: 100% }`, which
+  // otherwise outranks this file's own specificity.
+  gs-input {
+    width: 72px !important;
+    min-height: 40px;
+
+    input[type='color'] {
+      padding: 0;
+      cursor: pointer;
+    }
+  }
+}
+
+.wds-picker-row {
+  @include h-stack(flex-start, center);
+  gap: $medium-pad;
+  flex-wrap: wrap;
+}
+
+.wds-presets {
+  @include h-stack(flex-start, center);
+  gap: $x-small-pad;
+}
+
+.wds-preset {
+  width: 28px;
+  height: 28px;
+  border-radius: $small-medium-radius;
+  border: $light-border;
+  padding: 0;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: 2px solid $grey-800;
+    outline-offset: 1px;
+  }
+}
+
+.wds-mode-label {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  color: $grey-600;
+
+  // No top gap on the first one (right under the color picker row) — the
+  // second (Dark Mode) still wants the usual $medium-pad gap from
+  // .wds-scale-row's v-stack above the light row's swatches.
+  &:first-of-type {
+    margin-top: -#{$x-small-pad};
+  }
+}
+
+.wds-swatches {
+  @include h-stack(flex-start, stretch);
+  gap: $x-small-pad;
+  width: 100%;
+  overflow-x: auto;
+}
+
+// The 6 useSyncedSwatchScroll rows (WebsiteDesignStyleFields.jsx) scroll
+// together as one, so showing 6 separate scrollbars underneath them reads
+// as 6 unrelated strips instead of a single synced one — hidden here, drag/
+// wheel/trackpad scrolling still works with no visible scrollbar.
+.wds-swatches--synced {
+  scrollbar-width: none; // Firefox
+  -ms-overflow-style: none; // legacy Edge
+
+  &::-webkit-scrollbar {
+    display: none; // Chrome/Safari
+  }
+}
+
+.wds-swatch {
+  @include v-stack(flex-start, center);
+  flex: 0 0 120px;
+  width: 120px;
+  gap: $x-small-pad;
+}
+
+// The 400 step is the one editable value driving the rest of the row (see
+// ColorScaleRow) — ring it so it reads as the source, not just another stop.
+.wds-swatch--base {
+  .wds-swatch-color {
+    border: 2px solid $grey-800;
+    box-shadow: 0 0 0 2px $white;
+    outline: 2px solid $grey-800;
+  }
+}
+
+.wds-swatch-color {
+  width: 100px;
+  height: 100px;
+  border-radius: $small-medium-radius;
+  border: $light-border;
+}
+
+// The plain $light-border above all but disappears against pure black.
+.wds-swatch-color--outline {
+  border: 1px solid rgba($grey-400, 0.5);
+}
+
+.wds-swatch-step {
+  @include h-stack(center, center);
+  @include item-font();
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  gap: $x-small-pad;
+}
+
+.wds-swatch-base-tag {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  background: $grey-800;
+  color: $white;
+  border-radius: $huge-radius;
+  padding: 1px $small-pad;
+}
+
+.wds-swatch-hex {
+  @include item-font();
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+// Theme Definitions swatches (ThemeDefinitionRow, WebsiteDesignStyleFields.jsx)
+// render their reference text as this input instead of a plain div — typing
+// e.g. "Primary 900" and committing (blur/Enter) re-points that swatch at
+// that color. Reset to look like the plain text it replaces until touched.
+.wds-swatch-hex-input {
+  border: none;
+  background: transparent;
+  padding: 1px 2px;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  width: 100%;
+  cursor: text;
+  border-radius: $small-radius;
+
+  &:hover {
+    background: rgba($grey-800, 0.06);
+  }
+
+  &:focus {
+    outline: none;
+    opacity: 1;
+    background: $white;
+    box-shadow: 0 0 0 1px $grey-400;
+  }
+}
+
+.wds-swatch-family {
+  @include item-font();
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.wds-button-row {
+  @include h-stack(flex-start, center);
+  gap: $medium-pad;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.wds-theme-defs {
+  @include v-stack(flex-start, stretch);
+  gap: $x-large-pad;
+  width: 100%;
+}
+
+.wds-theme-def {
+  @include v-stack(flex-start, stretch);
+  gap: $medium-pad;
+  width: 100%;
+  padding-top: $large-pad;
+  border-top: $light-border;
+}
+
+.wds-theme-def-name {
+  @include gs-font($medium-font, $bold-font-weight, normal);
+}
+
+// Sub-label distinguishing the Neutral row from the Monochromatic row
+// stacked under it (ThemeDefinitionRow, WebsiteDesignStyleFields.jsx) —
+// one step lighter/smaller than .wds-mode-label above it, since it's a
+// second level of grouping under Light/Dark Mode, not a sibling of it.
+.wds-variant-label {
+  @include item-font();
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.6;
+  margin-top: $x-small-pad;
+}

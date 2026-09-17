@@ -26,7 +26,8 @@ import { defaultLayouts, defaultPadding } from "../helpers/Theme";
     toggleMenu,
     alignment,
     style,
-    headerStyle
+    headerStyle,
+    actionStyle
  */
 
 
@@ -54,7 +55,9 @@ export default function GSListPage(props) {
     loading,
     loadingMainText, 
     loadingSubText,
-    searchPage
+    searchPage,
+    actionStyle,
+    sidePanelStyle
   } = props;
   function getRoutes() {
     if (getChildRoutes) {
@@ -127,13 +130,14 @@ export default function GSListPage(props) {
           scrollUpdated={scrollUpdated}
           contentStyle={searchPage?.contentStyle}
           style={searchPage?.style}
+          actionStyle={actionStyle}
         >
           {props.children}
         </GSSearchPage>
       </div>
 
       {getRouter && (
-        <GSSidePanel sidePanelOpen={checkSidePanelOpen()}>
+        <GSSidePanel style={sidePanelStyle} sidePanelOpen={checkSidePanelOpen()}>
           {getRouter && 
           getRouter()}
         </GSSidePanel>

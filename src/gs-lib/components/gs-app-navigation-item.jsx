@@ -13,7 +13,7 @@ import { faExternalLinkSquareAlt } from "@fortawesome/free-solid-svg-icons";
  */
 
 export default function GSAppNavigationItem(props) {
-  const { navItem, itemSelected, activeRoute } = props;
+  const { navItem, itemSelected, activeRoute, activeRouteColor } = props;
   function selectItem() {
     if(navItem.itemSelected)
     {
@@ -36,10 +36,13 @@ export default function GSAppNavigationItem(props) {
   function selectableClass(){
     return navItem.isSelectable ? "selectable" : "";
   }
+  function navStyle(){
+    return isActiveRoute() ? {borderLeft: `4px solid ${activeRouteColor}`, color: activeRouteColor} : {};
+  }
   
   return (
     <gs-app-navigation-item>
-      <div className={`nav-item ${activeRouteClass()} ${selectableClass()} ${navItem.type}`} onClick={selectItem}>
+      <div style={navStyle()} className={`nav-item ${activeRouteClass()} ${selectableClass()} ${navItem.type}`} onClick={selectItem}>
         <div className="label">{navItem.label}</div>
         {navItem.isExternal && (
           <div className="icon">

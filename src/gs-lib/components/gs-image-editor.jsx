@@ -62,8 +62,15 @@ import GSActionBar from "./gs-action-bar";
     minWidth,
     resizeEnabled,
     ratio,
-    style
+    style,
+    theme, 
+    mode
  */
+export const CROP_IMAGE = "crop";
+export const CENTER_IMAGE = "center";
+export const FILL_IMAGE = "fill";
+export const ANONYMOUS = "anonymous";
+export const USE_CREDENTIALS = "use-credentials";
 
 export default function GSImageEditor(props) {
   const {
@@ -80,7 +87,10 @@ export default function GSImageEditor(props) {
     minWidth,
     resizeEnabled,
     ratio,
-    style
+    style,
+    crossOrigin,
+    defaultImageFit = CENTER_IMAGE,
+    imageFailed
   } = props;
 
   const [canvasX, setCanvasX] = useState(startX ? startX : 0);
@@ -97,7 +107,7 @@ export default function GSImageEditor(props) {
   const [ready, setReady] = useState(false);
   const [sourceRatio, setSourceRatio] = useState(0);
 
-  const [fit, setFit] = useState("crop");
+  const [fit, setFit] = useState(ratio? defaultImageFit: CROP_IMAGE );
   const [dropperEnabled, setDropperEnabled] = useState(false);
   const [padding, setPadding] = useState(0);
 
@@ -117,6 +127,14 @@ export default function GSImageEditor(props) {
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     const fullctx = fullcanvas.getContext("2d");
+
+    if (image.naturalWidth === 0 && image.naturalHeight === 0) {
+      return;
+    }
+
+    if (image.width === 0 || image.height === 0) {
+      return;
+    }
 
     const widthImageRatio = image.naturalWidth / image.width;
     const heightImageRatio = image.naturalHeight / image.height;
@@ -164,8 +182,16 @@ export default function GSImageEditor(props) {
 
   const getImageScale = () => {
     const image = sourceEditImage.current;
-    const widthImageScale = image.naturalWidth / image.width;
-    const heightImageScale = image.naturalHeight / image.height;
+    const widthImageScale = image.naturalWidth / imageSize.width;
+    const heightImageScale = image.naturalHeight / imageSize.height;
+    return { width: widthImageScale, height: heightImageScale };
+  };
+
+  const getEditorScale = () => {
+    const editor = editorCanvas.current;
+    const full = fullImageCanvas.current;
+    const widthImageScale = editor.width / full.width;
+    const heightImageScale = editor.height / full.height;
     return { width: widthImageScale, height: heightImageScale };
   };
 
@@ -178,29 +204,29 @@ export default function GSImageEditor(props) {
     cx,
     cy
   ) => {
-    if (fit === "crop") {
-      let x = cx * widthImageRatio
-      let y = cy * heightImageRatio
-      let width = canvas.clientWidth * widthImageRatio
-      let height = canvas.clientHeight * heightImageRatio
+    if (fit === CROP_IMAGE) {
+      let x = cx * widthImageRatio;
+      let y = cy * heightImageRatio;
+      let width = canvas.clientWidth * widthImageRatio;
+      let height = canvas.clientHeight * heightImageRatio;
 
       ctx.drawImage(
         image,
-        x ,
-        y ,
-        width ,
-        height ,
+        x,
+        y,
+        width,
+        height,
         0,
         0,
         canvas.width,
         canvas.height
       );
-    } else if (fit === "fill") {
+    } else if (fit === FILL_IMAGE) {
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     } else if (fit === "center") {
       const natW = image.naturalWidth;
       const natH = image.naturalHeight;
-      const natRatio = natW / natH
+      const natRatio = natW / natH;
       const widthCenterImageRatio = natW / canvas.width;
       const heightCenterImageRatio = natH / canvas.height;
       if (widthCenterImageRatio > heightCenterImageRatio) {
@@ -208,12 +234,12 @@ export default function GSImageEditor(props) {
 
         let doublepad = padding * 2;
 
-        let paddedLeft = 0 + padding
-        let paddedWidth = canvWidth - doublepad
-        let canvHeight = paddedWidth / natRatio
+        let paddedLeft = 0 + padding;
+        let paddedWidth = canvWidth - doublepad;
+        let canvHeight = paddedWidth / natRatio;
         let paddedHeight = canvHeight;
-        let paddedTop  = ((canvas.height - paddedHeight) / 2)
-        
+        let paddedTop = (canvas.height - paddedHeight) / 2;
+
         ctx.drawImage(
           image,
           0,
@@ -226,16 +252,15 @@ export default function GSImageEditor(props) {
           paddedHeight
         );
       } else {
-        let canvHeight = image.naturalHeight / heightCenterImageRatio
+        let canvHeight = image.naturalHeight / heightCenterImageRatio;
 
         let doublepad = padding * 2;
 
         let paddedHeight = canvHeight - doublepad;
-        let paddedTop  = 0 + padding
-        const canvWidth = paddedHeight * natRatio
+        let paddedTop = 0 + padding;
+        const canvWidth = paddedHeight * natRatio;
         let paddedWidth = canvWidth;
-        let paddedLeft = ((canvas.width - paddedWidth) / 2)
-        
+        let paddedLeft = (canvas.width - paddedWidth) / 2;
 
         ctx.drawImage(
           image,
@@ -251,6 +276,10 @@ export default function GSImageEditor(props) {
       }
     }
   };
+
+  const getDimensions = (element) => {
+    return [element.height, element.width]
+  }
 
   const drawFullImage = (
     image,
@@ -272,11 +301,21 @@ export default function GSImageEditor(props) {
         ? canvas.clientHeight
         : image.naturalHeight;
 
-    if (fit === "crop") {
-      if (canvas.clientHeight > image.naturalHeight) {
-        let r = image.naturalHeight / canvas.clientHeight;
-        width = width * r;
+    if (fit === CROP_IMAGE) {
+      let x = cx * widthImageRatio;
+      let y = cy * heightImageRatio;
+
+      const [editorHeight, editorWidth] = getDimensions(editorCanvas.current)
+      const [imageHeight, imageWidth] = getDimensions(image)
+      const heightRatio = editorHeight / imageHeight
+      const widthRatio = editorWidth / imageWidth
+
+      if(image.naturalHeight < minHeight || image.naturalWidth <  minWidth){
+        width = image.naturalWidth * widthRatio
+        height = image.naturalHeight * heightRatio
       }
+    
+
       ctx.drawImage(
         image,
         x,
@@ -288,12 +327,12 @@ export default function GSImageEditor(props) {
         canvas.width,
         canvas.height
       );
-    } else if (fit === "fill") {
+    } else if (fit === FILL_IMAGE) {
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     } else if (fit === "center") {
       const natW = image.naturalWidth;
       const natH = image.naturalHeight;
-      const natRatio = natW / natH
+      const natRatio = natW / natH;
       const widthCenterImageRatio = natW / canvas.width;
       const heightCenterImageRatio = natH / canvas.height;
       if (widthCenterImageRatio > heightCenterImageRatio) {
@@ -301,12 +340,12 @@ export default function GSImageEditor(props) {
 
         let doublepad = padding * 2;
 
-        let paddedLeft = 0 + padding
-        let paddedWidth = canvWidth - doublepad
-        let canvHeight = paddedWidth / natRatio
+        let paddedLeft = 0 + padding;
+        let paddedWidth = canvWidth - doublepad;
+        let canvHeight = paddedWidth / natRatio;
         let paddedHeight = canvHeight;
-        let paddedTop  = ((canvas.height - paddedHeight) / 2)
-        
+        let paddedTop = (canvas.height - paddedHeight) / 2;
+
         ctx.drawImage(
           image,
           0,
@@ -319,16 +358,15 @@ export default function GSImageEditor(props) {
           paddedHeight
         );
       } else {
-        let canvHeight = image.naturalHeight / heightCenterImageRatio
+        let canvHeight = image.naturalHeight / heightCenterImageRatio;
 
         let doublepad = padding * 2;
 
         let paddedHeight = canvHeight - doublepad;
-        let paddedTop  = 0 + padding
-        const canvWidth = paddedHeight * natRatio
+        let paddedTop = 0 + padding;
+        const canvWidth = paddedHeight * natRatio;
         let paddedWidth = canvWidth;
-        let paddedLeft = ((canvas.width - paddedWidth) / 2)
-        
+        let paddedLeft = (canvas.width - paddedWidth) / 2;
 
         ctx.drawImage(
           image,
@@ -450,22 +488,36 @@ export default function GSImageEditor(props) {
     const image = sourceEditImage.current;
     let newHeight = canvasHeight + movementY;
     let newWidth = canvasWidth + movementX;
+    const scale = getEditorScale();
+    const minScaledHeight = minHeight * scale.height
+    const minScaledWidth = minWidth * scale.width
     if (ratio) {
       if (sourceRatio < ratio) {
         newHeight = newWidth / ratio;
       } else {
         newWidth = newHeight * ratio;
       }
+      if(newHeight  < minScaledHeight ){
+        setCanvasHeight(minScaledHeight);
+         setCanvasWidth(minScaledHeight * ratio);
+        return
+      }
+
+      if(newWidth < minScaledWidth ){
+        setCanvasHeight(minScaledWidth / ratio);
+         setCanvasWidth(minScaledWidth);
+        return
+      }
     }
-    const scale = getImageScale();
+    
     if (
-      (newHeight * scale.height >= minHeight || minHeight === undefined) &&
+      (newHeight >= minScaledHeight || minHeight === undefined) &&
       newHeight + canvasY < image.height
     ) {
       setCanvasHeight(newHeight);
     }
     if (
-      (newWidth * scale.height >= minWidth || minWidth === undefined) &&
+      (newWidth  >= minScaledWidth || minWidth === undefined) &&
       newWidth + canvasX < image.width
     ) {
       setCanvasWidth(newWidth);
@@ -503,6 +555,7 @@ export default function GSImageEditor(props) {
   }, [ready]);
 
   const imageLoaded = e => {
+    setReady(false);
     const scale = getImageScale();
     let initialWidth = croppedWidth
       ? croppedWidth / scale.width
@@ -531,6 +584,9 @@ export default function GSImageEditor(props) {
     }
     setCanvasWidth(initialWidth);
     setCanvasHeight(initialHeight);
+    if (fit === CENTER_IMAGE) {
+      prepCanvas();
+    }
   };
 
   const imageSize = getImageSize();
@@ -540,23 +596,27 @@ export default function GSImageEditor(props) {
     setReady(false);
   };
 
+  const prepCanvas = () => {
+    let initialWidth = editor?.current?.clientWidth;
+    let initialHeight = initialWidth / ratio;
+    setCanvasWidth(initialWidth);
+    setCanvasHeight(initialHeight);
+    setCanvasX(0);
+    setCanvasY(0);
+  };
+
   const setImageFit = fit => {
-    if (fit === "crop") {
+    setFit(fit);
+    if (fit === CROP_IMAGE) {
       sourceEditImage.current.src = source;
     } else {
-      let initialWidth = editor?.current?.clientWidth;
-      let initialHeight = initialWidth / ratio;
-      setCanvasWidth(initialWidth);
-      setCanvasHeight(initialHeight);
-      setCanvasX(0);
-      setCanvasY(0);
+      prepCanvas();
     }
-    setFit(fit);
     setReady(false);
   };
 
   const resizeable = () => {
-    return resizeEnabled && fit === "crop";
+    return resizeEnabled && fit === CROP_IMAGE;
   };
 
   const getBackgrounds = () => {
@@ -595,18 +655,27 @@ export default function GSImageEditor(props) {
     return backgrounds;
   };
 
-  const padOptions = [{pad: 16, label: "S"},{pad: 36, label: "M"},{pad: 56, label: "L"}, {pad: 0, label: "None"}]
+  const padOptions = [
+    { pad: 16, label: "S" },
+    { pad: 36, label: "M" },
+    { pad: 56, label: "L" },
+    { pad: 0, label: "None" }
+  ];
 
   const getPaddingActions = () => {
     return padOptions.map?.((option, index) => {
       return {
         title: padOptions[index]?.label,
-        type: ` ${padding === padOptions[index].pad ? "black-border" : "white transparent-border"}`,
+        type: ` ${
+          padding === padOptions[index].pad
+            ? "black-border"
+            : "white transparent-border"
+        }`,
         actionClick: () => {
           setPadding(padOptions[index].pad);
           setReady(false);
         }
-      }
+      };
     });
   };
 
@@ -614,29 +683,29 @@ export default function GSImageEditor(props) {
     let options = [
       {
         title: "Crop",
-        type: ` mobile-icon ${fit === "crop" ? "black-border" : "white"}`,
+        type: ` mobile-icon ${fit === CROP_IMAGE ? "black-border" : "white"}`,
         actionClick: () => {
-          setImageFit("crop");
+          setImageFit(CROP_IMAGE);
         },
         actionIcon: faCrop
       },
       {
         title: "Fill",
         type: ` mobile-icon ${
-          fit === "fill" ? "black-border" : "white transparent-border"
+          fit === FILL_IMAGE ? "black-border" : "white transparent-border"
         }`,
         actionClick: () => {
-          setImageFit("fill");
+          setImageFit(FILL_IMAGE);
         },
         actionIcon: faExpandArrowsAlt
       },
       {
         title: "Center",
         type: ` mobile-icon ${
-          fit === "center" ? "black-border" : "white transparent-border"
+          fit === CENTER_IMAGE ? "black-border" : "white transparent-border"
         }`,
         actionClick: () => {
-          setImageFit("center");
+          setImageFit(CENTER_IMAGE);
         },
         actionIcon: faCompressArrowsAlt
       }
@@ -662,6 +731,8 @@ export default function GSImageEditor(props) {
           src={source}
           onLoad={imageLoaded}
           ref={sourceEditImage}
+          crossOrigin={crossOrigin}
+          onError={() => {imageFailed?.()}}
         ></img>
         <canvas
           className={`${fit} ${dropperEnabled ? "dropper" : ""}`}
@@ -700,7 +771,7 @@ export default function GSImageEditor(props) {
           <GSActionBar header="Image Fit" pageActions={getFitOptions()} />
         </div>
       ) : null}
-      {fit === "center" ? (
+      {fit === CENTER_IMAGE ? (
         <div className="background-colors">
           <GSActionBar header="Spacing" pageActions={getPaddingActions()} />
         </div>

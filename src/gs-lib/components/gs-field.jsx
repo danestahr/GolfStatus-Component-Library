@@ -4,7 +4,7 @@ import "./gs-field.scss";
 import GSInput from "../components/gs-input";
 import { isLink } from "../helpers/RegexHelper";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamation, faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
+import { faExclamationCircle } from "@fortawesome/free-solid-svg-icons";
 
 /**
  * a field that has an input, description, label, warnings, and validation built in, primarily used in forms.
@@ -64,6 +64,7 @@ export default function GSField(props) {
   const {
     label,
     value,
+    externalValue,
     description,
     validation,
     isEditable,
@@ -92,8 +93,16 @@ export default function GSField(props) {
     let valid = true;
     let warn = false;
     if (
-      !required &&
+      !required && !customView &&
       (value === "" || value === undefined || value === null)
+    ) {
+      setWarning(false)
+      return false;
+    }
+    if (
+      !required && customView &&
+      externalValue !== undefined &&
+      (externalValue === "" || externalValue === null)
     ) {
       setWarning(false)
       return false;
@@ -109,7 +118,7 @@ export default function GSField(props) {
     if (valid) {
       valid =
         validation && validation.isValid
-          ? validation.isValid(value)
+          ? validation.isValid((customView ? externalValue : value) ?? "")
           : true;
       warn = valid ? false : validation.invalidLabel;
     }
@@ -128,10 +137,12 @@ export default function GSField(props) {
   };
 
   const requiredCheck = () => {
-    if (required) {
-      return value !== "";
+    if (!required) return true;
+    if (customView) {
+      if (externalValue !== undefined) return externalValue !== "";
+      return true;
     }
-    return true;
+    return (value ?? "") !== "";
   };
 
   const valueClicked = e => {
@@ -177,6 +188,7 @@ export default function GSField(props) {
           textValue={value}
           onBlur={inputTouched}
           style={style}
+          name={label}
         ></GSInput>
       );
     }

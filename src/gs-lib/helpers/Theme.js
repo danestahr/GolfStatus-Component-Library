@@ -1,3 +1,5 @@
+import { height } from "@fortawesome/free-solid-svg-icons/fa0";
+
 export const brightGreen = "#8be200";
 export const linkGreen = "#88e400";
 export const purple = "#8f68dd";
@@ -18,7 +20,7 @@ export const cyan800 = "#003B3E";
 export const cyan900 = "#001E1F";
 
 //green
-export const green900 = "#001F06"
+export const green900 = "#001F06";
 export const green800 = "#003E0C";
 export const green700 = "#007C19";
 export const green600 = "#2DA145";
@@ -66,6 +68,14 @@ export const grey200 = "#dcdcdc";
 export const grey100 = "#eeeeee";
 export const grey50 = "#F3f3f3";
 export const white = "#fff";
+
+export const CENTER = "center";
+export const START = "flex-start";
+export const END = "flex-end";
+export const SPACE_BETWEEN = "space-between";
+export const STRETCH = "stretch";
+export const SPACE_AROUND = "space-around";
+export const SPACE_EVENLY = "space-evenly";
 
 //padding
 const noPad = "0";
@@ -476,7 +486,7 @@ export const defaultTheme = {
 const applyPadding = (pad, side) => {
   const padding = {
     top: {
-      paddintTop: pad,
+      paddingTop: pad,
       boxSizing: "border-box"
     },
     right: {
@@ -670,12 +680,10 @@ export const defaultBorders = {
     borderColor: grey200,
     borderWidth: "1px",
     borderStyle: "solid",
-    themed: (mode) => {
-      return mode === "light" ?  {borderColor: grey200,
-      borderWidth: "1px",
-      borderStyle: "solid"} : {borderColor: grey700,
-        borderWidth: "1px",
-        borderStyle: "solid"}
+    themed: mode => {
+      return mode === "light"
+        ? { borderColor: grey200, borderWidth: "1px", borderStyle: "solid" }
+        : { borderColor: grey700, borderWidth: "1px", borderStyle: "solid" };
     }
   }
 };
@@ -711,18 +719,64 @@ export const defaultTypography = {
     fontWeight: boldFontWeight,
     lineHeight: squareLineHeight
   },
-  headline2: { fontSize: xLargeFont, fontWeight: boldFontWeight, lineHeight: squareLineHeight },
-  headline3: { fontSize: largeFont, fontWeight: boldFontWeight, lineHeight: compactLineHeight },
-  headline4: { fontSize: mediumFont, fontWeight: boldFontWeight, lineHeight: compactLineHeight },
-  headline5: { fontSize: smallFont, fontWeight: boldFontWeight, lineHeight: compactLineHeight },
-  mediumBoldBody: {fontSize: mediumFont, fontWeight: boldFontWeight, lineHeight: regularLineHeight},
-  mediumBody: {fontSize: mediumFont, fontWeight: regularFontWeight, lineHeight: regularLineHeight},
-  xSmallBodyBold: {fontSize: xSmallFont, fontWeight: boldFontWeight, lineHeight: regularLineHeight},
-  xSmallBody: {fontSize: xSmallFont, fontWeight: regularFontWeight, lineHeight: regularLineHeight},
-  body: { fontSize: smallFont, fontWeight: boldFontWeight, lineHeight: regularLineHeight },
-  bodyRegular: { fontSize: smallFont, fontWeight: regularFontWeight, lineHeight: regularLineHeight, withOpacity : (opacity) => {
-    return { fontSize: smallFont, lineHeight: regularLineHeight, fontWeight: regularFontWeight, opacity: opacity ?? .7}
-  } },
+  headline2: {
+    fontSize: xLargeFont,
+    fontWeight: boldFontWeight,
+    lineHeight: squareLineHeight
+  },
+  headline3: {
+    fontSize: largeFont,
+    fontWeight: boldFontWeight,
+    lineHeight: compactLineHeight
+  },
+  headline4: {
+    fontSize: mediumFont,
+    fontWeight: boldFontWeight,
+    lineHeight: compactLineHeight
+  },
+  headline5: {
+    fontSize: smallFont,
+    fontWeight: boldFontWeight,
+    lineHeight: compactLineHeight
+  },
+  mediumBoldBody: {
+    fontSize: mediumFont,
+    fontWeight: boldFontWeight,
+    lineHeight: regularLineHeight
+  },
+  mediumBody: {
+    fontSize: mediumFont,
+    fontWeight: regularFontWeight,
+    lineHeight: regularLineHeight
+  },
+  xSmallBodyBold: {
+    fontSize: xSmallFont,
+    fontWeight: boldFontWeight,
+    lineHeight: regularLineHeight
+  },
+  xSmallBody: {
+    fontSize: xSmallFont,
+    fontWeight: regularFontWeight,
+    lineHeight: regularLineHeight
+  },
+  body: {
+    fontSize: smallFont,
+    fontWeight: boldFontWeight,
+    lineHeight: regularLineHeight
+  },
+  bodyRegular: {
+    fontSize: smallFont,
+    fontWeight: regularFontWeight,
+    lineHeight: regularLineHeight,
+    withOpacity: opacity => {
+      return {
+        fontSize: smallFont,
+        lineHeight: regularLineHeight,
+        fontWeight: regularFontWeight,
+        opacity: opacity ?? 0.7
+      };
+    }
+  },
   overLine1: {
     fontSize: xSmallFont,
     letterSpacing: smallMediumLetterSpacing,
@@ -744,7 +798,226 @@ export const defaultTypography = {
   },
   lowercase: {
     textTransform: "lowercase"
+  }
+};
+
+export const NORMAL_BUTTON = {
+  style: {
+    height: "40px",
+    padding: `${mediumPad}px ${mediumLargePad}px`,
+    boxSizing: "border-box"
   },
+  titleStyle: {
+    fontSize: xSmallFont, 
+    fontWeight: boldFontWeight,
+    letterSpacing: mediumLetterSpacing,
+    lineHeight: spaciousLineHeight
+  }
+};
+export const SMALL_BUTTON = {
+  style: {
+    height: "28px",
+    padding: `${mediumPad}px ${mediumLargePad}px`,
+    boxSizing: "border-box"
+  },
+  titleStyle: {
+    fontSize: xxSmallFont, 
+    fontWeight: boldFontWeight,
+    letterSpacing: mediumLetterSpacing,
+    lineHeight: spaciousLineHeight
+  }
+};
+export const PILL = {
+  style: {
+    borderRadius: "200px"
+  },
+};
+
+export const defaultButtonStyles = {
+  primary: {
+    style: {
+      ...defaultBorders.mediumLargeBorderRadius,
+      backgroundColor: black,
+      height: 40,
+      color: white
+    },
+    withTheme(theme = {}, mode = "light") {
+      return { ...this, style:  {...this.style, ...theme?.primaryContainer?.[mode]} };
+    },
+    withStyle(style){
+      return {...this, style: {...this.style,...style}}
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  },
+  secondary: {
+    style: {
+      ...defaultBorders.mediumLargeBorderRadius,
+      backgroundColor: black,
+      color: white,
+      height: 40,
+    },
+    withTheme(theme = {}, mode = "light"){
+      return { ...this, style:  {...this.style, ...theme?.secondaryContainer?.[mode]} };
+    },
+    withStyle(style){
+      return {...this, style: {...this.style,...style}}
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  },
+  tertiary: {
+    style: {
+      ...defaultBorders.mediumLargeBorderRadius,
+      backgroundColor: brightGreen,
+      color: white,
+      height: 40,
+    },
+    withTheme(theme = {}, mode = "light"){
+      return { ...this, style:  {...this.style, ...theme?.tertiaryContainer?.[mode]} };
+    },
+    withStyle(style){
+      return {...this, style: {...this.style,...style}}
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  },
+  error: {
+    style: {
+      ...defaultBorders.mediumLargeBorderRadius,
+      backgroundColor: orange400,
+      color: white,
+      height: 40,
+    },
+    withTheme(theme = {}, mode = "light"){
+      return { ...this, style:  {...this.style, ...theme?.errorContainer?.[mode]} };
+    },
+    withStyle(style){
+      return {...this, style: {...this.style,...style}}
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  },
+  text: {
+    style: {
+      ...defaultPadding.noPad,
+      height: "auto"
+    },
+    titleStyle: {
+      ...defaultTypography.xSmallBody,
+      ...defaultTypography.capitalize
+    },
+    hoverType: "underline",
+    withStyle(titleStyle = {}){
+      return {
+        ...this,
+        titleStyle: { ...this.titleStyle, ...titleStyle }
+      };
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  },
+  transparent: {
+    style: {
+      ...defaultBorders.mediumLargeBorderRadius,
+      backgroundColor: black,
+      color: white,
+      height: 40,
+    },
+    withTheme(theme = {}, mode = "light"){
+      return { ...this, textStyle:  {...this.textStyle, ...theme?.primary?.[mode]} };
+    },
+    withStyle(style){
+      return {...this, style: {...this.style,...style}}
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  },
+  outline: {
+    style: {
+      ...defaultBorders.mediumLargeBorderRadius,
+      height: 40,
+      border: "2px solid"
+    },
+    withTheme(theme = {}, mode = "light"){
+      return { ...this, style:  {...this.style, ...theme?.primaryContainer?.[mode]} };
+    },
+    withStyle(style){
+      return {...this, style: {...this.style,...style}}
+    },
+    withTitleStyle(style){
+      return {...this, titleStyle: {...this.titleStyle,...style}}
+    },
+    withButtonStyle(buttonStyle){
+      return {...this.withStyle(buttonStyle.style).withTitleStyle(buttonStyle.titleStyle)}
+    },
+    disabled(disabled){
+      if(!disabled){
+        return this
+      }
+    return {...this.withStyle({opacity: .5})}
+    }
+  }
 };
 
 export const defaultLayouts = {
@@ -820,6 +1093,26 @@ export const defaultLayouts = {
   },
   blurBackground: {
     backdropFilter: "blur(8px)"
+  },
+  grid: {
+    display: "inline-grid",
+    horizontal: (gridColumns = 1) => {
+      return {
+        display: "inline-grid",
+        gridTemplateColumns: `repeat(${gridColumns}, 1fr [col-start])`
+      };
+    },
+    vertical: (gridTemplateRows = 1) => {
+      return {
+        display: "inline-grid",
+        gridTemplateRows: `repeat(${gridTemplateRows}, 1fr [row-start])`
+      };
+    }
+  },
+  gridItem: {
+    columnStart: (col, span = 1) => {
+      return { gridColumnStart: `${col}`, gridColumnEnd: `span ${span}` };
+    }
   }
 };
 
@@ -853,30 +1146,32 @@ export const invertSyle = style => {
   return { color: style?.backgroundColor, backgroundColor: style?.color };
 };
 
-
 /**
  * inverts the background and the color definition for the given style
  *
  * @param {string} hex the hex value for the color without the alpha channel
  *  @param {number} alpha the alpha value from 0 to 1
- * 
+ *
  * @return {object} a style definition with that gradient as a background
  */
-export const addAlphaChannel = (hex, alpha = 1) =>{
-  if(!hex){
-    return hex
+export const addAlphaChannel = (hex, alpha = 1) => {
+  if (!hex) {
+    return hex;
   }
   // Remove the # if present
-  hex = hex.replace(/^#/, '');
+  hex = hex.replace(/^#/, "");
 
   // Check if the hex code is valid
   if (hex.length !== 3 && hex.length !== 6) {
-    return hex
+    return hex;
   }
 
   // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
   if (hex.length === 3) {
-    hex = hex.split('').map(char => char + char).join('');
+    hex = hex
+      .split("")
+      .map(char => char + char)
+      .join("");
   }
 
   // Parse the hex values into decimal
@@ -885,5 +1180,351 @@ export const addAlphaChannel = (hex, alpha = 1) =>{
   const b = parseInt(hex.slice(4, 6), 16);
 
   // Return the RGB values
-  return `rgba(${r}, ${g}, ${b}, ${alpha})` ;
-}
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+/**
+ * removes the undefined definitions from a style so they don't clear the style they are merged into
+ *
+ * @param {object} style the style definition to clean up
+ * @return {object} the style definition without empty values
+ */
+const definedStyles = style =>
+  Object.fromEntries(
+    Object.entries(style ?? {}).filter(([, value]) => value != null)
+  );
+
+/**
+ * banner styles for the gs-page-banner. every style has the four style definitions the banner
+ * renders with and the functions used to theme them
+ *
+ * @typedef bannerStyle
+ * @type {object}
+ * @property {object} bannerStyle style for the banner element
+ * @property {object} contentStyle style for the content of the banner
+ * @property {object} actionBarStyle style for the action bar in the banner content
+ * @property {object} navigationStyle style for the notification navigation in the banner content
+ * @property {string} progressColor color of the banner timer
+ * @property {function} withTheme (theme, mode) the banner style with the theme applied
+ * @property {function} withStyle (style) the banner style with the style merged into bannerStyle
+ * @property {function} withContentStyle (style) the banner style with the style merged into contentStyle
+ * @property {function} withActionBarStyle (style) the banner style with the style merged into actionBarStyle
+ * @property {function} withNavigationStyle (style) the banner style with the style merged into navigationStyle
+ * @property {function} withProgressColor (color) the banner style with the color as the progressColor
+ * @property {function} withBannerStyle (bannerStyle) the banner style merged with another banner style
+ */
+
+//the alpha channel of the background of the banner content. the color of the background is used
+//at full opacity for the timer so it reads over the content it is progressing across
+const bannerBackgroundAlpha = 0.3;
+
+/**
+ * the content style of a banner with the alpha channel added to its background
+ *
+ * @param {object} style the style of the content of the banner
+ * @return {object} the style with a transparent background
+ */
+const bannerContentStyle = (style = {}) => {
+  return {
+    ...style,
+    ...definedStyles({
+      backgroundColor: addAlphaChannel(
+        style?.backgroundColor,
+        bannerBackgroundAlpha
+      )
+    })
+  };
+};
+
+//the styles of the banner that the theme container color is applied to. the action bar and the
+//navigation sit on the content of the banner so they only take the foreground color
+const bannerStyleFunctions = {
+  /**
+   * the banner style with a theme applied. the banner takes the surface of the style, the content
+   * takes the container of the style with an alpha channel added to its background, the timer
+   * takes the container background, and the action bar and navigation take the container color
+   *
+   * @param {defaultTheme} theme the theme to style the banner with
+   * @param {string} mode the mode of the theme [light, dark]
+   * @return {bannerStyle} the banner style with the theme applied
+   */
+  withTheme(theme = {}, mode = "light") {
+    const container = theme?.[this.themeContainer]?.[mode];
+    return {
+      ...this,
+      bannerStyle: { ...this.bannerStyle, ...theme?.[this.themeSurface]?.[mode] },
+      contentStyle: { ...this.contentStyle, ...bannerContentStyle(container) },
+      progressColor: container?.backgroundColor ?? this.progressColor,
+      actionBarStyle: {
+        ...this.actionBarStyle,
+        ...definedStyles({ color: container?.color })
+      },
+      navigationStyle: {
+        ...this.navigationStyle,
+        ...definedStyles({ color: container?.color })
+      }
+    };
+  },
+  withStyle(style) {
+    return { ...this, bannerStyle: { ...this.bannerStyle, ...style } };
+  },
+  withContentStyle(style) {
+    return { ...this, contentStyle: { ...this.contentStyle, ...style } };
+  },
+  withActionBarStyle(style) {
+    return { ...this, actionBarStyle: { ...this.actionBarStyle, ...style } };
+  },
+  withNavigationStyle(style) {
+    return { ...this, navigationStyle: { ...this.navigationStyle, ...style } };
+  },
+  withProgressColor(progressColor) {
+    return { ...this, progressColor: progressColor ?? this.progressColor };
+  },
+  withBannerStyle(bannerStyle) {
+    return {
+      ...this.withStyle(bannerStyle?.bannerStyle)
+        .withContentStyle(bannerStyle?.contentStyle)
+        .withActionBarStyle(bannerStyle?.actionBarStyle)
+        .withNavigationStyle(bannerStyle?.navigationStyle)
+        .withProgressColor(bannerStyle?.progressColor)
+    };
+  }
+};
+
+/**
+ * a banner style with the functions used to theme it
+ *
+ * @param {object} style the banner, content, action bar, and navigation styles
+ * @param {string} themeContainer the theme container withTheme styles the content with
+ * @param {string} themeSurface the theme surface withTheme styles the banner with
+ * @return {bannerStyle} a style definition for the gs-page-banner
+ */
+const bannerStyle = (
+  style = {},
+  themeContainer = "primaryContainer",
+  themeSurface = "surface"
+) => {
+  const background = style?.contentStyle?.backgroundColor;
+  //a background that isn't a color of its own doesn't give the timer a color to count down with
+  const progressColor =
+    style?.progressColor ?? (background === "transparent" ? undefined : background);
+
+  return {
+    bannerStyle: { ...style?.bannerStyle },
+    contentStyle: bannerContentStyle(style?.contentStyle),
+    actionBarStyle: { ...style?.actionBarStyle },
+    navigationStyle: { ...style?.navigationStyle },
+    progressColor,
+    themeContainer,
+    themeSurface,
+    ...bannerStyleFunctions
+  };
+};
+
+export const defaultBannerStyles = {
+  primary: bannerStyle(
+    {
+      contentStyle: { backgroundColor: black, color: black }
+    },
+    "primaryContainer"
+  ),
+  secondary: bannerStyle(
+    {
+      contentStyle: { backgroundColor: cyan700, color: black }
+    },
+    "secondaryContainer"
+  ),
+  tertiary: bannerStyle(
+    {
+      contentStyle: { backgroundColor: brightGreen, color: black }
+    },
+    "tertiaryContainer"
+  ),
+  error: bannerStyle(
+    {
+      contentStyle: { backgroundColor: orange400, color: black }
+    },
+    "errorContainer"
+  ),
+  floating: bannerStyle(
+    {
+      bannerStyle: { ...defaultPadding.mediumPad },
+      contentStyle: {
+        ...defaultBorders.mediumLargeBorderRadius,
+        ...defaultShadows.firstLayerShadow,
+        backgroundColor: white,
+        color: grey800
+      }
+    },
+    "surfaceContainerHigh",
+    "background"
+  ),
+  transparent: bannerStyle(
+    {
+      bannerStyle: { backgroundColor: "transparent" },
+      contentStyle: { backgroundColor: "transparent" }
+    },
+    "primary",
+    null
+  )
+};
+
+//the parts of a react-select that can be styled with a theme style definition
+export const selectStyleParts = [
+  "container",
+  "control",
+  "controlFocused",
+  "controlDisabled",
+  "valueContainer",
+  "input",
+  "placeholder",
+  "singleValue",
+  "multiValue",
+  "multiValueLabel",
+  "multiValueRemove",
+  "indicatorsContainer",
+  "indicatorSeparator",
+  "dropdownIndicator",
+  "clearIndicator",
+  "menu",
+  "menuPortal",
+  "menuList",
+  "option",
+  "optionFocused",
+  "optionSelected",
+  "optionDisabled",
+  "noOptionsMessage",
+  "loadingMessage",
+  "groupHeading"
+];
+
+/**
+ * maps a theme style definition to the styles object react-select needs to style a select
+ *
+ * the style can be a theme style (defaultTheme.surface.light) which is mapped to every part of
+ * the select, or an object of theme styles keyed by the part of the select they style
+ * (see selectStyleParts). any css definitions at the root of the object, or on a base key, are
+ * used as the style the rest of the select is mapped from
+ *
+ * @param {object} customStyles a theme style, or theme styles keyed by select part
+ * @return {object} a react-select styles definition
+ */
+export const getSelectStyles = (customStyles = {}) => {
+  const { base, ...rest } = customStyles ?? {};
+
+  const parts = {};
+  const rootStyle = {};
+  Object.entries(rest).forEach(([key, value]) => {
+    if (selectStyleParts.includes(key)) {
+      parts[key] = value;
+      return;
+    }
+    rootStyle[key] = value;
+  });
+
+  const themeStyle = { ...rootStyle, ...base };
+  const { color, backgroundColor, borderColor } = themeStyle;
+
+  const text = definedStyles({ color });
+  const surface = definedStyles({ backgroundColor, color, borderColor });
+  const muted = definedStyles({ color: addAlphaChannel(color, 0.7) });
+  const placeholder = definedStyles({ color: addAlphaChannel(color, 0.5) });
+  const focused = definedStyles({
+    backgroundColor: addAlphaChannel(color, 0.08)
+  });
+  const selected = definedStyles({
+    backgroundColor: addAlphaChannel(color, 0.14)
+  });
+  const disabled = definedStyles({
+    backgroundColor: addAlphaChannel(color, 0.05),
+    color: addAlphaChannel(color, 0.4)
+  });
+  const inverted = definedStyles(invertSyle(themeStyle));
+
+  //the mapped style for a part of the select, overridden by anything sent in for that part
+  const partStyle = (part, style) => ({ ...style, ...parts?.[part] });
+
+  return {
+    container: provided => ({ ...provided, ...partStyle("container", text) }),
+    control: (provided, state) => ({
+      ...provided,
+      ...partStyle("control", surface),
+      ...(state?.isFocused
+        ? partStyle("controlFocused", definedStyles({ borderColor }))
+        : {}),
+      ...(state?.isDisabled ? partStyle("controlDisabled", disabled) : {})
+    }),
+    valueContainer: provided => ({
+      ...provided,
+      ...partStyle("valueContainer", text)
+    }),
+    input: provided => ({ ...provided, ...partStyle("input", text) }),
+    placeholder: provided => ({
+      ...provided,
+      ...partStyle("placeholder", placeholder)
+    }),
+    singleValue: provided => ({
+      ...provided,
+      ...partStyle("singleValue", text)
+    }),
+    multiValue: provided => ({
+      ...provided,
+      ...partStyle("multiValue", inverted)
+    }),
+    multiValueLabel: provided => ({
+      ...provided,
+      ...partStyle("multiValueLabel", definedStyles({ color: backgroundColor }))
+    }),
+    multiValueRemove: provided => ({
+      ...provided,
+      ...partStyle("multiValueRemove", {
+        ...definedStyles({ color: addAlphaChannel(backgroundColor, 0.7) }),
+        ":hover": {
+          backgroundColor: "unset",
+          ...definedStyles({ color: backgroundColor })
+        }
+      })
+    }),
+    indicatorsContainer: provided => ({
+      ...provided,
+      ...partStyle("indicatorsContainer", text)
+    }),
+    indicatorSeparator: provided => ({
+      ...provided,
+      ...partStyle(
+        "indicatorSeparator",
+        definedStyles({ backgroundColor: addAlphaChannel(color, 0.2) })
+      )
+    }),
+    dropdownIndicator: provided => ({
+      ...provided,
+      ...partStyle("dropdownIndicator", text)
+    }),
+    clearIndicator: provided => ({
+      ...provided,
+      ...partStyle("clearIndicator", text)
+    }),
+    menu: provided => ({ ...provided, ...partStyle("menu", surface) }),
+    menuPortal: provided => ({ ...provided, ...partStyle("menuPortal", {}) }),
+    menuList: provided => ({ ...provided, ...partStyle("menuList", text) }),
+    option: (provided, state) => ({
+      ...provided,
+      ...partStyle("option", { backgroundColor: "transparent", ...text }),
+      ...(state?.isFocused ? partStyle("optionFocused", focused) : {}),
+      ...(state?.isSelected ? partStyle("optionSelected", selected) : {}),
+      ...(state?.isDisabled ? partStyle("optionDisabled", muted) : {})
+    }),
+    noOptionsMessage: provided => ({
+      ...provided,
+      ...partStyle("noOptionsMessage", muted)
+    }),
+    loadingMessage: provided => ({
+      ...provided,
+      ...partStyle("loadingMessage", muted)
+    }),
+    groupHeading: provided => ({
+      ...provided,
+      ...partStyle("groupHeading", muted)
+    })
+  };
+};

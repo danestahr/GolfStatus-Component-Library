@@ -59,14 +59,10 @@ gs-file-select-item {
       background: $grey-100;
       .icon {
         font-size: $large-display-font;
+        color: $green;
       }
       .name {
         @include gs-font($x-small-font, unset, unset);
-      }
-      &.excel {
-        .icon {
-          color: $green;
-        }
       }
     }
   }

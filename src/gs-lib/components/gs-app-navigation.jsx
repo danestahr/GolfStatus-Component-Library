@@ -43,7 +43,8 @@ export default function GSAppNavigation(props) {
     history,
     headerClicked,
     activeRoute,
-    style
+    style,
+    activeRouteColor
   } = props;
   
   function backButtonClicked(item) {
@@ -85,6 +86,7 @@ export default function GSAppNavigation(props) {
               itemSelected={itemSelected}
               navItem={navItem}
               activeRoute={activeRoute}
+              activeRouteColor={activeRouteColor}
             ></GSAppNavigationItem>
           )}
           type="vertical"

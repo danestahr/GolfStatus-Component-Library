@@ -48,7 +48,8 @@ export default function GSSearchPage(props) {
     style,
     headerStyle,
     scrollUpdated,
-    contentStyle
+    contentStyle,
+    actionStyle
   } = props;
 
   const getInfiniteList = () => {
@@ -91,9 +92,13 @@ export default function GSSearchPage(props) {
         pageActions={pageActions}
         headerStyle={headerStyle}
       >
-        <page-content  style={contentStyle} class={`${sidePanelClass} align-${alignment ?? "left"}`}>
+        <page-content
+          style={contentStyle}
+          class={`${sidePanelClass} align-${alignment ?? "left"}`}
+        >
           {defaultSearch && (
             <GSActionBar
+              style={{ ...actionStyle }}
               header={<div className="search">{defaultSearch}</div>}
               pageActions={searchActions}
             ></GSActionBar>

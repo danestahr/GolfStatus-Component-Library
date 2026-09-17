@@ -5,7 +5,6 @@ $max-text-width: 480px;
 gs-empty-list {
   @include v-stack(center, center);
   gap: $xx-large-pad;
-  padding: 120px $x-large-pad;
   .messaging {
     @include v-stack(center, center);
     gap: $medium-large-pad;

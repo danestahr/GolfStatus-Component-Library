@@ -20,6 +20,7 @@ import OrdersFormsHubPage from './pages/orders-forms/OrdersFormsHubPage.jsx'
 import SponsorsListPage from './pages/orders-forms/SponsorsListPage.jsx'
 import TeamsListPage from './pages/orders-forms/TeamsListPage.jsx'
 import EventSitePackagesListPage from './pages/orders-forms/EventSitePackagesListPage.jsx'
+import EventWebsitePage from './pages/event-site/EventWebsitePage.jsx'
 
 // To add a new prototype page:
 // 1. Create the file in src/pages/
@@ -39,15 +40,30 @@ function ScrollToTop({ containerRef }) {
 }
 
 export default function App() {
-  const mainRef = useRef(null)
-
   return (
     <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
+  )
+}
+
+// The Event Website page (opened in its own tab from "View Website" on the
+// Event Site & Packages hub — see EventSitePreviewCard.jsx) is a preview of
+// what a registrant sees on the public site, so it never gets the admin
+// sidebar. useLocation has to run inside <BrowserRouter>, hence this being
+// split out from App() itself.
+function AppShell() {
+  const mainRef = useRef(null)
+  const location = useLocation()
+  const isStandalonePage = location.pathname.startsWith('/event-site')
+
+  return (
+    <>
       <ScrollToTop containerRef={mainRef} />
       <div style={{ display: 'flex', height: '100vh' }}>
 
         {/* Sidebar nav */}
-        <nav style={{
+        {!isStandalonePage && <nav style={{
           width: 300, background: '#111', padding: '24px 16px',
           display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0,
         }}>
@@ -69,10 +85,10 @@ export default function App() {
           <NavItem to="/teams" label="Players & Teams" />
           <NavItem to="/sponsors" label="Sponsors" />
           <NavItem to="/orders" label="Orders & Payouts" />
-        </nav>
+        </nav>}
 
         {/* Page content */}
-        <main ref={mainRef} style={{ flex: 1, background: '#f7f7f7', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <main ref={mainRef} style={{ flex: 1, background: isStandalonePage ? '#fff' : '#f7f7f7', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <Routes>
             <Route path="/" element={<InvoiceListPage />} />
             <Route path="/invoices" element={<InvoiceListPage />} />
@@ -96,14 +112,16 @@ export default function App() {
             <Route path="/orders-forms/event-site-packages/forms/:formId" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/forms/:formId/responses" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/homepage" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/website-design-style" element={<EventSitePackagesListPage />} />
             <Route path="/orders" element={<OrdersDraft1Page />} />
             <Route path="/orders/:id" element={<OrdersDraft1Page />} />
             <Route path="/orders/:id/responses" element={<OrdersDraft1Page />} />
+            <Route path="/event-site" element={<EventWebsitePage />} />
           </Routes>
         </main>
 
       </div>
-    </BrowserRouter>
+    </>
   )
 }
 

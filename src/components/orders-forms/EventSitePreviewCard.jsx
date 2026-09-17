@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEye, faEyeSlash, faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons'
+import { faEye, faEyeSlash, faExternalLinkSquareAlt, faCode } from '@fortawesome/free-solid-svg-icons'
 
 import GSButton from '../../gs-lib/components/gs-button'
 import eventSitePreviewThumb from '../../assets/event-site-preview-thumb.png'
@@ -10,7 +10,7 @@ import './EventSitePreviewCard.scss'
 // (Figma "List Item Layout" / "Large" variant). Only the active-site state
 // is wired up here — a draft/not-yet-enabled site would swap this for an
 // "Enable Site" prompt, which isn't part of this round of design.
-export default function EventSitePreviewCard({ eventSite, onViewWebsite, onEventRegistration }) {
+export default function EventSitePreviewCard({ eventSite, onViewWebsite, onEventRegistration, onEditLiveWebsite }) {
   const isPrivate = eventSite.registrationVisibility === 'private'
 
   return (
@@ -33,6 +33,9 @@ export default function EventSitePreviewCard({ eventSite, onViewWebsite, onEvent
       <div className="efp-preview-actions">
         <GSButton type="light-grey" title="View Website" rightIcon={faExternalLinkSquareAlt} onClick={onViewWebsite} isFocusable />
         <GSButton type="light-grey" title="Event Registration" rightIcon={faExternalLinkSquareAlt} onClick={onEventRegistration} isFocusable />
+        {onEditLiveWebsite && (
+          <GSButton type="light-grey" title="Edit Live Website" rightIcon={faCode} onClick={onEditLiveWebsite} isFocusable />
+        )}
       </div>
     </div>
   )

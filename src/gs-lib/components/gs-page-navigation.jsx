@@ -10,11 +10,18 @@ import {
 /**
  * A paging component that is currently used in banners to page through banner notifications
  *
- * @param {Properties} props pages, currentIndex, navigationActions, previousPage, nextPage
+ * @param {Properties} props pages, currentIndex, navigationActions, previousPage, nextPage, style
  */
 
 export default function GSPageNavigation(props) {
-  const { pages, currentIndex, navigationActions, previousPage, nextPage } = props;
+  const {
+    pages,
+    currentIndex,
+    navigationActions,
+    previousPage,
+    nextPage,
+    style
+  } = props;
   function getCurrentPage() {
     if (currentIndex === 0) {
       return 1;
@@ -46,7 +53,7 @@ export default function GSPageNavigation(props) {
     }
   }
   return (
-    <gs-page-navigation>
+    <gs-page-navigation style={style}>
       <div className="paging-info">
         <GSButton buttonIcon={faChevronLeft} size="secondary" onClick={previousPageClick}></GSButton>
         <div className="paging">

@@ -5,11 +5,24 @@ import ReactQuill from "react-quill";
 import GSInput from "./gs-input";
 import GSButton from "./gs-button";
 import { faCode, faEye, faPen } from "@fortawesome/free-solid-svg-icons";
-import GSHTMLViewer from "./gs-html-viewer";
+import HTMLViewer from "./gs-html-viewer";
 
 
+export const isEmptyEditorHtml = html => html === "" || html == null || html === "<div><br></div>";
 
 const Parchment = ReactQuill.Quill.import("parchment");
+
+const Link = ReactQuill.Quill.import("formats/link");
+const builtinLinkSanitize = Link.sanitize;
+Link.sanitize = url => {
+  const value = (url ?? "").trim();
+  if (!value) return builtinLinkSanitize.call(Link, value);
+  if (/^(https?:\/\/|mailto:|tel:|#|\/)/i.test(value)) {
+    return builtinLinkSanitize.call(Link, value);
+  }
+  return builtinLinkSanitize.call(Link, `https://${value}`);
+};
+ReactQuill.Quill.register(Link, true);
 const pixelLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 const TAB_MULTIPLIER = 30;
 
@@ -26,14 +39,14 @@ class IndentAttributor extends Parchment.Attributor.Style {
 /**
  * A WYSIWYG editor using QUILL 
  *
- * @param {Properties} props value, onChange, defaultState, placeholder, rows, onFocus
+ * @param {Properties} props value, onChange, defaultState, placeholder, rows, onFocus, showVideoEmbed
  */
 
 //Compnonent function -----------------------------------------------------------------------
 
 
 const GSTextEditor = props => {
-  const { value, onChange, defaultState, placeholder, rows, onFocus, style } = props;
+  const { value, onChange, onInternalChange, inputTouched, defaultState, placeholder, rows, onFocus, style, showVideoEmbed = true } = props;
 
   const [quillText, setQuillText] = useState(value)
 
@@ -121,7 +134,7 @@ const GSTextEditor = props => {
       "color",
       "link",
       "image",
-      "video",
+      ...(showVideoEmbed ? ["video"] : []),
       "align"
     ];
   };
@@ -145,7 +158,7 @@ const GSTextEditor = props => {
           { indent: "-1" }
         ],
         [{ background: colorList }, { color: colorList }],
-        ["link", "image", "video"],
+        showVideoEmbed ? ["link", "image", "video"] : ["link", "image"],
         ["clean"]
       ],
       clipboard: {
@@ -158,7 +171,7 @@ const GSTextEditor = props => {
   const getEditor = () => {
     if (state === "preview") {
       return (
-        <GSHTMLViewer html={value}/>
+        <HTMLViewer html={value}/>
       );
     } else if (state === "code") {
       return (
@@ -168,7 +181,12 @@ const GSTextEditor = props => {
           textValue={value}
           placeholder={placeholder}
           onChange={e => {
-            onChange?.(e?.target?.value);
+            const next = e?.target?.value;
+            onInternalChange?.(isEmptyEditorHtml(next) ? "" : next);
+            onChange?.(next);
+          }}
+          onBlur={() => {
+            inputTouched?.();
           }}
         />
       );
@@ -182,15 +200,13 @@ const GSTextEditor = props => {
           placeholder={placeholder}
           onChange={e => {
             setQuillText(e)
+            onInternalChange?.(isEmptyEditorHtml(e) ? "" : e)
           }}
           onBlur={
             () => {
-              if(quillText == "<div><br></div>"){
-                onChange("")
-              }
-              else{
-                onChange(quillText)
-              }
+              const committed = isEmptyEditorHtml(quillText) ? "" : quillText
+              onChange(committed)
+              inputTouched?.()
             }
           }
           onFocus={() => {

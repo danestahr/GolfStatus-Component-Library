@@ -1,0 +1,563 @@
+@import '../../gs-lib/styles/theme.scss';
+@import '../../gs-lib/styles/typography.scss';
+@import '../../gs-lib/styles/constants.scss';
+@import '../../gs-lib/styles/media-queries.scss';
+@import '../../gs-lib/styles/spacing.scss';
+
+// Section content, list layout, progress, and image treatment all come from
+// gs-lib components now (GSPageSection/GSItemList/GSInfoGroup/GSProgressBar/
+// GSImage/GSSplitView — see EventWebsitePage.jsx) and theme themselves via
+// the `.light` class on .es-page below, the same way the real app does.
+// What's left here is page-specific chrome those components don't own:
+// the header/sub-nav bar, and the small custom tiles (packages, donation
+// amounts, additional pages) this page's sections build out of GSItemList.
+// Those still read from the --gs-color-* custom properties in
+// gs-lib/styles/theme.scss (the `.gs-theme-default` class), never a raw
+// palette hex — that's the seam for building out additional color themes.
+.es-page {
+  font-family: $font-family;
+  background: var(--gs-color-background);
+  color: var(--gs-color-on-background);
+  min-height: 100%;
+  // App.jsx's <main> is a flex column and this page is its only child, so
+  // without this the flex algorithm shrinks the page down to main's own
+  // height (flex-shrink defaults to 1), silently clipping the containing
+  // block sticky positioning below (.es-header) is bound to — the page's
+  // content would still overflow and scroll fine, but the sticky header
+  // would stop sticking as soon as the scroll passed that shrunk height.
+  flex-shrink: 0;
+
+  // gs-page-section.scss leaves .section-body unstyled (just width/padding/
+  // radius) — giving it the surface color here is scoped to this page only,
+  // not a change to the shared component.
+  .section-body {
+    background: var(--gs-color-surface-container-high);
+    color: var(--gs-color-on-surface);
+  }
+
+  // gs-page-section.scss leaves the section itself (not just .section-body
+  // above) background-less — scoped here the same way. Its border-bottom
+  // (also unstyled there, just "1px solid" with no color — currentColor)
+  // gets the same treatment, same theme.scss outline-variant token
+  // .es-arrow-tile's own border reads (see gs-image's border-color below).
+  gs-page-section {
+    background: var(--gs-color-background);
+    border-bottom-color: var(--gs-color-outline-variant);
+  }
+
+  // gs-image.scss's own border is a hardcoded $light-border (rgba black,
+  // theme-invariant) — scoped to the theme's outline-variant token here
+  // instead, same page-only-override convention as .section-body/
+  // gs-page-section above.
+  gs-image {
+    border-color: var(--gs-color-outline-variant);
+  }
+
+  // gs-split-view.scss's own v-stack/h-stack mixins are display:inline-flex,
+  // which shrink-to-fit rather than filling their container — used often
+  // enough on this page (intro row, live scoring) that it's worth fixing
+  // here rather than passing a width style to every instance.
+  gs-split-view {
+    width: 100%;
+
+    .split-view-content {
+      width: 100%;
+    }
+  }
+}
+
+// Header (dark) and sub-nav (white) are two visually distinct bars, both
+// sticking together as one unit — matches the real event site, where the
+// sub-nav is not just a darker continuation of the header.
+.es-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+// bg/text read Primary/On Primary, matching .es-cart-button/.es-theme-toggle/
+// .es-theme-picker below (already on-primary) — this bar no longer forces
+// gs-lib's `.dark` class on itself the way it used to, so it now actually
+// varies with the active theme (Winter/Lavender's own primary/on-primary,
+// see gs-lib/styles/theme.scss) instead of being hardcoded black/white
+// regardless of theme. The sub-nav below stays on the page's own
+// light/dark background/on-surface.
+//
+// --es-header-bg/--es-header-fg are local aliases (not gs-lib tokens) so
+// dark mode can invert the pairing — background becomes on-primary, text
+// becomes primary — in one place, and have every descendant that colors
+// itself off the header (.es-brand-logo, .es-cart-button, .es-theme-toggle,
+// .es-theme-picker below) inherit the flip automatically instead of each
+// needing its own `.dark` override.
+.es-header-bar {
+  --es-header-bg: var(--gs-color-primary);
+  --es-header-fg: var(--gs-color-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px;
+  background: var(--es-header-bg);
+  color: var(--es-header-fg);
+
+  // GSAppNavigationHeader pads itself ($x-large-pad) and sets its own
+  // font size/letter-spacing — reset to this bar's own 16px padding and the
+  // spec's Overline 2 type (10px / bold / 1.5px) instead of touching the
+  // shared component itself.
+  gs-app-navigation-header {
+    padding: 0;
+    font-size: $xx-small-font;
+    letter-spacing: $small-medium-letter-spacing;
+  }
+}
+
+.dark .es-header-bar {
+  --es-header-bg: var(--gs-color-on-primary);
+  --es-header-fg: var(--gs-color-primary);
+}
+
+.es-brand-row {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+}
+
+// GSAppNavigationHeader's own `logo` prop only renders a plain <img>, whose
+// color can't track --es-header-fg (no CSS color context for an
+// externally-loaded SVG) — masking the logo file as this div's background
+// instead means its color is a real, themeable value, not a hardcoded
+// filter. `mask-image` (the file itself) is set inline in
+// EventWebsitePage.jsx since it needs the bundled asset URL.
+.es-brand-logo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  background-color: var(--es-header-fg);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.es-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// GSButton with no `type` prop renders a literal "undefined" class (its
+// class string is built straight from the raw `type` prop) — the button's
+// own base styles are already an unstyled/transparent background, so this
+// just adds the icon's color. --es-header-fg (not --gs-color-on-primary
+// directly) so this inverts along with the rest of the header in dark mode
+// — see .es-header-bar above.
+.es-cart-button {
+  gs-button.undefined {
+    background: transparent;
+    color: var(--es-header-fg);
+  }
+}
+
+// Toggles the whole page's `.gs-theme-${themeName}` class between `light`
+// and `dark` (see EventWebsitePage.jsx) — same --es-header-fg as the cart
+// button since it lives in the same header bar (.es-header-bar, above).
+.es-theme-toggle {
+  gs-button.undefined {
+    background: transparent;
+    color: var(--es-header-fg);
+  }
+}
+
+// Cycles the page's `.gs-theme-${themeName}` class through THEME_NAMES
+// (default/winter/lavender) — same --es-header-fg as .es-theme-toggle
+// above since it lives in the same header bar.
+.es-theme-picker {
+  gs-button.undefined {
+    background: transparent;
+    color: var(--es-header-fg);
+  }
+}
+
+.es-avatar {
+  display: inline-flex;
+  padding: 2px;
+  border: 2px solid var(--gs-color-outline-variant);
+  border-radius: $circle-border-radius;
+  box-sizing: border-box;
+}
+
+.es-avatar-image {
+  width: 34px;
+  height: 34px;
+  border-radius: $circle-border-radius;
+  object-fit: cover;
+  background: var(--gs-color-outline-variant);
+}
+
+// Hidden on desktop and tablet — only shown at phone widths, per the Figma
+// spec's "Mobile Navigation Bar" naming (the sub-nav below covers navigation
+// at desktop/tablet widths instead of this menu).
+.es-menu-button {
+  display: none;
+
+  @include large-phone {
+    display: inline-flex;
+  }
+
+  // GSButton with no `type` prop renders a literal "undefined" class
+  // (its class string is built from the raw `type` prop) — the button's
+  // own base styles are already an unstyled/transparent background, so
+  // this just adds the icon's color.
+  gs-button.undefined {
+    background: transparent;
+    color: var(--gs-color-primary);
+  }
+}
+
+// GSAppNavigationItem is a vertical sidebar link (left-border active accent,
+// forced white text) — this bar is a horizontal tab row instead, so it's
+// built from GSActionBar (no `header`, just `pageActions`) with each tab a
+// plain GSButton (transparent/secondary when idle, light-grey when active)
+// rather than that component. See the file-level comment in
+// EventWebsitePage.jsx for why.
+.es-subnav {
+  background: var(--gs-color-background);
+  border-bottom: 1px solid var(--gs-color-outline-variant);
+  overflow-x: auto;
+  box-shadow: $second-layer-shadow;
+
+  // GSActionBar's own .actions row hardcodes "medium-gap" (see
+  // gs-action-bar.jsx) — bumped to large-gap here instead of touching that
+  // shared component.
+  .horizontal.medium-gap {
+    gap: $large-pad;
+  }
+}
+
+.es-intro-main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
+  gap: $x-large-pad;
+}
+
+.es-intro-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.es-course-location-group {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.es-intro-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.es-sidebar-card {
+  border: 1px solid var(--gs-color-outline-variant);
+  border-radius: $medium-large-border-radius;
+  overflow: hidden;
+}
+
+.es-sidebar-card-image {
+  display: block;
+  width: 100%;
+}
+
+.es-body-text {
+  font-size: $small-font;
+  line-height: $regular-line-height;
+  color: var(--gs-color-on-surface);
+  margin: 0;
+}
+
+// The bordered, arrow-trailing tile shape Packages and Additional Pages both
+// use — GSItemList/gs-list-item supply the list/layout, this is just the
+// tile content's own look.
+.es-arrow-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: $medium-large-border-radius;
+  padding: $x-large-pad;
+  min-width: 200px;
+  cursor: pointer;
+  background: var(--gs-color-surface-bright);
+  transition: $fast;
+
+  &:hover {
+    box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
+    outline: none;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: $focus-shadow;
+  }
+}
+
+// Package category tiles (Figma "Section Content Layout") — full-width grid
+// that steps down from 4 columns to 2 then 1 as the viewport narrows, each
+// tile always stretching to fill its column (see the inline width:100% on
+// the tile itself in EventWebsitePage.jsx). The compound `.grid` selector
+// beats gs-item-list.scss's own `.grid` rule (flex, not grid) on
+// specificity regardless of stylesheet order.
+.grid.es-package-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+
+  @include tablet() {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include large-phone() {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+// Same full-width-grid-that-steps-down pattern as .grid.es-package-tiles
+// above, applied to the 3 additional-page tiles so they react to the
+// viewport the same way Packages' tiles do instead of wrapping loosely.
+.grid.es-additional-pages-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  @include tablet() {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include large-phone() {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+.es-arrow-tile-icon {
+  color: var(--gs-color-on-surface);
+}
+
+.es-arrow-tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.es-arrow-tile-label {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: var(--gs-color-on-surface);
+}
+
+.es-arrow-tile-sub {
+  font-size: $small-font;
+  color: var(--gs-color-on-surface-variant);
+  opacity: .7;
+}
+
+.es-arrow-tile-arrow {
+  position: absolute;
+  top: 50%;
+  right: $x-large-pad;
+  transform: translateY(-50%);
+  color: var(--gs-color-on-surface-variant);
+}
+
+.es-sponsor-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.es-sponsor-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+
+  // GSActionBar's H5 header type hardcodes defaultTypography.bodyRegular
+  // (regular weight) as an inline style — needs !important to win over that.
+  gs-action-bar h5 {
+    font-weight: $bold-font-weight !important;
+  }
+}
+
+.es-sponsor-feature-name-wrap {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.es-sponsor-feature {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  width: 100%;
+}
+
+.es-sponsor-feature-name {
+  font-size: $large-font;
+  font-weight: $bold-font-weight;
+  color: var(--gs-color-on-surface);
+}
+
+.es-sponsor-feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  align-items: flex-start;
+}
+
+.es-sponsor-feature-description {
+  font-size: $small-font;
+  line-height: $regular-line-height;
+  color: var(--gs-color-on-surface);
+  opacity: .7;
+  margin: 0;
+}
+
+.es-donation-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+
+  // gs-progress-bar.scss's .percentage-value is already bold but leaves
+  // font-size to inherit from context — pin it here instead of touching
+  // the shared component.
+  gs-progress-bar .percentage-value {
+    font-size: $small-font;
+    font-weight: $bold-font-weight;
+  }
+}
+
+.es-donation-goal-label {
+  font-size: $small-font;
+  color: var(--gs-color-on-surface);
+}
+
+.es-donation-raised-amount {
+  font-weight: $bold-font-weight;
+}
+
+// Same full-width-grid-that-steps-down pattern as .grid.es-package-tiles
+// above (4 cols -> 2x2 -> 1 column), applied to the 4 donation amounts.
+.grid.es-donation-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+
+  @include tablet() {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include large-phone() {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+// GSButton's base styles (40px height, row layout, uppercase) are built for
+// a single-line label, so this overrides them on the nested "undefined"
+// button to get the two-line card look — same "wrapper class styles the
+// real component" convention as .es-cart-button/.es-menu-button above.
+// Otherwise matches .es-arrow-tile's look (surface-bright bg, no border,
+// same radius/padding) and leaves gs-button's own &.enabled hover/focus
+// ring (gs-button.scss) untouched instead of overriding it with a bg swap.
+.es-donation-tile {
+  width: 100%;
+
+  gs-button.undefined {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+    background: var(--gs-color-surface-bright);
+    color: var(--gs-color-on-surface);
+    border-radius: $medium-large-border-radius;
+    padding: $x-large-pad;
+    text-transform: none;
+  }
+
+  .button-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  // 10px overline 2 (gs-lib/helpers/Theme.js defaultTypography.overline2)
+  .es-donation-tile-label {
+    font-size: $xx-small-font;
+    font-weight: $bold-font-weight;
+    letter-spacing: $medium-letter-spacing;
+    text-transform: uppercase;
+    opacity: .6;
+  }
+
+  // 14px bold body (defaultTypography.body) — .button-title's own letter-
+  // spacing (gs-button.scss, 2px) is inherited unless reset here.
+  .es-donation-tile-value {
+    font-size: $small-font;
+    font-weight: $bold-font-weight;
+    letter-spacing: normal;
+  }
+}
+
+// GSSplitView's own left/right panes just stretch to the row's height
+// (see gs-split-view.scss) — centering the app gif and the download
+// buttons within each pane is scoped to this section only.
+.es-live-scoring-section {
+  .split-view-left,
+  .split-view-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.es-live-scoring-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+
+  .es-body-text {
+    opacity: .7;
+  }
+}
+
+// Matches gs-image.scss's own frame treatment so the Photos & Video
+// section's video stays visually consistent with the photo above it —
+// except the stroke itself, which reads the theme's outline-variant token
+// here instead of gs-image's own hardcoded $light-border (rgba black),
+// same reasoning as the gs-image override below.
+.es-video-frame {
+  display: block;
+  border: 1px solid var(--gs-color-outline-variant);
+  border-radius: $medium-large-border-radius;
+  background: $white;
+}
+
+.es-store-badges {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.es-store-badge-image {
+  height: 44px;
+  width: auto;
+}
+

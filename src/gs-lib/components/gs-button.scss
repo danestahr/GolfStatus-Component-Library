@@ -8,27 +8,16 @@ gs-button {
   text-align: center;
   cursor: pointer;
   transition: $fast;
-  font-family: $font-family;
   font-weight: $bold-font-weight;
   text-transform: uppercase;
   height: 40px;
   overflow: hidden;
-  white-space: nowrap;
 
   .button-icon {
     font-size: $medium-font;
   }
 
   &.enabled {
-    &:hover {
-      box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
-      outline: none;
-    }
-
-    &:focus {
-      box-shadow: $focus-shadow;
-      outline: none;
-    }
 
     &.black {
       background: $grey-800;
@@ -157,20 +146,6 @@ gs-button {
       }
     }
 
-    &.cyan {
-      background: $cyan-700;
-      color: $white;
-      // &:hover {
-      //   background: $cyan !important;
-      // }
-      &:active {
-        background: $cyan-700;
-      }
-      &:focus {
-        background: $cyan-700;
-      }
-    }
-
     &.transparent {
       background: transparent;
 
@@ -198,7 +173,7 @@ gs-button {
         &:focus {
           color: $orange-700;
         }
-      }      
+      }
       &.white {
         background: transparent;
         color: $white;
@@ -226,11 +201,52 @@ gs-button {
         color: $orange-800;
       }
     }
+
+    // Event Website Primary/Secondary Fill/Outline/Subtle variants — driven
+    // by the `--gs-color-*` theme tokens (gs-lib/styles/theme.scss) instead
+    // of a fixed palette color, since Primary/Secondary are the event's own
+    // brand colors (see colorScale.js's generateScale). Outline reuses the
+    // same --gs-color-primary/secondary other roles already read from;
+    // Subtle reads the dedicated -subtle tokens. Fill's text reads its own
+    // -fill tokens (scale step 50) rather than --gs-color-on-primary/
+    // secondary — those are shared with the header bar's bg/fg pairing
+    // (EventWebsitePage.scss), which stays AA-picked independently.
+    &.color-primary-color {
+      &.style-fill {
+        background: var(--gs-color-primary);
+        color: var(--gs-color-on-primary-fill);
+      }
+      &.style-outline {
+        background: transparent;
+        border: 2px solid var(--gs-color-primary);
+        color: var(--gs-color-primary);
+      }
+      &.style-subtle {
+        background: var(--gs-color-primary-subtle);
+        color: var(--gs-color-on-primary-subtle);
+      }
+    }
+    &.color-secondary-color {
+      &.style-fill {
+        background: var(--gs-color-secondary);
+        color: var(--gs-color-on-secondary-fill);
+      }
+      &.style-outline {
+        background: transparent;
+        border: 2px solid var(--gs-color-secondary);
+        color: var(--gs-color-secondary);
+      }
+      &.style-subtle {
+        background: var(--gs-color-secondary-subtle);
+        color: var(--gs-color-on-secondary-subtle);
+      }
+    }
   }
 
   .button-title {
     @include gs-font($x-small-font, $bold-font-weight, $medium-letter-spacing);
     line-height: $spacious-line-height;
+    white-space: nowrap;
   }
 
   &.secondary {
@@ -290,25 +306,48 @@ gs-button {
   }
   &.disabled {
     cursor: default;
-    background-color: $disabled-background;
-    color: $disabled;
+    opacity: .5;
   }
+
+  &.enabled {
+      &.outline:hover {
+        box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
+        outline: none;
+      }
+      &.underline:hover {
+        .button-title{
+          text-decoration: underline;
+        }
+        outline: none;
+      }
+    }
 }
 
 .light {
   gs-button {
     border: 2px solid transparent;
-    &:hover {
-      box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
-      outline: none;
+    &.enabled {
+      &.outline:hover {
+        box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
+        outline: none;
+      }
     }
   }
 }
 
 .dark {
   gs-button {
-    &:hover {
-      box-shadow: 0 0 0 4px rgba($grey-200, 0.5);
+    // Matches .light's own transparent 2px border above — without this,
+    // every button is 4px narrower in dark mode than light mode (no
+    // border reserved at all), which compounds across a row of buttons
+    // (e.g. a sub-nav's tabs) into a visible horizontal shift when
+    // toggling light/dark, even though the border is invisible either way.
+    border: 2px solid transparent;
+
+    &.enabled {
+      &.outline:hover {
+        box-shadow: 0 0 0 4px rgba($grey-400, 0.5);
+      }
     }
 
     &.transparent {
@@ -328,27 +367,6 @@ gs-button {
       }
       &:focus {
         background: rgba($white, 0.8);
-      }
-    }
-  }
-}
-
-.light {
-  gs-button {
-    &.enabled {
-      &:hover {
-        box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
-        outline: none;
-      }
-    }
-  }
-}
-
-.dark {
-  gs-button {
-    &.enabled {
-      &:hover {
-        box-shadow: 0 0 0 4px rgba($grey-400, 0.5);
       }
     }
   }

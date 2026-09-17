@@ -9,4 +9,16 @@ export const eventSite = {
   status: 'active',
   registrationVisibility: 'private',
   registrationCloseAt: 'Mon, Aug 24 at 12:00 PM',
+  // The rest of these back the public Event Website page (Figma "Event
+  // Details") — the page a registrant sees when they click "View Website"
+  // on the preview card above.
+  dateRange: 'Mon, Aug 24, 2026',
+  facility: 'Highland Ridge Golf Club',
+  location: 'Denver, CO',
+  description:
+    "Join us for the Highland Ridge Charity Classic, a day of golf, community, and giving back. Every dollar raised goes directly toward funding scholarships for local students pursuing careers in the trades.",
+  additionalDescription:
+    'Registration includes 18 holes of golf with cart, a boxed lunch, range access before your tee time, and entry into the evening awards reception. Teams of four are encouraged, but individual registrations will be paired with a group.',
+  donationGoal: 25000,
+  donationRaised: 16250,
 }

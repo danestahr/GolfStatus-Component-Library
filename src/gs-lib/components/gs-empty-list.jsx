@@ -3,6 +3,8 @@ import "./gs-empty-list.scss";
 
 import GSButton from "./gs-button";
 import GSItemList from "./gs-item-list";
+import { useCollapsable } from "../hooks/layoutHooks";
+import { defaultButtonStyles } from "../helpers/Theme";
 
 /**
  * component to be displayed in empty lists, should be use inside the emptyMessage of a GSItemList
@@ -13,6 +15,7 @@ import GSItemList from "./gs-item-list";
 
 const GSEmptyList = props => {
   const { title, detail, actions, style, titleStyle, detailStyle } = props;
+
   return (
     <gs-empty-list style={style}>
       <div className="messaging">
@@ -23,7 +26,7 @@ const GSEmptyList = props => {
         <GSItemList
           type="horizontal medium-large-gap mobile-vertical action-buttons"
           items={actions}
-          listItem={action => <GSButton {...action} style={action.buttonStyle} />}
+          listItem={action => <GSButton  {...action} style={action.buttonStyle} />}
         ></GSItemList>
       ) : null}
     </gs-empty-list>

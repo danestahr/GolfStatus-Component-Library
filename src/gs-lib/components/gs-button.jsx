@@ -22,13 +22,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
  * @property {Boolean} isPill add the pill border radius to the buton
  * 
  * @property {string} size size of the button [primary, secondary]
- * 
+ *
  * @property {Boolean} isDisabled button is disabled
- * 
+ *
  * @property {Boolean} isFocusable button is focusable
- * 
+ *
  * @property {object} style style for the component
- * 
+ *
+ * @property {string} color which brand color the button reads from [primary-color, secondary-color] —
+ *  combines with appearance for the Event Website's Primary/Secondary Fill/Outline/Subtle variants
+ *
+ * @property {string} appearance how color is applied [fill, outline, subtle]. Not named
+ *  "buttonStyle" — that name is already taken elsewhere (GSInput, GSActionBar, GSEmptyList)
+ *  to mean "a CSS style object for this button", a different thing entirely.
+ *
  *
  * @param {Properties} props buttonIcon,
       rightIcon,
@@ -39,13 +46,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
       size,
       isDisabled,
       isFocusable,
-      style
+      style,
+      color,
+      appearance
  */
 
 export default class GSButton extends Component {
   enterKeyPressed = e => {
-    const key = e.key;
-    if (key === "Enter") {
+    if (this.props.isDisabled) return;
+    if (e.key === "Enter") {
       this.props?.onClick?.();
     }
   };
@@ -61,12 +70,21 @@ export default class GSButton extends Component {
       isDisabled,
       isFocusable,
       iconStyle,
-      style
+      style,
+      titleStyle,
+      hoverType,
+      color,
+      appearance
     } = this.props;
-    
+
     const buttonSize = size === "secondary" || isPill ? "secondary" : "primary";
     const pillCss = isPill ? "pill" : "";
     const disabled = isDisabled ? "disabled" : "enabled";
+    // Prefixed so "outline" here can never collide with hoverType's own
+    // "outline" class (the default hover box-shadow ring), which every
+    // button already carries regardless of appearance.
+    const colorCss = color ? `color-${color}` : "";
+    const appearanceCss = appearance ? `style-${appearance}` : "";
 
     return (
       <gs-button
@@ -81,14 +99,14 @@ export default class GSButton extends Component {
               }
             : onClick
         }
-        class={`${type} ${disabled} ${pillCss} ${buttonSize}`}
+        class={`${type} ${disabled} ${pillCss} ${buttonSize} ${hoverType ?? 'outline'} ${colorCss} ${appearanceCss}`}
       >
         {buttonIcon && (
           <div className={`button-icon left`}>
             <FontAwesomeIcon icon={buttonIcon} style={iconStyle}></FontAwesomeIcon>
           </div>
         )}
-        {title && <div className={`button-title`}>{title}</div>}
+        {title && <div style={{...titleStyle}} className={`button-title`}>{title}</div>}
         {rightIcon && (
           <div className={`button-icon right`}>
             <FontAwesomeIcon icon={rightIcon} style={iconStyle}></FontAwesomeIcon>

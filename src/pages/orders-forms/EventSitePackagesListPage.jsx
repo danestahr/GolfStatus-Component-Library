@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCircleNotch } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons'
 
 import EntityListPage from '../../components/orders-forms/EntityListPage.jsx'
 import NavRow from '../../components/orders-forms/NavRow.jsx'
@@ -9,6 +9,7 @@ import EventSitePreviewCard from '../../components/orders-forms/EventSitePreview
 import PackageCard from '../../components/orders-forms/PackageCard.jsx'
 import FormsListContent from '../../components/orders-forms/FormsListContent.jsx'
 import EventSiteHomepageFields from '../../components/orders-forms/EventSiteHomepageFields.jsx'
+import WebsiteDesignStyleFields from '../../components/orders-forms/WebsiteDesignStyleFields.jsx'
 import AddFormFields from '../../components/orders-forms/AddFormFields.jsx'
 import AddQuestionFields, { emptyQuestionDraft } from '../../components/orders-forms/AddQuestionFields.jsx'
 import AddResponseFields, { answerKey, emptyResponseDraft, formQuestionsFor, playerAnswerKey } from '../../components/orders-forms/AddResponseFields.jsx'
@@ -21,6 +22,7 @@ import { forms as initialForms } from '../../data/mockForms.js'
 import { orders as initialOrders } from '../../data/mockOrders.js'
 import { sponsors } from '../../data/mockSponsors.js'
 import { registeredTeams } from '../../data/mockTeams.js'
+import { loadEventSiteStyle, saveEventSiteStyle } from '../../data/eventSiteStyle.js'
 import './EventSitePackagesListPage.scss'
 
 // Order matches the Figma "Event Site + Packages" navigation list — the
@@ -37,6 +39,11 @@ const NAV_ROWS = [
     id: 'event-site-homepage',
     title: 'Event Site Homepage',
     description: 'Manage promotional content, imagery, and media.',
+  },
+  {
+    id: 'website-design-style',
+    title: 'Website Design and Style',
+    description: 'Manage the event site’s primary and accent colors.',
   },
   {
     id: 'packages',
@@ -76,6 +83,14 @@ function matches(query, ...texts) {
 
 const FORMS_PATH = '/orders-forms/event-site-packages/forms'
 const HOMEPAGE_PATH = '/orders-forms/event-site-packages/homepage'
+const STYLE_PATH = '/orders-forms/event-site-packages/website-design-style'
+
+// The real event website app (see "GolfStatus Event Website" on the
+// Desktop), running locally via its own dev server + mock API — not part of
+// this prototype. "Edit Live Website" only works while that's running.
+// birdies-for-a-cause is one of its mock-server's sample tournaments; it
+// isn't slug-matched to this page's own mockEventSite.js data.
+const LIVE_WEBSITE_URL = 'http://localhost:4208/event/birdies-for-a-cause'
 
 // One side panel for the whole Forms flow (list → add form → form overview →
 // add question), same single-panel-many-screens convention as TeamsListPage/
@@ -131,7 +146,8 @@ export default function EventSitePackagesListPage() {
   const showingFormsList = location.pathname === FORMS_PATH
   const viewingResponses = location.pathname.endsWith('/responses')
   const showingHomepage = location.pathname === HOMEPAGE_PATH
-  const panelOpen = location.pathname.startsWith(FORMS_PATH) || showingHomepage
+  const showingStyle = location.pathname === STYLE_PATH
+  const panelOpen = location.pathname.startsWith(FORMS_PATH) || showingHomepage || showingStyle
   // The Form Name field's draft on OrderFormOverviewDraft1 itself (renaming
   // moved inline there — see `handleSaveFormName`/`handleCancelFormName`
   // below). Reseeded from the form's current name whenever the *route's*
@@ -195,11 +211,41 @@ export default function EventSitePackagesListPage() {
   // (below), same "reseed on route, not on every saved change" reasoning as
   // `formNameDraft`, and Cancel/the panel's own close chevron just navigate
   // away without ever committing it back.
-  const emptyHomepage = { bannerFiles: [], description: '', additionalDescription: '' }
+  const emptyHomepage = {
+    bannerFiles: [],
+    description: '',
+    additionalDescription: '',
+    registrationDetails: '',
+    promotionalImageFiles: [],
+    promotionalVideoFiles: [],
+  }
   const [homepageSaved, setHomepageSaved] = useState(emptyHomepage)
   const [homepageDraft, setHomepageDraft] = useState(emptyHomepage)
   useEffect(() => {
     if (showingHomepage) setHomepageDraft(homepageSaved)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
+  // Website Design and Style — same single-screen, reseed-on-route,
+  // Save/Cancel convention as Event Site Homepage above. Colors default to
+  // DEFAULT_EVENT_SITE_STYLE (data/eventSiteStyle.js) rather than starting
+  // blank, but styleSaved actually seeds from whatever was last persisted
+  // there (loadEventSiteStyle) — this prototype has no backend, so that's
+  // also what /event-site (EventWebsitePage.jsx) reads to reflect a saved
+  // style, and what handleSaveStyle below writes back to. Tertiary was
+  // dropped in favor of a fixed, non-editable Neutral palette (see
+  // WebsiteDesignStyleFields) — monochromatic swaps that Neutral scale for
+  // the matching step of the Primary scale instead, wherever it's used in
+  // the theme definitions preview.
+  const [styleSaved, setStyleSaved] = useState(loadEventSiteStyle)
+  const [styleDraft, setStyleDraft] = useState(loadEventSiteStyle)
+  // Website Design and Style's own swatch grids run wide (Theme Definitions'
+  // 6 modes/roles especially) — this panel-header button widens the panel
+  // itself (AppSidePanel's own `expanded` prop) so there's more room to see
+  // them without scrolling, same idea as a browser's own fullscreen toggle.
+  const [isStyleExpanded, setIsStyleExpanded] = useState(false)
+  useEffect(() => {
+    if (showingStyle) setStyleDraft(styleSaved)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
@@ -217,6 +263,24 @@ export default function EventSitePackagesListPage() {
   }
 
   function handleCancelHomepage() {
+    navigate('/orders-forms/event-site-packages')
+  }
+
+  function openStylePanel() {
+    navigate(STYLE_PATH)
+  }
+
+  function handleSaveStyle() {
+    setStyleSaved(styleDraft)
+    saveEventSiteStyle(styleDraft)
+    // Panel stays open (no navigate) — this screen's whole point is riffing
+    // on colors and Theme Definitions overrides in real time, so closing it
+    // on every save would interrupt that instead of supporting it. Save
+    // simply re-disables itself (styleDraft now equals styleSaved) until
+    // the next change.
+  }
+
+  function handleCancelStyle() {
     navigate('/orders-forms/event-site-packages')
   }
 
@@ -513,6 +577,8 @@ export default function EventSitePackagesListPage() {
       ? 'Add Response'
       : showingHomepage
       ? 'Event Site Homepage'
+      : showingStyle
+      ? 'Website Design and Style'
       : formOverviewId
       // Static, matching 'Add Form' above, now that renaming happens inline
       // on the form-overview screen itself — same title whether that
@@ -532,12 +598,20 @@ export default function EventSitePackagesListPage() {
   const canSaveQuestion =
     questionDraft.question.trim() !== '' && JSON.stringify(questionDraft) !== JSON.stringify(originalQuestionDraft)
   // Same "nothing to save yet" reasoning as the two above — file objects
-  // don't survive JSON.stringify meaningfully, so the banner image just
+  // don't survive JSON.stringify meaningfully, so each file field just
   // compares by count instead.
   const canSaveHomepage =
     homepageDraft.description !== homepageSaved.description ||
     homepageDraft.additionalDescription !== homepageSaved.additionalDescription ||
-    homepageDraft.bannerFiles.length !== homepageSaved.bannerFiles.length
+    homepageDraft.registrationDetails !== homepageSaved.registrationDetails ||
+    homepageDraft.bannerFiles.length !== homepageSaved.bannerFiles.length ||
+    homepageDraft.promotionalImageFiles.length !== homepageSaved.promotionalImageFiles.length ||
+    homepageDraft.promotionalVideoFiles.length !== homepageSaved.promotionalVideoFiles.length
+  const canSaveStyle =
+    styleDraft.primaryColor !== styleSaved.primaryColor ||
+    styleDraft.secondaryColor !== styleSaved.secondaryColor ||
+    styleDraft.monochromatic !== styleSaved.monochromatic ||
+    JSON.stringify(styleDraft.themeOverrides ?? {}) !== JSON.stringify(styleSaved.themeOverrides ?? {})
   // At least one link to attach the response to, and at least one form to
   // answer questions on — the answers themselves are allowed to stay blank
   // (same "No response yet" allowance a real order's own responses get).
@@ -570,6 +644,11 @@ export default function EventSitePackagesListPage() {
       ? [
           { name: 'Save', type: 'black', action: handleSaveHomepage, isDisabled: !canSaveHomepage },
           { name: 'Cancel', type: 'light-grey', action: handleCancelHomepage },
+        ]
+      : showingStyle
+      ? [
+          { name: 'Save', type: 'black', action: handleSaveStyle, isDisabled: !canSaveStyle },
+          { name: 'Cancel', type: 'light-grey', action: handleCancelStyle },
         ]
       : addingResponse
       ? [
@@ -613,12 +692,18 @@ export default function EventSitePackagesListPage() {
                         ? openFormsPanel
                         : row.id === 'event-site-homepage'
                         ? openHomepagePanel
+                        : row.id === 'website-design-style'
+                        ? openStylePanel
                         : undefined
                     }
                   />
                 )}
                 {row.id === 'event-site-details' && visibleRowIds.has('event-site-details') && (
-                  <EventSitePreviewCard eventSite={eventSite} />
+                  <EventSitePreviewCard
+                    eventSite={eventSite}
+                    onViewWebsite={() => window.open('/event-site', '_blank', 'noopener,noreferrer')}
+                    onEditLiveWebsite={() => window.open(LIVE_WEBSITE_URL, '_blank', 'noopener,noreferrer')}
+                  />
                 )}
                 {row.id === 'packages' && showPackages && (
                   <div className="efp-pkg-row">
@@ -641,12 +726,19 @@ export default function EventSitePackagesListPage() {
         // confusing jump back if the panel had already navigated away).
         onClose={creatingForm ? undefined : () => navigate('/orders-forms/event-site-packages')}
         onBack={
-          creatingForm || !panelOpen || showingHomepage || (showingFormsList && !addingForm && !addingQuestion)
+          creatingForm ||
+          !panelOpen ||
+          showingHomepage ||
+          showingStyle ||
+          (showingFormsList && !addingForm && !addingQuestion)
             ? undefined
             : handlePanelBack
         }
         title={panelTitle}
         actions={panelActions}
+        expanded={showingStyle && isStyleExpanded}
+        rightIcon={showingStyle ? (isStyleExpanded ? faCompress : faExpand) : undefined}
+        onRightAction={showingStyle ? () => setIsStyleExpanded(value => !value) : undefined}
       >
         {creatingForm ? (
           <div className="efp-loading">
@@ -686,6 +778,28 @@ export default function EventSitePackagesListPage() {
             additionalDescription={homepageDraft.additionalDescription}
             onChangeAdditionalDescription={additionalDescription =>
               setHomepageDraft(prev => ({ ...prev, additionalDescription }))
+            }
+            registrationDetails={homepageDraft.registrationDetails}
+            onChangeRegistrationDetails={registrationDetails =>
+              setHomepageDraft(prev => ({ ...prev, registrationDetails }))
+            }
+            promotionalImageFiles={homepageDraft.promotionalImageFiles}
+            onChangePromotionalImageFiles={files => setHomepageDraft(prev => ({ ...prev, promotionalImageFiles: files }))}
+            promotionalVideoFiles={homepageDraft.promotionalVideoFiles}
+            onChangePromotionalVideoFiles={files => setHomepageDraft(prev => ({ ...prev, promotionalVideoFiles: files }))}
+          />
+        ) : showingStyle ? (
+          <WebsiteDesignStyleFields
+            primaryColor={styleDraft.primaryColor}
+            onChangePrimaryColor={primaryColor => setStyleDraft(prev => ({ ...prev, primaryColor }))}
+            secondaryColor={styleDraft.secondaryColor}
+            onChangeSecondaryColor={secondaryColor => setStyleDraft(prev => ({ ...prev, secondaryColor }))}
+            themeOverrides={styleDraft.themeOverrides}
+            onChangeThemeOverrides={updater =>
+              setStyleDraft(prev => ({
+                ...prev,
+                themeOverrides: typeof updater === 'function' ? updater(prev.themeOverrides ?? {}) : updater,
+              }))
             }
           />
         ) : viewingResponses ? (

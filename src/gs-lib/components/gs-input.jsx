@@ -14,9 +14,7 @@ import GSSelect from "./gs-select";
  * @property {string} textValue :text inside the input box
  * 
  * @property {object} rightIcon :icon to the right of the text
- *
- * @property {string} rightTitle :text label to the right of the text, in place of (or alongside) rightIcon
- *
+ * 
  * @property {object} leftIcon :icon to the left of the text
  * 
  * @property {function} rightIconClick :action for the right icon
@@ -30,7 +28,11 @@ import GSSelect from "./gs-select";
  * @property {object} style :styling for the component
  * 
  * @property {object} buttonStyle :styling for the buttons in the component
- * 
+ *
+ * @property {object} leftButtonProps :props spread onto the left inline GSButton (e.g. title, isDisabled, rightIcon); overrides defaults
+ *
+ * @property {object} rightButtonProps :props spread onto the right inline GSButton (e.g. title, isDisabled, rightIcon); overrides defaults
+ *
  * @property {object} inputStyle :styling for the input
  * 
  * @property {string} type :type of input
@@ -101,7 +103,6 @@ export default class GSinput extends Component {
     const {
       textValue,
       rightIcon,
-      rightTitle,
       leftIcon,
       rightIconClick,
       leftIconClick,
@@ -113,8 +114,9 @@ export default class GSinput extends Component {
       pattern,
       placeholder,
       onBlur,
-      min,
+      min, 
       max,
+      name,
       ...rest
     } = this.props;
     if (type == "text-area") {
@@ -137,6 +139,7 @@ export default class GSinput extends Component {
     }
     return (
       <input
+        name={name}
         type={type}
         pattern={pattern}
         value={
@@ -157,18 +160,18 @@ export default class GSinput extends Component {
   };
 
   render() {
-    const { leftIcon, rightIcon, rightTitle, style, buttonStyle, type, leftIconClick, rightIconClick } = this.props;
+    const { leftIcon, rightIcon, style, buttonStyle, type, leftIconClick, rightIconClick, leftButtonProps, rightButtonProps } = this.props;
     return (
       <gs-input class={type} style={style}>
-        {leftIcon && (
-          <div className="left-icon" onClick={leftIconClick}>
-            <GSButton type="secondary" buttonIcon={leftIcon} style={buttonStyle}/>
+        {(leftIcon || leftButtonProps) && (
+          <div className="left-icon">
+            <GSButton type="secondary" buttonIcon={leftIcon} onClick={leftIconClick} style={buttonStyle} {...leftButtonProps}/>
           </div>
         )}
         {this.getValue()}
-        {(rightIcon || rightTitle) && (
-          <div className="right-icon" onClick={rightIconClick}>
-            <GSButton type="secondary" buttonIcon={rightIcon} title={rightTitle} style={buttonStyle}/>
+        {(rightIcon || rightButtonProps) && (
+          <div className="right-icon">
+            <GSButton type="secondary" buttonIcon={rightIcon} onClick={rightIconClick} style={buttonStyle} {...rightButtonProps}/>
           </div>
         )}
       </gs-input>

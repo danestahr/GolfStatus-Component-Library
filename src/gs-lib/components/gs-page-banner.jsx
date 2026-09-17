@@ -6,7 +6,25 @@ import GSPageNavigation from "./gs-page-navigation";
 /**
  * A Banner that will typically reside at the top of a page to notify users, typically on a side panel or app
  *
- * @param {Properties} props timeout, notifications, timeoutAction
+ * @typedef Properties
+ *
+ * @type {object}
+ *
+ * @property {object} bannerStyle style for the banner element
+ *
+ * @property {object} contentStyle style for the content of the banner
+ *
+ * @property {object} actionBarStyle style for the action bar in the banner content
+ *
+ * @property {object} navigationStyle style for the notification navigation in the banner content
+ *
+ * @property {string} progressColor color of the timer that counts the banner timeout down
+ *
+ * the four styles above are what defaultBannerStyles definitions are made up of, so a banner
+ * style can be spread onto the banner ({...defaultBannerStyles.primary.withTheme(theme, mode)})
+ *
+ * @param {Properties} props timeout, notifications, timeoutAction, bannerStyle, contentStyle,
+ * actionBarStyle, navigationStyle, progressColor
  */
 
 export default class GSPageBanner extends Component {
@@ -42,24 +60,37 @@ export default class GSPageBanner extends Component {
     }
   };
   getNextBanner = () => {
-    const { title, bannerActions, notifications, state, type } = this.props;
+    const {
+      title,
+      bannerActions,
+      notifications,
+      state,
+      type,
+      bannerStyle,
+      contentStyle,
+      actionBarStyle,
+      navigationStyle,
+      progressColor
+    } = this.props;
     const { currentNotificationIndex } = this.state;
     if (title) {
       return {
         header: title,
         pageActions: bannerActions,
-        state: state,
-        type: type
+        state,
+        type,
+        bannerStyle,
+        contentStyle,
+        actionBarStyle,
+        navigationStyle,
+        progressColor
       };
-    }else if (
+    } else if (
       notifications &&
       notifications?.length > currentNotificationIndex
     ) {
       return notifications[currentNotificationIndex];
-    }
-    else if(
-      notifications?.length > 0
-    ){
+    } else if (notifications?.length > 0) {
       return notifications[0];
     }
     return { header: "", state: "" };
@@ -83,20 +114,63 @@ export default class GSPageBanner extends Component {
     }
   };
 
+  getStyles = banner => {
+    const bannerStyle = banner.bannerStyle ?? this.props.bannerStyle ?? {};
+    const contentStyle = banner.contentStyle ?? this.props.contentStyle ?? {};
+    const actionBarStyle =
+      banner.actionBarStyle ?? this.props.actionBarStyle ?? {};
+    const navigationStyle =
+      banner.navigationStyle ?? this.props.navigationStyle ?? {};
+    const progressColor =
+      banner.progressColor ?? this.props.progressColor ?? {};
+
+    return {
+      bannerStyle,
+      contentStyle,
+      actionBarStyle,
+      navigationStyle,
+      progressColor
+    };
+  };
+
   render() {
     const { timeout, notifications } = this.props;
-    const progressStyle = timeout
-      ? { animationDuration: `${timeout / 1000}s` }
-      : {};
+
     const banner = this.getNextBanner() ? this.getNextBanner() : {};
+
+    const {
+      bannerStyle,
+      contentStyle,
+      actionBarStyle,
+      navigationStyle,
+      progressColor
+    } = this.getStyles(banner);
+
+    const progressStyle = timeout
+      ? {
+          animationDuration: `${timeout / 1000}s`,
+          backgroundColor: progressColor
+        }
+      : {};
+
     return (
       <gs-page-banner
+        style={bannerStyle}
         class={`banner ${banner.state} ${banner.type} ${this.state.localState}`}
       >
-        <div className="gs-banner-content">
-          <GSActionBar {...banner}></GSActionBar>
+        {progressColor ? (
+          <div
+            style={{ display: "none", height: 0, width: 0, position: "fixed" }}
+            dangerouslySetInnerHTML={{
+              __html: `<style>.icon{color:${progressColor}!important}</style>`
+            }}
+          ></div>
+        ) : null}
+        <div style={contentStyle} className="gs-banner-content">
+          <GSActionBar style={actionBarStyle} {...banner}></GSActionBar>
           {this.showBannerNavigation() && (
             <GSPageNavigation
+              style={navigationStyle}
               navigationActions={this.getNavigationActions()}
               nextPage={this.nextPage}
               previousPage={this.previousPage}
