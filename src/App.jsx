@@ -112,7 +112,12 @@ function AppShell() {
             <Route path="/orders-forms/event-site-packages/forms/:formId" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/forms/:formId/responses" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/homepage" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/homepage/:homepageSectionId" element={<EventSitePackagesListPage />} />
             <Route path="/orders-forms/event-site-packages/website-design-style" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/color-exploration" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/pages" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/packages" element={<EventSitePackagesListPage />} />
+            <Route path="/orders-forms/event-site-packages/packages/category/:categoryKey" element={<EventSitePackagesListPage />} />
             <Route path="/orders" element={<OrdersDraft1Page />} />
             <Route path="/orders/:id" element={<OrdersDraft1Page />} />
             <Route path="/orders/:id/responses" element={<OrdersDraft1Page />} />

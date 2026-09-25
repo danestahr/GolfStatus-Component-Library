@@ -63,8 +63,6 @@ import { utilities } from "./helpers/Utilities.js";
 import { converters } from "./helpers/converters.js";
 import { colorThemes, colorThemeKeys } from "./helpers/colorThemes.js";
 import { monochromatize } from "./helpers/monochromatic.js";
-import { winterTheme } from "./helpers/winterTheme.js";
-import { lavenderTheme } from "./helpers/lavenderTheme.js";
 import {
   defaultButtonStyles,
   defaultBannerStyles,
@@ -164,8 +162,6 @@ export {
   converters,
   colorThemes,
   colorThemeKeys,
-  winterTheme,
-  lavenderTheme,
   monochromatize,
   defaultTheme,
   golfstatusColors,
@@ -269,8 +265,6 @@ export default {
   converters,
   colorThemes,
   colorThemeKeys,
-  winterTheme,
-  lavenderTheme,
   monochromatize,
   defaultTheme,
   golfstatusColors,

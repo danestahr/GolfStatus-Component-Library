@@ -8,6 +8,7 @@ import GSSelect from '../../gs-lib/components/gs-select'
 import GSToggle from '../../gs-lib/components/gs-toggle'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSEmptyList from '../../gs-lib/components/gs-empty-list'
+import { useDragToReorder } from '../../gs-lib/hooks/useDragToReorder.js'
 import './AddQuestionFields.scss'
 
 export const RESPONSE_TYPE_OPTIONS = [
@@ -186,21 +187,20 @@ export default function AddQuestionFields({ draft, onChange, onSubmit, isEditing
   const [editingOptionIds, setEditingOptionIds] = useState(() => new Set())
   const anyOptionEditing = editingOptionIds.size > 0
 
-  // Pointer-based drag-to-reorder for dropdown options — same live-swap
-  // convention as WavesPanel's wave reordering (see that file's own
-  // comments): dragging past the midpoint of a neighboring tile swaps it
-  // immediately in `draftOptionOrder`, with a brief reverse-offset "flash"
-  // on whichever tile just got displaced so it visibly slides into its new
-  // slot instead of jump-cutting there. Deliberately not native HTML5
-  // drag-and-drop — that only reorders on drop, with a static drag-ghost
-  // image in between; this swaps live as you drag, same as the waves list.
-  const [draggingOptionId, setDraggingOptionId] = useState(null)
-  const [dragOffsetY, setDragOffsetY] = useState(0)
-  const [draftOptionOrder, setDraftOptionOrder] = useState(null)
-  const [flashOffsets, setFlashOffsets] = useState({})
-  const optionRowRefs = useRef(new Map())
-  const optionsBoxRef = useRef(null)
-  const dragStartYRef = useRef(0)
+  // Pointer-based drag-to-reorder for dropdown options (useDragToReorder),
+  // same shared convention as WavesPanel's wave reordering.
+  const {
+    draggingId: draggingOptionId,
+    dragOffsetY,
+    flashOffsets,
+    displayOrder: displayOptionIds,
+    rowsBoxRef: optionsBoxRef,
+    setRowRef: setOptionRowRef,
+    handleGrabberPointerDown,
+  } = useDragToReorder(
+    draft.dropdownOptions.map(o => o.id),
+    reorderedIds => onChange({ dropdownOptions: reorderedIds.map(id => draft.dropdownOptions.find(o => o.id === id)).filter(Boolean) })
+  )
 
   function setOptionEditing(id, isEditingOption) {
     setEditingOptionIds(prev => {
@@ -224,119 +224,7 @@ export default function AddQuestionFields({ draft, onChange, onSubmit, isEditing
     onChange({ dropdownOptions: draft.dropdownOptions.filter(o => o.id !== id) })
   }
 
-  function setOptionRowRef(id, el) {
-    if (el) optionRowRefs.current.set(id, el)
-    else optionRowRefs.current.delete(id)
-  }
-
-  // One row's height + the gap after it — every tile's movement during a
-  // drag is some whole multiple of this. See WavesPanel's identical helper
-  // for why it's measured fresh each move rather than cached.
-  function measureOptionRowStep(excludeId) {
-    const gap = optionsBoxRef.current ? parseFloat(getComputedStyle(optionsBoxRef.current).rowGap) || 0 : 0
-    for (const [id, el] of optionRowRefs.current) {
-      if (id === excludeId) continue
-      return el.getBoundingClientRect().height + gap
-    }
-    return 0
-  }
-
-  function handleGrabberPointerDown(e, id) {
-    if (e.button != null && e.button !== 0) return
-    e.preventDefault()
-    dragStartYRef.current = e.clientY
-    setDraggingOptionId(id)
-    setDragOffsetY(0)
-    setDraftOptionOrder(draft.dropdownOptions.map(o => o.id))
-  }
-
-  function handleGrabberPointerMove(e) {
-    if (draggingOptionId == null) return
-    const step = measureOptionRowStep(draggingOptionId)
-    let offset = e.clientY - dragStartYRef.current
-    if (step > 0) {
-      const order = [...(draftOptionOrder ?? draft.dropdownOptions.map(o => o.id))]
-      let idx = order.indexOf(draggingOptionId)
-      const flashes = {}
-      let didSwap = false
-      while (idx < order.length - 1 && offset > step / 2) {
-        const otherId = order[idx + 1]
-        order[idx] = otherId
-        order[idx + 1] = draggingOptionId
-        flashes[otherId] = step
-        idx += 1
-        offset -= step
-        didSwap = true
-      }
-      while (idx > 0 && offset < -step / 2) {
-        const otherId = order[idx - 1]
-        order[idx] = otherId
-        order[idx - 1] = draggingOptionId
-        flashes[otherId] = -step
-        idx -= 1
-        offset += step
-        didSwap = true
-      }
-      if (didSwap) {
-        setDraftOptionOrder(order)
-        setFlashOffsets(prev => ({ ...prev, ...flashes }))
-        // Double rAF: the flash offset needs to actually paint before the
-        // next frame clears it to 0, or there's nothing for the transition
-        // to animate from (see WavesPanel's identical comment).
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setFlashOffsets(prev => {
-              const next = { ...prev }
-              Object.keys(flashes).forEach(flashedId => { next[flashedId] = 0 })
-              return next
-            })
-          })
-        })
-      }
-      const min = -idx * step
-      const max = (order.length - 1 - idx) * step
-      offset = Math.min(Math.max(offset, min), max)
-    }
-    setDragOffsetY(offset)
-    dragStartYRef.current = e.clientY - offset
-  }
-
-  function handleGrabberPointerUp() {
-    if (draftOptionOrder && draftOptionOrder.some((id, i) => id !== draft.dropdownOptions[i]?.id)) {
-      const reordered = draftOptionOrder.map(id => draft.dropdownOptions.find(o => o.id === id)).filter(Boolean)
-      onChange({ dropdownOptions: reordered })
-    }
-    setDraggingOptionId(null)
-    setDragOffsetY(0)
-    setFlashOffsets({})
-    setDraftOptionOrder(null)
-  }
-
-  // Refs, not direct listener args — same reasoning as WavesPanel: the
-  // window listener effect only re-subscribes when draggingOptionId flips,
-  // so its closure would otherwise be stuck on a stale draftOptionOrder.
-  const pointerMoveRef = useRef(() => {})
-  const pointerUpRef = useRef(() => {})
-  pointerMoveRef.current = handleGrabberPointerMove
-  pointerUpRef.current = handleGrabberPointerUp
-
-  useEffect(() => {
-    if (draggingOptionId == null) return
-    const onMove = e => pointerMoveRef.current(e)
-    const onUp = e => pointerUpRef.current(e)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-    }
-  }, [draggingOptionId])
-
-  const displayOptions = draftOptionOrder
-    ? draftOptionOrder.map(id => draft.dropdownOptions.find(o => o.id === id)).filter(Boolean)
-    : draft.dropdownOptions
+  const displayOptions = displayOptionIds.map(id => draft.dropdownOptions.find(o => o.id === id)).filter(Boolean)
 
   return (
     <div className="ordr1-list">

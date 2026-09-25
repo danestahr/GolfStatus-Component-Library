@@ -11,12 +11,20 @@ const STATUS_META = {
 }
 
 // A single package tile in the horizontal "Packages" preview on the Event
-// Site & Packages hub page (Figma "Horizontal Card List").
-export default function PackageCard({ pkg }) {
+// Site & Packages hub page (Figma "Horizontal Card List") — clicking any
+// tile opens the full Packages list (Figma "Packages" — PackagesListContent),
+// same as tapping the "Packages" row above it.
+export default function PackageCard({ pkg, onClick }) {
   const meta = STATUS_META[pkg.status]
 
   return (
-    <div className="efp-pkg-card">
+    <div
+      className={`efp-pkg-card${onClick ? ' efp-pkg-card--clickable' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? e => (e.key === 'Enter' || e.key === ' ') && onClick() : undefined}
+    >
       <div className="efp-pkg-title-group">
         <div className="efp-pkg-name">{pkg.name}</div>
         <div className="efp-pkg-sub">{pkg.category}</div>

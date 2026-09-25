@@ -10,6 +10,15 @@
   border-radius: $medium-radius;
   background: $white;
   box-shadow: $first-layer-shadow;
+
+  &--clickable {
+    cursor: pointer;
+    transition: $fast;
+
+    &:hover {
+      box-shadow: $second-layer-shadow;
+    }
+  }
 }
 
 .efp-pkg-title-group {

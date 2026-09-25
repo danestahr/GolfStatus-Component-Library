@@ -1,5 +1,5 @@
 // Persists the Event Website preview's own header toggles (Light/Dark
-// mode, the Default/Winter/Lavender theme picker, and the Monochromatic
+// mode, the Default/GolfStatus theme picker, and the Monochromatic
 // button) across a page refresh — separate from eventSiteStyle.js's own
 // storage, which is the *saved design* the Website Design and Style
 // screen's Save button writes. These three are just "how I'm currently

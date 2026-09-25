@@ -1,0 +1,42 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Wraps the tournament-details preview (EventSiteTournamentPreview.jsx) and
+// its optional label together.
+.estp-preview-block {
+  @include v-stack(flex-start, stretch);
+  gap: $medium-pad;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+// "PRIMARY"/"SECONDARY" (or a thumbnail's own optional caption) — centered
+// per the Frame 70/71 reference.
+.estp-preview-label {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  text-align: center;
+  color: $grey-800;
+}
+
+.estp-preview {
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // Inlined directly (EventSiteTournamentPreview.jsx's own
+  // dangerouslySetInnerHTML), not an <img>, so its two color-bearing spots
+  // can be recolored in memory — same display/sizing an <img> got before.
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}
+
+// Grey-bordered frame around the preview SVG — same border convention as
+// .wds-colors-tile, just without its padding since the SVG already draws its
+// own white page background up to the edge.
+.estp-preview--bordered {
+  border: $light-border;
+  border-radius: $medium-radius;
+}

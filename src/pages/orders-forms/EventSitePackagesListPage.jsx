@@ -1,15 +1,20 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCircleNotch, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch } from '@fortawesome/free-solid-svg-icons'
 
 import EntityListPage from '../../components/orders-forms/EntityListPage.jsx'
 import NavRow from '../../components/orders-forms/NavRow.jsx'
 import EventSitePreviewCard from '../../components/orders-forms/EventSitePreviewCard.jsx'
 import PackageCard from '../../components/orders-forms/PackageCard.jsx'
 import FormsListContent from '../../components/orders-forms/FormsListContent.jsx'
+import EventSiteHomepageSectionsList, { sectionTileLabel } from '../../components/orders-forms/EventSiteHomepageSectionsList.jsx'
 import EventSiteHomepageFields from '../../components/orders-forms/EventSiteHomepageFields.jsx'
+import EventSitePagesTiles from '../../components/orders-forms/EventSitePagesTiles.jsx'
+import PackagesListContent from '../../components/orders-forms/PackagesListContent.jsx'
+import EditPackageCategoryFields from '../../components/orders-forms/EditPackageCategoryFields.jsx'
 import WebsiteDesignStyleFields from '../../components/orders-forms/WebsiteDesignStyleFields.jsx'
+import ColorExplorationFields from '../../components/orders-forms/ColorExplorationFields.jsx'
 import AddFormFields from '../../components/orders-forms/AddFormFields.jsx'
 import AddQuestionFields, { emptyQuestionDraft } from '../../components/orders-forms/AddQuestionFields.jsx'
 import AddResponseFields, { answerKey, emptyResponseDraft, formQuestionsFor, playerAnswerKey } from '../../components/orders-forms/AddResponseFields.jsx'
@@ -23,6 +28,42 @@ import { orders as initialOrders } from '../../data/mockOrders.js'
 import { sponsors } from '../../data/mockSponsors.js'
 import { registeredTeams } from '../../data/mockTeams.js'
 import { loadEventSiteStyle, saveEventSiteStyle } from '../../data/eventSiteStyle.js'
+import {
+  DEFAULT_HOMEPAGE_SECTION_ORDER,
+  DEFAULT_SECTION_HEADERS,
+  HOMEPAGE_SECTION_BY_ID,
+  isHomepageSectionEditable,
+  loadHomepageSectionOrder,
+  saveHomepageSectionOrder,
+  loadHomepageSectionHeaders,
+  saveHomepageSectionHeaders,
+  loadHomepageSectionContent,
+  saveHomepageSectionContent,
+  loadHomepageBannerImage,
+  saveHomepageBannerImage,
+  loadHomepageMediaImage,
+  saveHomepageMediaImage,
+  loadHomepageMediaVideo,
+  saveHomepageMediaVideo,
+  loadHomepageSectionButtons,
+  saveHomepageSectionButtons,
+} from '../../data/eventSiteHomepageSections.js'
+import { EVENT_SITE_PAGES } from '../../data/eventSitePages.js'
+import {
+  loadPageVisibility,
+  savePageVisibility,
+  loadAuctionUrl,
+  saveAuctionUrl,
+} from '../../data/eventSitePagesVisibility.js'
+import { loadIsPremium, saveIsPremium } from '../../data/eventSitePremium.js'
+import {
+  DEFAULT_PACKAGE_CATEGORY_LABELS,
+  PACKAGE_CATEGORIES,
+  PACKAGE_CATEGORY_BY_KEY,
+  PACKAGE_CATEGORY_KEY_BY_CATEGORY,
+  loadPackageCategoryLabels,
+  savePackageCategoryLabels,
+} from '../../data/eventSitePackageCategories.js'
 import './EventSitePackagesListPage.scss'
 
 // Order matches the Figma "Event Site + Packages" navigation list — the
@@ -36,14 +77,38 @@ const NAV_ROWS = [
     description: 'Manage tournament activation, registration privacy, event site url, registration details, and registration close date.',
   },
   {
-    id: 'event-site-homepage',
-    title: 'Event Site Homepage',
-    description: 'Manage promotional content, imagery, and media.',
+    id: 'event-site-pages',
+    title: 'Event Site Pages',
+    description: 'View all pages on the event site.',
+    // Hidden for now — the screen (EventSitePagesTiles) and its route stay
+    // wired up (still reachable at SITE_PAGES_PATH), just not surfaced here.
+    hidden: true,
   },
   {
     id: 'website-design-style',
-    title: 'Website Design and Style',
+    title: 'Website Colors',
     description: 'Manage the event site’s primary and accent colors.',
+    // Premium-only — non-premium tournaments can't customize colors, so the
+    // row itself disappears rather than opening a locked screen.
+    premiumOnly: true,
+  },
+  // A second entry point onto the same draft as the row above — same
+  // Primary/Secondary (and, for the roles the live site can override,
+  // themeOverrides) as Website Colors, so an edit from either screen
+  // reflects on the other and on /event-site alike (see
+  // ColorExplorationFields.jsx). Hidden here — the screen and its route stay
+  // wired up (still reachable at COLOR_EXPLORATION_PATH), just not surfaced
+  // on this list, same convention as `event-site-pages` above.
+  {
+    id: 'color-exploration',
+    title: 'Color Exploration',
+    description: 'Experiment with alternate primary and accent colors for the event site.',
+    hidden: true,
+  },
+  {
+    id: 'event-site-homepage',
+    title: 'Event Site Homepage',
+    description: 'Manage promotional content, imagery, and media.',
   },
   {
     id: 'packages',
@@ -81,16 +146,43 @@ function matches(query, ...texts) {
   return !query || texts.some(text => text.toLowerCase().includes(query))
 }
 
+// Each category's starting order (Figma "Packages") — price high to low.
+// Keyed by PACKAGE_CATEGORIES' own stable `key`, same "ids, not the objects
+// themselves" convention as SponsorsListPage's `tierOrder`/`groupByTier` —
+// `packageOrder` (below) is what actually drives display order from here
+// on, this only ever runs once per package list to seed it.
+function buildPackageOrder(list) {
+  return Object.fromEntries(
+    PACKAGE_CATEGORIES.map(({ key, category }) => [
+      key,
+      list
+        .filter(pkg => pkg.category === category)
+        .slice()
+        .sort((a, b) => b.price - a.price)
+        .map(pkg => pkg.id),
+    ])
+  )
+}
+
+// Where a brand new or copied package's id belongs in an already price-
+// sorted (high to low) category order — used by handleAddPackage/
+// handleCopyPackage so a new entry lands wherever its price actually
+// belongs, without needing any dedicated reorder UI of its own: it just
+// slots in ahead of the first existing id whose price is lower.
+function insertIdByPrice(order, getPrice, id) {
+  const price = getPrice(id)
+  const insertAt = order.findIndex(existingId => getPrice(existingId) < price)
+  const at = insertAt === -1 ? order.length : insertAt
+  return [...order.slice(0, at), id, ...order.slice(at)]
+}
+
 const FORMS_PATH = '/orders-forms/event-site-packages/forms'
 const HOMEPAGE_PATH = '/orders-forms/event-site-packages/homepage'
 const STYLE_PATH = '/orders-forms/event-site-packages/website-design-style'
-
-// The real event website app (see "GolfStatus Event Website" on the
-// Desktop), running locally via its own dev server + mock API — not part of
-// this prototype. "Edit Live Website" only works while that's running.
-// birdies-for-a-cause is one of its mock-server's sample tournaments; it
-// isn't slug-matched to this page's own mockEventSite.js data.
-const LIVE_WEBSITE_URL = 'http://localhost:4208/event/birdies-for-a-cause'
+const COLOR_EXPLORATION_PATH = '/orders-forms/event-site-packages/color-exploration'
+const SITE_PAGES_PATH = '/orders-forms/event-site-packages/pages'
+const PACKAGES_PATH = '/orders-forms/event-site-packages/packages'
+const PACKAGE_CATEGORY_PATH = `${PACKAGES_PATH}/category`
 
 // One side panel for the whole Forms flow (list → add form → form overview →
 // add question), same single-panel-many-screens convention as TeamsListPage/
@@ -105,8 +197,23 @@ const LIVE_WEBSITE_URL = 'http://localhost:4208/event/birdies-for-a-cause'
 export default function EventSitePackagesListPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { formId: formOverviewId } = useParams()
+  const { formId: formOverviewId, categoryKey, homepageSectionId } = useParams()
   const [search, setSearch] = useState('')
+  // Per-page show/hide switch on the Event Site Pages screen (see
+  // EventSitePagesTiles) — every page starts Visible; toggling just flips
+  // this in place, same instant-apply convention as ScorecardDetailPage's
+  // Override Total toggle (no Save/Cancel step, unlike Homepage/Style below).
+  // Persisted (data/eventSitePagesVisibility.js), same read-once-on-load/
+  // save-on-toggle convention as isPremium above, so a hidden page's subnav
+  // tab actually disappears on /event-site (EventWebsitePage.jsx reads this
+  // same flag back on mount) instead of only ever affecting this admin list.
+  const [pageVisibility, setPageVisibility] = useState(loadPageVisibility)
+  // The Auction page's own required URL field (EventSitePagesTiles), saved
+  // via that field's own inline Save button rather than this screen's
+  // Save/Cancel (it has neither) — starts blank same as a tournament that
+  // hasn't linked an auction yet. Same persisted, read-once-on-load
+  // convention as pageVisibility above.
+  const [auctionUrl, setAuctionUrl] = useState(loadAuctionUrl)
   const [addingForm, setAddingForm] = useState(false)
   // True for a beat between clicking Save & Continue on a brand new form and
   // actually landing on its overview — simulates the save/load a real
@@ -122,6 +229,92 @@ export default function EventSitePackagesListPage() {
   const [addingResponse, setAddingResponse] = useState(false)
   const [responseDraft, setResponseDraft] = useState(emptyResponseDraft)
   const [formsList, setFormsList] = useState(initialForms)
+  // Mutated by the Packages screen's own Add Package/Copy actions (see
+  // `handleAddPackage`/`handleCopyPackage` below) — the hub page's own
+  // inline package strip (`visiblePackages` below) reads from this same
+  // list, so anything added or copied there shows up in both places.
+  const [packagesList, setPackagesList] = useState(eventSitePackages)
+  const packagesById = useMemo(() => Object.fromEntries(packagesList.map(pkg => [pkg.id, pkg])), [packagesList])
+  // Each category's own display order (Figma "Packages") — starts sorted
+  // price high to low (see `buildPackageOrder`), then only ever changes via
+  // a manual drag (`reorderWithinCategory`, PackageCategorySection's own
+  // handle) or a new/copied package landing wherever its price belongs
+  // (`insertIdByPrice`, see `handleAddPackage`/`handleCopyPackage`) — never
+  // re-sorted wholesale, so a manual reorder always sticks. The hub page's
+  // own inline package strip (`visiblePackages` below) flattens this same
+  // order (category by category) instead of reading `packagesList` directly,
+  // so its order always matches the Packages screen even though it has no
+  // category headers of its own to group by.
+  const [packageOrder, setPackageOrder] = useState(() => buildPackageOrder(eventSitePackages))
+  // Display label per PACKAGE_CATEGORIES key, keyed the same way — starts on
+  // whatever's already saved (or each category's own default label, the
+  // first time), and a Save on the "Package Category" screen (see
+  // `handleSaveCategoryLabel` below) writes back to that same
+  // localStorage-backed store (data/eventSitePackageCategories.js), same
+  // convention as eventSiteStyle.js. This is what lets a renamed category
+  // actually show up on the public event site's own Packages tiles
+  // (EventWebsitePage.jsx reads it back on mount) instead of staying
+  // admin-only.
+  const [categoryLabels, setCategoryLabels] = useState(loadPackageCategoryLabels)
+  // Dev-facing Premium/Non-Premium toggle, shown on this hub page's own
+  // top action bar — purely so this prototype can show off both visual
+  // states side by side; there's no real plan/entitlement system behind it.
+  // `isPremium` is still read by PackagesListContent/EventSiteHomepageSectionsList
+  // (and the `website-design-style` row above) to gate what each shows, they
+  // just no longer render a toggle of their own. Persisted (see
+  // data/eventSitePremium.js) so /event-site (EventWebsitePage.jsx) can read
+  // the same flag back and lock its own theme to GolfStatus's baseline
+  // colors while non-premium, same read-once-on-load/save-on-toggle
+  // convention as eventSiteStyle.js.
+  const [isPremium, setIsPremium] = useState(loadIsPremium)
+
+  // Premium -> Non-Premium (never the other direction) also resets any
+  // custom `categoryLabels` back to PACKAGE_CATEGORIES' own defaults — a
+  // downgrade doesn't get to keep a customized category name, same as it
+  // wouldn't keep any other premium-only customization. PackagesListContent
+  // still always reads NON_PREMIUM_PACKAGE_CATEGORY_LABELS while `isPremium`
+  // is off regardless (see its own comment), so this only actually matters
+  // for what's showing the next time Premium is switched back on. Same
+  // downgrade also resets `packageOrder` back to price high-to-low within
+  // each category (`buildPackageOrder`, the same sort it starts on) — a
+  // non-premium tournament can't drag-reorder packages either (see
+  // PackagesListContent/PackageCategorySection's own `isPremium` gating), so
+  // any manual reorder gets discarded right along with it rather than just
+  // becoming un-editable in place.
+  //
+  // Same downgrade also resets the Event Site Homepage screen's own section
+  // order and section headers back to their defaults (DEFAULT_HOMEPAGE_
+  // SECTION_ORDER/DEFAULT_SECTION_HEADERS) — a non-premium tournament can't
+  // drag-reorder sections either (see EventSiteHomepageSectionsList's own
+  // `isPremium` gating), and its Section Header field disappears there too
+  // (see EventSiteHomepageFields.jsx's `locked`), so both get discarded the
+  // same way `categoryLabels`/`packageOrder` do above. Deliberately leaves
+  // every other homepage field alone — the actual paragraph content
+  // (description/additionalDescription/registrationDetails), button text,
+  // and images all survive a downgrade untouched.
+  function toggleIsPremium() {
+    setIsPremium(prev => {
+      const next = !prev
+      saveIsPremium(next)
+      if (prev && !next) {
+        setCategoryLabels(DEFAULT_PACKAGE_CATEGORY_LABELS)
+        savePackageCategoryLabels(DEFAULT_PACKAGE_CATEGORY_LABELS)
+        setPackageOrder(buildPackageOrder(packagesList))
+        setHomepageDraft(current => ({
+          ...current,
+          sectionOrder: DEFAULT_HOMEPAGE_SECTION_ORDER,
+          sectionHeaders: DEFAULT_SECTION_HEADERS,
+        }))
+        saveHomepageSectionOrder(DEFAULT_HOMEPAGE_SECTION_ORDER)
+        saveHomepageSectionHeaders(DEFAULT_SECTION_HEADERS)
+      }
+      return next
+    })
+  }
+  // The "Package Category" screen's own draft — reseeded from
+  // `categoryLabels` whenever the route's `categoryKey` changes, same
+  // reseed-on-route-param convention as `formNameDraft`.
+  const [categoryLabelDraft, setCategoryLabelDraft] = useState('')
   // Only mutated by AllOrderResponsesForFormDraft1's inline answer editing
   // (see `saveResponseAnswer` below) — this page has no order-details screen
   // of its own (its "View Order" link navigates elsewhere, see `viewOrder`),
@@ -147,7 +340,35 @@ export default function EventSitePackagesListPage() {
   const viewingResponses = location.pathname.endsWith('/responses')
   const showingHomepage = location.pathname === HOMEPAGE_PATH
   const showingStyle = location.pathname === STYLE_PATH
-  const panelOpen = location.pathname.startsWith(FORMS_PATH) || showingHomepage || showingStyle
+  const showingColorExploration = location.pathname === COLOR_EXPLORATION_PATH
+  const showingSitePages = location.pathname === SITE_PAGES_PATH
+  const showingPackagesList = location.pathname === PACKAGES_PATH
+  // Only true for a real, known category key — an unrecognized one (a typo'd
+  // direct visit) just falls through to nothing rendering, same as an
+  // unrecognized `formId` would.
+  const showingEditCategory = categoryKey != null && PACKAGE_CATEGORY_BY_KEY[categoryKey] != null
+  // A single Event Site Homepage section's own edit screen (Figma "Event
+  // Site Homepage" tile detail) — reached via that tile's pencil/plus on
+  // EventSiteHomepageSectionsList (`handleEditHomepageSection` below), a
+  // real route (not local state) so it's its own back-stack entry/deep-
+  // linkable, same as "Package Category" (`showingEditCategory` above).
+  // Only true for a real, currently-editable section id — an unrecognized
+  // or non-editable one (Make a Donation while DONATIONS_ENABLED is off, or
+  // any of isHomepageSectionEditable's own Premium-gated ids while
+  // non-premium) just falls through to nothing rendering, same reasoning as
+  // `showingEditCategory` — a direct/bookmarked visit to a now-locked
+  // section's URL can't bypass the tile list's own hidden pen/plus either.
+  const editingHomepageSectionId =
+    homepageSectionId != null && isHomepageSectionEditable(homepageSectionId, isPremium) ? homepageSectionId : null
+  const panelOpen =
+    location.pathname.startsWith(FORMS_PATH) ||
+    showingHomepage ||
+    Boolean(editingHomepageSectionId) ||
+    showingStyle ||
+    showingColorExploration ||
+    showingSitePages ||
+    showingPackagesList ||
+    showingEditCategory
   // The Form Name field's draft on OrderFormOverviewDraft1 itself (renaming
   // moved inline there — see `handleSaveFormName`/`handleCancelFormName`
   // below). Reseeded from the form's current name whenever the *route's*
@@ -159,6 +380,10 @@ export default function EventSitePackagesListPage() {
     if (formOverviewName != null) setFormNameDraft(formOverviewName)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formOverviewId])
+  useEffect(() => {
+    if (showingEditCategory) setCategoryLabelDraft(categoryLabels[categoryKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryKey])
   // Add Form/Add Question are plain overlays on top of whichever route is
   // showing (see the comment above this component) — they never push their
   // own history entry, so the browser's own back/forward buttons skip right
@@ -204,25 +429,64 @@ export default function EventSitePackagesListPage() {
   // matters for real ones, but filtering by it either way is simplest.
   const [deletedQuestionsByForm, setDeletedQuestionsByForm] = useState({})
 
-  // Event Site Homepage (Figma "Event Site Homepage") — a single settings
-  // screen, not a list-backed entity like Forms, so there's just one saved
-  // doc (`homepageSaved`) and one live draft of it. The draft reseeds from
-  // whatever's currently saved every time this screen's route is entered
-  // (below), same "reseed on route, not on every saved change" reasoning as
-  // `formNameDraft`, and Cancel/the panel's own close chevron just navigate
-  // away without ever committing it back.
-  const emptyHomepage = {
-    bannerFiles: [],
-    description: '',
-    additionalDescription: '',
-    registrationDetails: '',
-    promotionalImageFiles: [],
-    promotionalVideoFiles: [],
+  // Event Site Homepage (Figma "Event Site Homepage") — no panel-level
+  // Save/Cancel here (see EventSiteHomepageSectionsList.jsx's own tile
+  // Save/Discard instead): each tile persists itself the moment its own
+  // Save is tapped (handleSaveHomepageSection below), so there's nothing
+  // left to batch-commit or discard at the screen level — the panel's own
+  // close chevron can just navigate away same as any other read-through
+  // screen. `homepageDraft` still reseeds from whatever's currently
+  // persisted every time this screen's route is entered (below), same
+  // "reseed on route" reasoning as `formNameDraft`, since it's read fresh
+  // rather than kept in sync live with what other tabs/sessions might save.
+  // bannerFiles/photoFiles/videoFiles start empty here since their real
+  // saved value lives in IndexedDB (see eventSiteHomepageSections.js's own
+  // "NOT localStorage" comment) behind an async load*, not one of the
+  // synchronous localStorage reads above — the effect below fills them in
+  // right after this fires, same reseed-on-route trigger, once that load
+  // resolves.
+  function loadHomepageDraft() {
+    const savedHomepageContent = loadHomepageSectionContent()
+    return {
+      bannerFiles: [],
+      description: savedHomepageContent.description,
+      additionalDescription: savedHomepageContent.additionalDescription,
+      registrationDetails: savedHomepageContent.registrationDetails,
+      photoFiles: [],
+      videoFiles: [],
+      sectionOrder: loadHomepageSectionOrder(),
+      sectionHeaders: loadHomepageSectionHeaders(),
+      sectionButtons: loadHomepageSectionButtons(),
+    }
   }
-  const [homepageSaved, setHomepageSaved] = useState(emptyHomepage)
-  const [homepageDraft, setHomepageDraft] = useState(emptyHomepage)
+  const [homepageDraft, setHomepageDraft] = useState(loadHomepageDraft)
   useEffect(() => {
-    if (showingHomepage) setHomepageDraft(homepageSaved)
+    if (showingHomepage) setHomepageDraft(loadHomepageDraft())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
+
+  // Fills in bannerFiles/photoFiles/videoFiles once IndexedDB actually
+  // answers — without this, a saved banner/photo/video would reset to
+  // empty (hasContent's `hidden` check going back to true, the tile's own
+  // Save flow showing an empty file field again) every time this route
+  // reseeds, even though handleSaveHomepageSection below did persist it.
+  useEffect(() => {
+    if (!showingHomepage) return
+    let cancelled = false
+    Promise.all([loadHomepageBannerImage(), loadHomepageMediaImage(), loadHomepageMediaVideo()]).then(
+      ([bannerImage, photoImage, video]) => {
+        if (cancelled) return
+        setHomepageDraft(prev => ({
+          ...prev,
+          bannerFiles: bannerImage ? [bannerImage] : prev.bannerFiles,
+          photoFiles: photoImage ? [photoImage] : prev.photoFiles,
+          videoFiles: video ? [video] : prev.videoFiles,
+        }))
+      }
+    )
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
@@ -232,20 +496,15 @@ export default function EventSitePackagesListPage() {
   // blank, but styleSaved actually seeds from whatever was last persisted
   // there (loadEventSiteStyle) — this prototype has no backend, so that's
   // also what /event-site (EventWebsitePage.jsx) reads to reflect a saved
-  // style, and what handleSaveStyle below writes back to. Tertiary was
-  // dropped in favor of a fixed, non-editable Neutral palette (see
-  // WebsiteDesignStyleFields) — monochromatic swaps that Neutral scale for
-  // the matching step of the Primary scale instead, wherever it's used in
-  // the theme definitions preview.
+  // style, and what handleSaveStyle below writes back to. neutralTint picks
+  // which scale (Neutral/Primary/Secondary) the Neutral section's own
+  // reference ramp is tinted with (WebsiteDesignStyleFields) — that same
+  // saved choice decides whether /event-site's own Monochromatic toggle
+  // starts on and which scale it substitutes in.
   const [styleSaved, setStyleSaved] = useState(loadEventSiteStyle)
   const [styleDraft, setStyleDraft] = useState(loadEventSiteStyle)
-  // Website Design and Style's own swatch grids run wide (Theme Definitions'
-  // 6 modes/roles especially) — this panel-header button widens the panel
-  // itself (AppSidePanel's own `expanded` prop) so there's more room to see
-  // them without scrolling, same idea as a browser's own fullscreen toggle.
-  const [isStyleExpanded, setIsStyleExpanded] = useState(false)
   useEffect(() => {
-    if (showingStyle) setStyleDraft(styleSaved)
+    if (showingStyle || showingColorExploration) setStyleDraft(styleSaved)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
@@ -257,17 +516,226 @@ export default function EventSitePackagesListPage() {
     navigate(HOMEPAGE_PATH)
   }
 
-  function handleSaveHomepage() {
-    setHomepageSaved(homepageDraft)
-    navigate('/orders-forms/event-site-packages')
+  // Fires from EventSiteHomepageSectionsList's own per-tile Save (not a
+  // whole-screen batch commit) — every tile's fields live in one of four
+  // shared stores (headers/buttons/content/header visibility), so this
+  // always writes all four regardless of which section triggered it (cheap,
+  // and correct even though only one section's values actually changed);
+  // the two IndexedDB-backed file fields only get re-written when their own
+  // section is the one that saved, since those writes are heavier.
+  //
+  // Reads `homepageDraft` through setHomepageDraft's own updater callback
+  // rather than closing over the `homepageDraft` in scope — the Save click
+  // that triggers this fires in the same tick React is still committing the
+  // field's own last keystroke, so the plain in-scope `homepageDraft` can
+  // still be one render behind (a real, reproduced bug: the first Save
+  // right after typing silently wrote the pre-edit value). The updater
+  // callback is the one place React guarantees the truly-latest state,
+  // batched keystroke or not — this returns it unchanged, it's only here to
+  // read it safely.
+  function handleSaveHomepageSection(id) {
+    setHomepageDraft(current => {
+      saveHomepageSectionHeaders(current.sectionHeaders)
+      saveHomepageSectionButtons(current.sectionButtons)
+      saveHomepageSectionContent({
+        description: current.description,
+        additionalDescription: current.additionalDescription,
+        registrationDetails: current.registrationDetails,
+      })
+      if (id === 'banner') saveHomepageBannerImage(current.bannerFiles[0] ?? null)
+      if (id === 'photo') saveHomepageMediaImage(current.photoFiles[0] ?? null)
+      if (id === 'video') saveHomepageMediaVideo(current.videoFiles[0] ?? null)
+      return current
+    })
   }
 
-  function handleCancelHomepage() {
-    navigate('/orders-forms/event-site-packages')
+  // Reordering isn't a tile's own Save (it's the drag handle, not a field
+  // edit), so it persists immediately on drop rather than waiting on any
+  // particular tile's Save — same "every action here writes through right
+  // away" rule the rest of this screen now follows.
+  function handleReorderHomepageSections(sectionOrder) {
+    setHomepageDraft(prev => ({ ...prev, sectionOrder }))
+    saveHomepageSectionOrder(sectionOrder)
+  }
+
+  function openHomepageSectionPanel(id) {
+    navigate(`${HOMEPAGE_PATH}/${id}`)
+  }
+
+  // What a homepage section's own edit screen (EventSiteHomepageFields,
+  // reached via `openHomepageSectionPanel` above) actually holds right now —
+  // only the keys that section owns, same "only what's there" convention
+  // EventSiteHomepageSectionsList's own snapshot used to capture before this
+  // screen moved out of that list and into its own route. Captured the
+  // moment the screen opens (see the effect below) so Cancel has something
+  // to revert to.
+  function captureHomepageSectionSnapshot(id) {
+    const d = homepageDraft
+    switch (id) {
+      case 'banner':
+        return { bannerFiles: d.bannerFiles }
+      case 'description':
+        return { header: d.sectionHeaders.description, description: d.description }
+      case 'additionalDescription':
+        return { header: d.sectionHeaders.additionalDescription, additionalDescription: d.additionalDescription }
+      case 'registrationDetails':
+        return { header: d.sectionHeaders.registrationDetails, registrationDetails: d.registrationDetails }
+      case 'photo':
+        return { header: d.sectionHeaders.photo, photoFiles: d.photoFiles }
+      case 'video':
+        return { header: d.sectionHeaders.video, videoFiles: d.videoFiles }
+      case 'tournamentDetails':
+        return { buttons: { ...d.sectionButtons.tournamentDetails } }
+      case 'packages':
+        return { header: d.sectionHeaders.packages, buttons: { ...d.sectionButtons.packages } }
+      case 'sponsors':
+        return { header: d.sectionHeaders.sponsors, buttons: { ...d.sectionButtons.sponsors } }
+      case 'donation':
+        return { header: d.sectionHeaders.donation, buttons: { ...d.sectionButtons.donation } }
+      case 'additionalPages':
+        return { header: d.sectionHeaders.additionalPages }
+      case 'liveScoring':
+        return { header: d.sectionHeaders.liveScoring }
+      default:
+        return {}
+    }
+  }
+
+  function restoreHomepageSectionSnapshot(id, snapshot) {
+    setHomepageDraft(prev => ({
+      ...prev,
+      ...('header' in snapshot ? { sectionHeaders: { ...prev.sectionHeaders, [id]: snapshot.header } } : {}),
+      ...('bannerFiles' in snapshot ? { bannerFiles: snapshot.bannerFiles } : {}),
+      ...('description' in snapshot ? { description: snapshot.description } : {}),
+      ...('additionalDescription' in snapshot ? { additionalDescription: snapshot.additionalDescription } : {}),
+      ...('registrationDetails' in snapshot ? { registrationDetails: snapshot.registrationDetails } : {}),
+      ...('photoFiles' in snapshot ? { photoFiles: snapshot.photoFiles } : {}),
+      ...('videoFiles' in snapshot ? { videoFiles: snapshot.videoFiles } : {}),
+      ...('buttons' in snapshot ? { sectionButtons: { ...prev.sectionButtons, [id]: snapshot.buttons } } : {}),
+    }))
+  }
+
+  // Whatever the currently-open section's own fields held right before it
+  // opened — captured below, restored by Cancel (`handleCancelHomepageSection`).
+  const [homepageSectionSnapshot, setHomepageSectionSnapshot] = useState(null)
+  useEffect(() => {
+    if (editingHomepageSectionId) setHomepageSectionSnapshot(captureHomepageSectionSnapshot(editingHomepageSectionId))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingHomepageSectionId])
+
+  function handleSaveHomepageSectionScreen() {
+    handleSaveHomepageSection(editingHomepageSectionId)
+    navigate(HOMEPAGE_PATH)
+  }
+
+  function handleCancelHomepageSectionScreen() {
+    if (homepageSectionSnapshot) restoreHomepageSectionSnapshot(editingHomepageSectionId, homepageSectionSnapshot)
+    navigate(HOMEPAGE_PATH)
   }
 
   function openStylePanel() {
     navigate(STYLE_PATH)
+  }
+
+  function openSitePagesPanel() {
+    navigate(SITE_PAGES_PATH)
+  }
+
+  function openPackagesPanel() {
+    navigate(PACKAGES_PATH)
+  }
+
+  // No Add Package fields screen exists in this prototype yet (see
+  // AddFormFields for the equivalent Forms flow) — Add Package just drops a
+  // blank draft straight onto the list, same "no real backend" spirit as
+  // the rest of this page. Its price (0) is what places it last within its
+  // category's own order (see `insertIdByPrice`) — nothing special-cased.
+  function handleAddPackage() {
+    const newPackage = {
+      id: `pkg-${Date.now()}`,
+      name: 'New Package',
+      category: PACKAGE_CATEGORIES[0].category,
+      price: 0,
+      formsCount: 0,
+      purchased: 0,
+      remaining: null,
+      updatedAt: 'Updated just now',
+      status: 'active',
+    }
+    const key = PACKAGE_CATEGORY_KEY_BY_CATEGORY[newPackage.category]
+    setPackagesList(prev => [...prev, newPackage])
+    setPackageOrder(prev => ({
+      ...prev,
+      [key]: insertIdByPrice(prev[key], id => (id === newPackage.id ? newPackage.price : packagesById[id].price), newPackage.id),
+    }))
+  }
+
+  // Inserted right after the original in `packagesList` so the duplicate
+  // reads as "next to what it copied"; `packageOrder` instead places it by
+  // price (see `insertIdByPrice`) — same price as the original it copied,
+  // so it lands right alongside it there too.
+  function handleCopyPackage(pkg) {
+    const copy = { ...pkg, id: `${pkg.id}-copy-${Date.now()}`, name: `${pkg.name} (Copy)`, purchased: 0, status: 'active' }
+    const key = PACKAGE_CATEGORY_KEY_BY_CATEGORY[pkg.category]
+    setPackagesList(prev => {
+      const idx = prev.findIndex(p => p.id === pkg.id)
+      const next = [...prev]
+      next.splice(idx + 1, 0, copy)
+      return next
+    })
+    setPackageOrder(prev => ({
+      ...prev,
+      [key]: insertIdByPrice(prev[key], id => (id === copy.id ? copy.price : packagesById[id].price), copy.id),
+    }))
+  }
+
+  // `newOrder` is the reordered id list for whatever packages were visible
+  // to the drag (see PackageCategorySection) — usually the whole category,
+  // but only the search-matched subset while a filter is active. Ids
+  // outside that subset keep their existing slots, with the reordered ids
+  // dropped in wherever their old ones were — same convention as
+  // SponsorsListPage's `reorderWithinTier`.
+  function reorderWithinCategory(key, newOrder) {
+    setPackageOrder(prev => {
+      const visible = new Set(newOrder)
+      let i = 0
+      const merged = prev[key].map(id => (visible.has(id) ? newOrder[i++] : id))
+      return { ...prev, [key]: merged }
+    })
+  }
+
+  // The "Package Category" screen (Figma "Package Category") — reached via
+  // a category's own edit pencil (PackageCategorySection), a real route (not
+  // a local-state overlay) so it's its own back-stack entry/deep-linkable,
+  // same as a form's own overview screen.
+  function openEditCategory(key) {
+    navigate(`${PACKAGE_CATEGORY_PATH}/${key}`)
+  }
+
+  function handleSaveCategoryLabel() {
+    const label = categoryLabelDraft.trim()
+    if (!label) return
+    const next = { ...categoryLabels, [categoryKey]: label }
+    setCategoryLabels(next)
+    savePackageCategoryLabels(next)
+    navigate(PACKAGES_PATH)
+  }
+
+  function handleCancelCategoryLabel() {
+    navigate(PACKAGES_PATH)
+  }
+
+  function togglePageVisibility(page) {
+    setPageVisibility(prev => {
+      const next = { ...prev, [page]: !prev[page] }
+      savePageVisibility(next)
+      return next
+    })
+  }
+
+  function handleSaveAuctionUrl(url) {
+    setAuctionUrl(url)
+    saveAuctionUrl(url)
   }
 
   function handleSaveStyle() {
@@ -283,6 +751,16 @@ export default function EventSitePackagesListPage() {
   function handleCancelStyle() {
     navigate('/orders-forms/event-site-packages')
   }
+
+  function openColorExplorationPanel() {
+    navigate(COLOR_EXPLORATION_PATH)
+  }
+
+  // Same shared styleDraft/styleSaved as handleSaveStyle/handleCancelStyle
+  // above — Color Exploration and Website Design and Style are the same
+  // underlying draft now, just two entry points onto it.
+  const handleSaveColorExploration = handleSaveStyle
+  const handleCancelColorExploration = handleCancelStyle
 
   function openAddForm() {
     setEditingFormId(null)
@@ -478,6 +956,14 @@ export default function EventSitePackagesListPage() {
       navigate(`${FORMS_PATH}/${formOverviewId}`)
       return
     }
+    if (showingEditCategory) {
+      navigate(PACKAGES_PATH)
+      return
+    }
+    if (editingHomepageSectionId) {
+      handleCancelHomepageSectionScreen()
+      return
+    }
     navigate(FORMS_PATH)
   }
 
@@ -558,12 +1044,20 @@ export default function EventSitePackagesListPage() {
 
   const { visibleRowIds, visiblePackages } = useMemo(() => {
     const query = search.trim().toLowerCase()
-    const rows = NAV_ROWS.filter(row => matches(query, row.title, row.description))
+    const rows = NAV_ROWS.filter(
+      row => !row.hidden && (!row.premiumOnly || isPremium) && matches(query, row.title, row.description)
+    )
+    // Flattens `packageOrder` category by category (Sponsorships, Team
+    // Registrations, Player Registrations, Add-Ons & Extras, in that order)
+    // rather than reading `packagesList`'s own order directly — this strip
+    // has no category headers of its own to group by, but its packages
+    // still need to read in the exact same order as the Packages screen's.
+    const orderedPackages = PACKAGE_CATEGORIES.flatMap(({ key }) => packageOrder[key].map(id => packagesById[id]))
     return {
       visibleRowIds: new Set(rows.map(row => row.id)),
-      visiblePackages: eventSitePackages.filter(pkg => matches(query, pkg.name, pkg.category)),
+      visiblePackages: orderedPackages.filter(pkg => matches(query, pkg.name, pkg.category)),
     }
-  }, [search])
+  }, [search, packageOrder, packagesById, isPremium])
 
   const showPackages = visibleRowIds.has('packages') || visiblePackages.length > 0
   const isEmpty = visibleRowIds.size === 0 && visiblePackages.length === 0
@@ -577,8 +1071,27 @@ export default function EventSitePackagesListPage() {
       ? 'Add Response'
       : showingHomepage
       ? 'Event Site Homepage'
+      // Live off `homepageDraft.sectionHeaders` (same helper the tile list
+      // itself reads its own label from) so typing into this screen's own
+      // Section Header field updates the side panel's own top title bar as
+      // you type, not just the tile you'll see again once you navigate back.
+      : editingHomepageSectionId
+      ? sectionTileLabel(
+          editingHomepageSectionId,
+          HOMEPAGE_SECTION_BY_ID[editingHomepageSectionId].label,
+          homepageDraft.sectionHeaders,
+          isPremium
+        )
       : showingStyle
-      ? 'Website Design and Style'
+      ? 'Website Colors'
+      : showingColorExploration
+      ? 'Color Exploration'
+      : showingSitePages
+      ? 'Event Site Pages'
+      : showingPackagesList
+      ? 'Packages'
+      : showingEditCategory
+      ? 'Package Category'
       : formOverviewId
       // Static, matching 'Add Form' above, now that renaming happens inline
       // on the form-overview screen itself — same title whether that
@@ -597,25 +1110,21 @@ export default function EventSitePackagesListPage() {
   // the screen opened, see `openAddQuestion`/`openEditQuestion`).
   const canSaveQuestion =
     questionDraft.question.trim() !== '' && JSON.stringify(questionDraft) !== JSON.stringify(originalQuestionDraft)
-  // Same "nothing to save yet" reasoning as the two above — file objects
-  // don't survive JSON.stringify meaningfully, so each file field just
-  // compares by count instead.
-  const canSaveHomepage =
-    homepageDraft.description !== homepageSaved.description ||
-    homepageDraft.additionalDescription !== homepageSaved.additionalDescription ||
-    homepageDraft.registrationDetails !== homepageSaved.registrationDetails ||
-    homepageDraft.bannerFiles.length !== homepageSaved.bannerFiles.length ||
-    homepageDraft.promotionalImageFiles.length !== homepageSaved.promotionalImageFiles.length ||
-    homepageDraft.promotionalVideoFiles.length !== homepageSaved.promotionalVideoFiles.length
   const canSaveStyle =
     styleDraft.primaryColor !== styleSaved.primaryColor ||
     styleDraft.secondaryColor !== styleSaved.secondaryColor ||
-    styleDraft.monochromatic !== styleSaved.monochromatic ||
-    JSON.stringify(styleDraft.themeOverrides ?? {}) !== JSON.stringify(styleSaved.themeOverrides ?? {})
+    styleDraft.neutralTint !== styleSaved.neutralTint ||
+    JSON.stringify(styleDraft.themeOverrides ?? {}) !== JSON.stringify(styleSaved.themeOverrides ?? {}) ||
+    JSON.stringify(styleDraft.elementOverrides ?? {}) !== JSON.stringify(styleSaved.elementOverrides ?? {})
+  // Same shared styleDraft/styleSaved as canSaveStyle above.
+  const canSaveColorExploration = canSaveStyle
   // At least one link to attach the response to, and at least one form to
   // answer questions on — the answers themselves are allowed to stay blank
   // (same "No response yet" allowance a real order's own responses get).
   const canSaveResponse = responseDraft.links.length > 0 && responseDraft.formIds.length > 0
+  // Same "nothing to save yet" reasoning as canSaveForm above.
+  const canSaveCategoryLabel =
+    showingEditCategory && categoryLabelDraft.trim() !== '' && categoryLabelDraft.trim() !== categoryLabels[categoryKey]
 
   const panelActions =
     // Buttons hidden during the simulated create — nothing to Save (already
@@ -640,15 +1149,25 @@ export default function EventSitePackagesListPage() {
           // brand new one (`editingQuestionKey` null) has nothing yet.
           ...(editingQuestionKey ? [{ name: 'Delete Question', type: 'transparent red', action: handleDeleteQuestion }] : []),
         ]
+      // No panel-level Save/Cancel on the list screen itself — reordering
+      // persists immediately on drop, and a tile's own fields are edited
+      // (and saved/canceled) on their own screen instead, right below.
       : showingHomepage
+      ? []
+      : editingHomepageSectionId
       ? [
-          { name: 'Save', type: 'black', action: handleSaveHomepage, isDisabled: !canSaveHomepage },
-          { name: 'Cancel', type: 'light-grey', action: handleCancelHomepage },
+          { name: 'Save', type: 'black', action: handleSaveHomepageSectionScreen },
+          { name: 'Cancel', type: 'light-grey', action: handleCancelHomepageSectionScreen },
         ]
       : showingStyle
       ? [
           { name: 'Save', type: 'black', action: handleSaveStyle, isDisabled: !canSaveStyle },
           { name: 'Cancel', type: 'light-grey', action: handleCancelStyle },
+        ]
+      : showingColorExploration
+      ? [
+          { name: 'Save', type: 'black', action: handleSaveColorExploration, isDisabled: !canSaveColorExploration },
+          { name: 'Cancel', type: 'light-grey', action: handleCancelColorExploration },
         ]
       : addingResponse
       ? [
@@ -657,6 +1176,15 @@ export default function EventSitePackagesListPage() {
         ]
       : viewingResponses
       ? []
+      : showingSitePages
+      ? []
+      : showingPackagesList
+      ? []
+      : showingEditCategory
+      ? [
+          { name: 'Save', type: 'black', action: handleSaveCategoryLabel, isDisabled: !canSaveCategoryLabel },
+          { name: 'Cancel', type: 'light-grey', action: handleCancelCategoryLabel },
+        ]
       : formOverviewId
       // While the Form Name field's draft differs from the saved name,
       // Save/Cancel take over from Delete Form — revert: drop this
@@ -676,6 +1204,12 @@ export default function EventSitePackagesListPage() {
         searchPlaceholder="Search Event Site and Packages..."
         search={search}
         onSearchChange={setSearch}
+        pageActions={[
+          {
+            actionType: 'toggle',
+            pageActionProps: { label: 'Premium', value: isPremium, onClick: toggleIsPremium },
+          },
+        ]}
       >
         {isEmpty ? (
           <div className="efp-empty">No results match your search.</div>
@@ -694,6 +1228,12 @@ export default function EventSitePackagesListPage() {
                         ? openHomepagePanel
                         : row.id === 'website-design-style'
                         ? openStylePanel
+                        : row.id === 'color-exploration'
+                        ? openColorExplorationPanel
+                        : row.id === 'event-site-pages'
+                        ? openSitePagesPanel
+                        : row.id === 'packages'
+                        ? openPackagesPanel
                         : undefined
                     }
                   />
@@ -702,13 +1242,13 @@ export default function EventSitePackagesListPage() {
                   <EventSitePreviewCard
                     eventSite={eventSite}
                     onViewWebsite={() => window.open('/event-site', '_blank', 'noopener,noreferrer')}
-                    onEditLiveWebsite={() => window.open(LIVE_WEBSITE_URL, '_blank', 'noopener,noreferrer')}
+                    isPremium={isPremium}
                   />
                 )}
                 {row.id === 'packages' && showPackages && (
                   <div className="efp-pkg-row">
                     {visiblePackages.map(pkg => (
-                      <PackageCard key={pkg.id} pkg={pkg} />
+                      <PackageCard key={pkg.id} pkg={pkg} onClick={openPackagesPanel} />
                     ))}
                   </div>
                 )}
@@ -730,15 +1270,15 @@ export default function EventSitePackagesListPage() {
           !panelOpen ||
           showingHomepage ||
           showingStyle ||
+          showingColorExploration ||
+          showingSitePages ||
+          showingPackagesList ||
           (showingFormsList && !addingForm && !addingQuestion)
             ? undefined
             : handlePanelBack
         }
         title={panelTitle}
         actions={panelActions}
-        expanded={showingStyle && isStyleExpanded}
-        rightIcon={showingStyle ? (isStyleExpanded ? faCompress : faExpand) : undefined}
-        onRightAction={showingStyle ? () => setIsStyleExpanded(value => !value) : undefined}
       >
         {creatingForm ? (
           <div className="efp-loading">
@@ -770,7 +1310,48 @@ export default function EventSitePackagesListPage() {
             onChange={patch => setResponseDraft(prev => ({ ...prev, ...patch }))}
           />
         ) : showingHomepage ? (
+          <EventSiteHomepageSectionsList
+            order={homepageDraft.sectionOrder}
+            onReorder={handleReorderHomepageSections}
+            bannerFiles={homepageDraft.bannerFiles}
+            description={homepageDraft.description}
+            additionalDescription={homepageDraft.additionalDescription}
+            registrationDetails={homepageDraft.registrationDetails}
+            photoFiles={homepageDraft.photoFiles}
+            videoFiles={homepageDraft.videoFiles}
+            headers={homepageDraft.sectionHeaders}
+            onEditSection={openHomepageSectionPanel}
+            isPremium={isPremium}
+          />
+        ) : editingHomepageSectionId === 'photo' ? (
           <EventSiteHomepageFields
+            section="photo"
+            title={sectionTileLabel('photo', HOMEPAGE_SECTION_BY_ID.photo.label, homepageDraft.sectionHeaders, isPremium)}
+            photoFiles={homepageDraft.photoFiles}
+            onChangePhotoFiles={files => setHomepageDraft(prev => ({ ...prev, photoFiles: files }))}
+            header={homepageDraft.sectionHeaders.photo}
+            onChangeHeader={value => setHomepageDraft(prev => ({ ...prev, sectionHeaders: { ...prev.sectionHeaders, photo: value } }))}
+            isPremium={isPremium}
+          />
+        ) : editingHomepageSectionId === 'video' ? (
+          <EventSiteHomepageFields
+            section="video"
+            title={sectionTileLabel('video', HOMEPAGE_SECTION_BY_ID.video.label, homepageDraft.sectionHeaders, isPremium)}
+            videoFiles={homepageDraft.videoFiles}
+            onChangeVideoFiles={files => setHomepageDraft(prev => ({ ...prev, videoFiles: files }))}
+            header={homepageDraft.sectionHeaders.video}
+            onChangeHeader={value => setHomepageDraft(prev => ({ ...prev, sectionHeaders: { ...prev.sectionHeaders, video: value } }))}
+            isPremium={isPremium}
+          />
+        ) : editingHomepageSectionId ? (
+          <EventSiteHomepageFields
+            section={editingHomepageSectionId}
+            title={sectionTileLabel(
+              editingHomepageSectionId,
+              HOMEPAGE_SECTION_BY_ID[editingHomepageSectionId].label,
+              homepageDraft.sectionHeaders,
+              isPremium
+            )}
             bannerFiles={homepageDraft.bannerFiles}
             onChangeBannerFiles={files => setHomepageDraft(prev => ({ ...prev, bannerFiles: files }))}
             description={homepageDraft.description}
@@ -783,13 +1364,45 @@ export default function EventSitePackagesListPage() {
             onChangeRegistrationDetails={registrationDetails =>
               setHomepageDraft(prev => ({ ...prev, registrationDetails }))
             }
-            promotionalImageFiles={homepageDraft.promotionalImageFiles}
-            onChangePromotionalImageFiles={files => setHomepageDraft(prev => ({ ...prev, promotionalImageFiles: files }))}
-            promotionalVideoFiles={homepageDraft.promotionalVideoFiles}
-            onChangePromotionalVideoFiles={files => setHomepageDraft(prev => ({ ...prev, promotionalVideoFiles: files }))}
+            header={homepageDraft.sectionHeaders[editingHomepageSectionId]}
+            onChangeHeader={value =>
+              setHomepageDraft(prev => ({
+                ...prev,
+                sectionHeaders: { ...prev.sectionHeaders, [editingHomepageSectionId]: value },
+              }))
+            }
+            buttons={homepageDraft.sectionButtons[editingHomepageSectionId]}
+            onChangeButton={(key, value) =>
+              setHomepageDraft(prev => ({
+                ...prev,
+                sectionButtons: {
+                  ...prev.sectionButtons,
+                  [editingHomepageSectionId]: { ...prev.sectionButtons[editingHomepageSectionId], [key]: value },
+                },
+              }))
+            }
+            isPremium={isPremium}
           />
         ) : showingStyle ? (
           <WebsiteDesignStyleFields
+            isPremium={isPremium}
+            primaryColor={styleDraft.primaryColor}
+            onChangePrimaryColor={primaryColor => setStyleDraft(prev => ({ ...prev, primaryColor }))}
+            secondaryColor={styleDraft.secondaryColor}
+            onChangeSecondaryColor={secondaryColor => setStyleDraft(prev => ({ ...prev, secondaryColor }))}
+            neutralTint={styleDraft.neutralTint}
+            onChangeNeutralTint={neutralTint => setStyleDraft(prev => ({ ...prev, neutralTint }))}
+            themeOverrides={styleDraft.themeOverrides}
+            onChangeThemeOverrides={updater =>
+              setStyleDraft(prev => ({
+                ...prev,
+                themeOverrides: typeof updater === 'function' ? updater(prev.themeOverrides ?? {}) : updater,
+              }))
+            }
+          />
+        ) : showingColorExploration ? (
+          <ColorExplorationFields
+            isPremium={isPremium}
             primaryColor={styleDraft.primaryColor}
             onChangePrimaryColor={primaryColor => setStyleDraft(prev => ({ ...prev, primaryColor }))}
             secondaryColor={styleDraft.secondaryColor}
@@ -801,6 +1414,38 @@ export default function EventSitePackagesListPage() {
                 themeOverrides: typeof updater === 'function' ? updater(prev.themeOverrides ?? {}) : updater,
               }))
             }
+            elementOverrides={styleDraft.elementOverrides}
+            onChangeElementOverrides={updater =>
+              setStyleDraft(prev => ({
+                ...prev,
+                elementOverrides: typeof updater === 'function' ? updater(prev.elementOverrides ?? {}) : updater,
+              }))
+            }
+          />
+        ) : showingSitePages ? (
+          <EventSitePagesTiles
+            visibility={pageVisibility}
+            onToggleVisibility={togglePageVisibility}
+            auctionUrl={auctionUrl}
+            onSaveAuctionUrl={handleSaveAuctionUrl}
+            onEditHomepage={openHomepagePanel}
+          />
+        ) : showingPackagesList ? (
+          <PackagesListContent
+            packagesById={packagesById}
+            packageOrder={packageOrder}
+            categoryLabels={categoryLabels}
+            onAddPackage={handleAddPackage}
+            onCopyPackage={handleCopyPackage}
+            onEditCategory={openEditCategory}
+            onReorderCategory={reorderWithinCategory}
+            isPremium={isPremium}
+          />
+        ) : showingEditCategory ? (
+          <EditPackageCategoryFields
+            value={categoryLabelDraft}
+            onChange={setCategoryLabelDraft}
+            onSubmit={handleSaveCategoryLabel}
           />
         ) : viewingResponses ? (
           formOverviewName && (

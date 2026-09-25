@@ -1,0 +1,21 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.ehs-rows {
+  display: flex;
+  flex-direction: column;
+  // No gap or padding of its own — tiles sit flush against each other
+  // (their own borders are what separate them, EventSiteHomepageSectionRow.scss's
+  // .ehs-row) and run the full width of the panel; each tile's own padding
+  // is what keeps its content off the panel's edges instead.
+
+  // Dragging a tile selects page text otherwise, since pointer-event
+  // dragging (see EventSiteHomepageSectionsList.jsx) has no native
+  // browser-level equivalent of drag-and-drop's automatic selection
+  // suppression. Every tile's own preview thumbnail stays put through a
+  // drag (unlike `.ehs-row-card--editing`, EventSiteHomepageSectionRow.scss)
+  // — it's only redundant next to that tile's own opened fields, not while
+  // just reordering.
+  &--reordering {
+    user-select: none;
+  }
+}

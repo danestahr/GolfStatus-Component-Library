@@ -51,12 +51,14 @@ const GSPageSection = props => {
     <gs-page-section style={style}>
       {title && <GSActionBar style={{...defaultBodyWidth}} header={title} pageActions={sectionActions} type="H2"/>}
       {description ? <div style={{...defaultBodyWidth, ...defaultTypography.bodyRegular.withOpacity()}} className="description">{description}</div> : null}
-      <GSItemList
-        style={{...defaultBodyWidth}}
-        items={sectionViews}
-        listItem={item => item}
-        type="vertical large-gap"
-      />
+      {sectionViews.length > 0 && (
+        <GSItemList
+          style={{...defaultBodyWidth}}
+          items={sectionViews}
+          listItem={item => item}
+          type="vertical large-gap"
+        />
+      )}
     </gs-page-section>
   );
 };

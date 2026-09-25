@@ -3,17 +3,22 @@
 gs-page-section {
   width: 100%;
   @include h-padding($x-large-pad );
-  @include v-padding($xx-large-pad );
+  @include v-padding($small-layout-pad );
   @include v-stack(center, center);
+  // v-stack already makes this a column flex box — a gap here spaces every
+  // direct child (the title's gs-action-bar, .description, gs-item-list)
+  // evenly, only between whichever of them actually render, instead of
+  // each one needing its own margin-bottom that'd still leave a trailing
+  // gap after the last child.
+  gap: $x-large-pad;
   border-bottom: 1px solid;
 
 
   > gs-action-bar {
-    @include padding($x-large-pad 0);
+    padding: 0;
   }
 
   .description {
-    padding-bottom: $x-large-pad;
     width: 100%;
   }
   .section-body {

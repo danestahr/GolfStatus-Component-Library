@@ -1,0 +1,392 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// The Color Ramps / Theme tab row — a plain GSButton row, same "active gets
+// Primary Subtle, inactive stays transparent" convention EventWebsitePage's
+// sub-nav (.es-subnav) uses for switching sections, reused here for this
+// admin screen since gs-lib has no dedicated tab component yet.
+.wds-color-tabs {
+  border-bottom: $light-border;
+  margin-bottom: $large-pad;
+}
+
+// Both tabs' own comparison grid (RampRowLabels/RampGroup/RampPill/
+// RampChip in ColorExplorationFields.jsx) — an optional shared step-label
+// column on the left (Color Ramps only — see RampRowLabels' own comment),
+// then one flexible column per Neutral/Primary/Secondary group, each
+// holding a Light and a Dark pill side by side. The 24px side padding
+// keeps the grid clear of the panel edge, matching the "Color Exploration"
+// H3 header's own inset (GSActionBar's form-header padding).
+$ramp-row-gap: $large-pad;
+$ramp-chip-height: 76px;
+$ramp-head-height: 116px;
+
+.wds-ramps-compare {
+  display: flex;
+  align-items: flex-start;
+  gap: $x-large-pad;
+  width: 100%;
+  padding: 0 $x-large-pad;
+  box-sizing: border-box;
+}
+
+// Fixed width (not flex: 1) — unlike the ramp groups, its content (a
+// two/three-digit step number) never needs to shrink to make room.
+.wds-ramp-row-labels {
+  @include v-stack(unset, unset);
+  gap: $ramp-row-gap;
+  flex: 0 0 auto;
+}
+
+.wds-ramp-head-spacer {
+  height: $ramp-head-height;
+}
+
+.wds-ramp-row-label {
+  height: $ramp-chip-height;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: $grey-700;
+}
+
+// Each group takes an equal share of whatever width is left after the
+// label column, and shrinks its own pills with it — same "flex instead of
+// a fixed px width" approach the rest of this screen uses to avoid ever
+// needing a horizontal scrollbar.
+.wds-ramp-group {
+  @include v-stack(unset, unset);
+  gap: $medium-pad;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.wds-ramp-group-head {
+  @include v-stack(unset, unset);
+  gap: $small-medium-pad;
+}
+
+// Only the Color Ramps tab's groups get this (see RampGroup's own comment)
+// — its picker row needs to reserve the same height as RampRowLabels'
+// spacer so chip rows still line up with the shared step-label column.
+.wds-ramp-group-head--fixed {
+  height: $ramp-head-height;
+}
+
+.wds-ramp-group-title {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.wds-ramp-fixed-note {
+  color: $grey-500;
+  text-align: center;
+}
+
+.wds-ramp-group-pills {
+  display: flex;
+  gap: $small-medium-pad;
+}
+
+// One Light or Dark backdrop for a whole Neutral/Primary/Secondary ramp —
+// a single rounded-rect column (not one rounded box per swatch) so the
+// ramp reads as one continuous strip, same idea as wds-swatches-container's
+// own light/dark backdrop, just column-oriented.
+.wds-ramp-pill {
+  @include v-stack(unset, unset);
+  gap: $ramp-row-gap;
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: $large-radius;
+  padding: $x-large-pad $medium-pad;
+}
+
+.wds-ramp-pill--light {
+  background: $white;
+  border: $light-border;
+}
+
+.wds-ramp-pill--dark {
+  background: $black;
+}
+
+.wds-ramp-chip {
+  height: $ramp-chip-height;
+  @include v-stack(unset, center);
+  // v-stack's inline-flex shrink-wraps to its widest child — without this,
+  // the color tile's own width: 100% (below) resolves against that
+  // shrink-wrapped box instead of the actual chip slot, so it renders no
+  // wider than the label/hex text under it.
+  display: flex;
+  width: 100%;
+  gap: $small-pad;
+}
+
+// The Theme tab's own chips (RampChip's `label` prop) show a role name
+// above the hex instead of relying on a shared row-label column (Neutral's
+// role list is a different length than Primary/Secondary's, so there's no
+// single set of rows all three groups could share) — auto height instead
+// of the Color Ramps tab's fixed $ramp-chip-height, since nothing else
+// needs this chip's row position to line up with.
+.wds-ramp-chip--labeled {
+  height: auto;
+}
+
+.wds-ramp-chip-color {
+  width: 100%;
+  height: 48px;
+  border-radius: $large-radius;
+  box-sizing: border-box;
+}
+
+// The Color Ramps tab's own "this is the step BaseColorPicker controls"
+// marker (RampChip's `isBase` prop, step 400) — dark border against the
+// light pill, white against the dark one, so it reads on either backdrop.
+.wds-ramp-pill--light .wds-ramp-chip-color--base {
+  border: 4px solid $grey-800;
+}
+
+.wds-ramp-pill--dark .wds-ramp-chip-color--base {
+  border: 4px solid $white;
+}
+
+.wds-ramp-chip-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+// The Theme/Event Site tabs' own editable "which scale step is this" spot
+// (RampChip's designation/onChangeDesignation, e.g. "Primary 600") — sits
+// between the role name and the hex, muted so it doesn't compete with
+// either until focused. A plain text input, not a button/select, so typing
+// "Secondary 900" is the whole interaction (see parseDesignation).
+.wds-ramp-chip-designation {
+  font-size: 12px;
+  font-weight: 400;
+  font-style: normal;
+  text-align: center;
+  opacity: 1;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  color: inherit;
+  padding: 0;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    opacity: 0.6;
+  }
+}
+
+.wds-ramp-chip-hex {
+  font-size: 12px;
+  font-weight: 400;
+  font-family: monospace;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.wds-ramp-pill--light .wds-ramp-chip-label,
+.wds-ramp-pill--light .wds-ramp-chip-designation,
+.wds-ramp-pill--light .wds-ramp-chip-hex,
+.wds-role-chip-slot--light .wds-ramp-chip-label,
+.wds-role-chip-slot--light .wds-ramp-chip-designation,
+.wds-role-chip-slot--light .wds-ramp-chip-hex {
+  color: $grey-700;
+}
+
+.wds-ramp-pill--dark .wds-ramp-chip-label,
+.wds-ramp-pill--dark .wds-ramp-chip-designation,
+.wds-ramp-pill--dark .wds-ramp-chip-hex,
+.wds-role-chip-slot--dark .wds-ramp-chip-label,
+.wds-role-chip-slot--dark .wds-ramp-chip-designation,
+.wds-role-chip-slot--dark .wds-ramp-chip-hex {
+  color: $white;
+}
+
+// The Theme tab's own role-compare table (RoleCompareTable in
+// ColorExplorationFields.jsx) — Neutral Tint/Primary Tint/Secondary Tint as
+// columns, every Primary/Secondary/Neutral role as its own row, so
+// scrolling down through roles keeps all three tint themes in view side by
+// side instead of scrolling past one whole theme to reach the next one's
+// same role.
+.wds-role-table {
+  padding: 0 $x-large-pad $x-large-pad;
+}
+
+$wds-role-label-width: 140px;
+
+.wds-role-row {
+  display: grid;
+  grid-template-columns: $wds-role-label-width repeat(3, 1fr);
+  align-items: center;
+  gap: $medium-pad 56px;
+  padding: $medium-pad 0;
+  border-bottom: $light-border;
+}
+
+// Pinned to the top of the panel's own scroll so the theme names stay in
+// view no matter how far down the role list you've scrolled.
+.wds-role-row--header {
+  position: sticky;
+  top: 0;
+  background: $white;
+  z-index: 1;
+  border-bottom: 2px solid $grey-200;
+}
+
+.wds-role-row-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.wds-role-row-theme-header {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.wds-role-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  padding: $large-pad 0 $small-pad ($wds-role-label-width + $medium-pad);
+}
+
+.wds-role-row-theme {
+  display: flex;
+  gap: $small-medium-pad;
+}
+
+// One chip's own Light or Dark backdrop — same idea as wds-ramp-pill's own
+// light/dark backdrop, just sized to a single chip instead of a whole
+// column of them (this table shows one role's chips at a time per cell).
+.wds-role-chip-slot {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: $medium-radius;
+  padding: $large-pad;
+  box-sizing: border-box;
+}
+
+.wds-role-chip-slot--light {
+  background: $white;
+  border: $light-border;
+}
+
+.wds-role-chip-slot--dark {
+  background: $black;
+}
+
+// Site Colors' own per-element list (ElementRow/ELEMENT_GROUPS in
+// ColorExplorationFields.jsx) — a label + 3-tint-theme grid per element
+// (Neutral/Primary/Secondary Tint side by side, same grid shape as
+// wds-role-row, just a wider label column for an element's longer names)
+// grouped under a section title, so a role reference an element points at
+// (e.g. "Background") shows how it'd actually render under every tint at
+// once — useful since a Neutral-group role's own hex genuinely differs per
+// tint, unlike Primary/Secondary's own roles.
+$wds-element-label-width: 220px;
+
+.wds-element-list {
+  padding: 0 $x-large-pad $x-large-pad;
+}
+
+.wds-element-group {
+  & + & {
+    margin-top: $x-large-pad;
+  }
+}
+
+.wds-element-group-title {
+  font-weight: 700;
+  font-size: 15px;
+  padding: $large-pad 0 $small-pad;
+}
+
+.wds-element-row {
+  display: grid;
+  grid-template-columns: $wds-element-label-width repeat(3, 1fr);
+  align-items: center;
+  gap: $medium-pad 56px;
+  padding: $medium-pad 0;
+  border-bottom: $light-border;
+}
+
+.wds-element-row-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+// An element/role's real --es-el-*/--gs-color-* variable name (ElementRow's
+// `cssVar` prop, Site Colors' own CSS Variables table) — sits under the
+// label, muted, same treatment wds-svg-color-fixed below gives a "not
+// themed" note.
+.wds-site-color-var {
+  font-family: monospace;
+  font-size: 11px;
+  color: $grey-500;
+  margin-top: 2px;
+}
+
+// A plain key/value reference table, not another role-compare grid — SVG
+// Preview's own dev-handoff table (SVG_COLOR_MAP, source hex -> preview CSS
+// var) and Site Colors' "CSS Variables" table (SITE_ROLE_CSS_VAR, role ->
+// live --gs-color-* var) share this styling since both are one fixed list
+// mapped to a CSS variable, not a comparison across tint themes.
+.wds-svg-color-map {
+  padding: $x-large-pad;
+}
+
+.wds-svg-color-map-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    text-align: left;
+    padding: $medium-pad $small-medium-pad;
+    border-bottom: $light-border;
+  }
+
+  th {
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $grey-700;
+  }
+
+  code {
+    font-family: monospace;
+    font-size: 12px;
+  }
+}
+
+.wds-svg-color-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: $small-radius;
+  border: $light-border;
+  margin-right: $small-pad;
+  vertical-align: middle;
+}
+
+.wds-svg-color-hex {
+  font-family: monospace;
+  vertical-align: middle;
+}
+
+.wds-svg-color-fixed {
+  color: $grey-500;
+  font-style: italic;
+}

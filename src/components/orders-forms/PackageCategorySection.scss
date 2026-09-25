@@ -1,0 +1,33 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.pkgc-header {
+  position: sticky;
+  // Sticks right beneath PackagesListContent's own sticky search bar — same
+  // measured-offset convention as SponsorTierSection's tier header (see
+  // EntityListPage.jsx), just scoped to this panel screen's own search bar
+  // instead (see PackagesListContent.jsx).
+  top: var(--pkgc-sticky-offset, 0px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  background: $grey-50;
+}
+
+.pkgc-name {
+  min-width: 0;
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.pkgc-rows {
+  // Dragging a row selects page text otherwise, since pointer-event
+  // dragging (see PackageCategorySection.jsx) has no native browser-level
+  // equivalent of drag-and-drop's automatic selection suppression.
+  &--reordering {
+    user-select: none;
+  }
+}

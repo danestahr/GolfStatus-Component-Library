@@ -1,0 +1,35 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.pkgl-list {
+  display: flex;
+  flex-direction: column;
+
+  > gs-action-bar {
+    border-bottom: $light-border;
+  }
+}
+
+.pkgl-search {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: $white;
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+  gs-input {
+    width: 100%;
+  }
+}
+
+.pkgl-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.pkgl-empty {
+  padding: $xx-large-pad;
+  text-align: center;
+  color: $grey-500;
+  font-size: $small-font;
+}

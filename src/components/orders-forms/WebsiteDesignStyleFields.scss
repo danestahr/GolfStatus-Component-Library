@@ -18,43 +18,202 @@
   }
 }
 
-.wds-picker-row {
-  @include h-stack(flex-start, center);
-  gap: $medium-pad;
-  flex-wrap: wrap;
-}
-
-.wds-presets {
-  @include h-stack(flex-start, center);
+.wds-hex-field {
+  @include v-stack(flex-start, stretch);
   gap: $x-small-pad;
-}
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative; // contains .wds-hex-native-picker's absolute position
 
-.wds-preset {
-  width: 28px;
-  height: 28px;
-  border-radius: $small-medium-radius;
-  border: $light-border;
-  padding: 0;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    outline: 2px solid $grey-800;
-    outline-offset: 1px;
+  // Beats gs-field.scss's `.field-value gs-input { width: 100% }` the same
+  // way .wds-scale-row's own gs-input override does — here stretched to
+  // fill its half of .wds-hex-inputs instead of a fixed width, so the two
+  // fields span the full row.
+  gs-input {
+    width: 100% !important;
+    min-height: 40px;
   }
 }
 
-.wds-mode-label {
+.wds-hex-label {
   @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
   text-transform: uppercase;
   color: $grey-600;
+}
 
-  // No top gap on the first one (right under the color picker row) — the
-  // second (Dark Mode) still wants the usual $medium-pad gap from
-  // .wds-scale-row's v-stack above the light row's swatches.
-  &:first-of-type {
-    margin-top: -#{$x-small-pad};
+// The real <input type="color"> HexColorField's palette icon opens
+// (WebsiteDesignStyleFields.jsx) — kept off-screen rather than
+// display:none, which some browsers refuse to open a picker from.
+.wds-hex-native-picker {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+// Both hex inputs together, side by side, above the Primary/Secondary
+// blocks (WebsiteDesignStyleFields.jsx's ColorsSection) — set apart from
+// .wds-colors-tile below by its own 16px margin rather than
+// .wds-scale-row's usual $medium-pad gap.
+.wds-hex-inputs {
+  @include h-stack(flex-start, flex-start);
+  gap: $large-pad;
+  width: 100%;
+  margin-bottom: $large-pad;
+}
+
+// A grey-bordered tile holding a light-backdrop row (bare, e.g. a ramp or
+// button row) and, usually, a dark one inset in its own .wds-ramp-dark-pill
+// underneath — the Colors, Neutral, and Button Styles sections all share
+// this same container/layout.
+.wds-colors-tile {
+  @include v-stack(flex-start, stretch);
+  gap: $large-pad;
+  width: 100%;
+  padding: $large-pad;
+  border: $light-border;
+  border-radius: $small-medium-radius;
+  box-sizing: border-box;
+}
+
+// ColorsSection's own tile doubles as its Color Range toggle — tapping
+// anywhere on it (not just a dedicated button) flips showRamp — so it gets
+// a pointer cursor and a subtle hover/focus tint, same rgba($grey-500, …)
+// convention as GSButton's own "light-grey" type, to read as interactive.
+.wds-colors-tile--clickable {
+  cursor: pointer;
+  transition: background $fast;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba($grey-500, 0.05);
   }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: $focus-shadow;
+  }
+}
+
+// Primary's and Secondary's ColorBlock sit side by side in their own row
+// (ColorsSection, WebsiteDesignStyleFields.jsx), each sharing half the
+// tile's width evenly, rather than stacked one above the other.
+.wds-colors-tile-blocks {
+  @include h-stack(flex-start, stretch);
+  gap: $large-pad;
+  width: 100%;
+
+  .wds-color-block {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+// The Swap button sitting between the Primary/Secondary blocks
+// (ColorsSection, WebsiteDesignStyleFields.jsx) — centered on the row's
+// cross-axis so it lines up with the color bars regardless of whether
+// either block's ramp is open (taller) or closed.
+.wds-colors-swap {
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+// One color's own name-plus-swatch-plus-ramp stack (ColorBlock,
+// WebsiteDesignStyleFields.jsx) — plain on the panel's own background, no
+// card or shadow of its own.
+.wds-color-block {
+  @include v-stack(flex-start, stretch);
+  gap: $medium-pad;
+  width: 100%;
+}
+
+// "PRIMARY"/"SECONDARY" — centered per the Frame 70/71 reference, unlike
+// this file's other (left-aligned) labels.
+.wds-color-block-label {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  text-align: center;
+  color: $grey-800;
+}
+
+// The color exactly as picked, not mode-adjusted — spans its block's full
+// width so the raw selection reads at a glance under the hex input.
+.wds-ramp-base-bar {
+  width: 100%;
+  height: 56px;
+  border-radius: $small-medium-radius;
+}
+
+// Animates the Color Range toggle open/closed instead of popping the ramp
+// in/out (ColorBlock, WebsiteDesignStyleFields.jsx) — stays mounted either
+// way; grid-template-rows 0fr -> 1fr smoothly animates to the ramp's real
+// (variable) height, which a plain height/max-height transition can't do
+// without hard-coding a value. .wds-ramp-reveal-inner's own overflow+
+// min-height:0 is what lets the 0fr track actually clip it to nothing.
+.wds-ramp-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.3s ease, opacity 0.3s ease;
+
+  &.wds-ramp-reveal--open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+.wds-ramp-reveal-inner {
+  @include v-stack(flex-start, stretch);
+  gap: $medium-pad;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// Insets the dark-mode ramp (ColorBlock, WebsiteDesignStyleFields.jsx) in
+// its own rounded black pill, mirroring the light ramp's bare squares
+// sitting directly on .wds-colors-card's own white background.
+.wds-ramp-dark-pill {
+  width: 100%;
+  padding: $large-pad;
+  background: $black;
+  border-radius: $medium-large-border-radius;
+  box-sizing: border-box;
+}
+
+// Colors section's ramp squares — bare swatches with no step/hex/family
+// text, so Primary's ramp and Secondary's ramp each read as a ramp instead
+// of a data table.
+.wds-ramp-row {
+  @include h-stack(flex-start, stretch);
+  gap: $x-small-pad;
+  width: 100%;
+}
+
+.wds-ramp-square {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 48px;
+  border-radius: $small-medium-radius;
+}
+
+// Marks the 400 step — the value the hex input actually set — inset so the
+// ring stays inside the square's own bounds instead of bleeding into its
+// tightly-packed neighbors. Dark grey on the light ramp, white on the dark
+// ramp (wds-ramp-row--light/--dark, ColorRampSquares) so it reads against
+// either backdrop instead of just one.
+.wds-ramp-square--base {
+  outline-offset: -4px;
+}
+
+.wds-ramp-row--light .wds-ramp-square--base {
+  outline: 4px solid $grey-800;
+}
+
+.wds-ramp-row--dark .wds-ramp-square--base {
+  outline: 4px solid $white;
 }
 
 // Wraps a Light/Dark Mode swatch row (ScaleSwatches and ThemeDefinitionRow's
@@ -70,6 +229,7 @@
 
 .wds-swatches-container--light {
   background: $white;
+  border: $light-border;
 }
 
 .wds-swatches-container--dark {
@@ -84,25 +244,11 @@
   overflow-x: auto;
 }
 
-// Primary/Secondary/Neutral's own rows (ScaleSwatches's `fit` prop) —
-// unlike Theme Definitions' rows, which scroll (wds-swatches--synced),
-// these shrink every swatch to fit the panel's width instead, so all 12
-// (White, 50-900, Black) stay visible with no scrollbar.
+// The Neutral section's own row (ScaleSwatches's `fit` prop) — shrinks
+// every swatch to fit the panel's width, so all 12 (White, 50-900, Black)
+// stay visible with no scrollbar.
 .wds-swatches--fit {
   overflow-x: visible;
-}
-
-// The 6 useSyncedSwatchScroll rows (WebsiteDesignStyleFields.jsx) scroll
-// together as one, so showing 6 separate scrollbars underneath them reads
-// as 6 unrelated strips instead of a single synced one — hidden here, drag/
-// wheel/trackpad scrolling still works with no visible scrollbar.
-.wds-swatches--synced {
-  scrollbar-width: none; // Firefox
-  -ms-overflow-style: none; // legacy Edge
-
-  &::-webkit-scrollbar {
-    display: none; // Chrome/Safari
-  }
 }
 
 .wds-swatch {
@@ -127,117 +273,23 @@
   }
 }
 
-// The 400 step is the one editable value driving the rest of the row (see
-// ColorScaleRow) — ring it so it reads as the source, not just another stop.
-.wds-swatch--base {
-  .wds-swatch-color {
-    box-shadow: 0 0 0 2px $white;
-    outline: 2px solid $grey-800;
-  }
-}
-
 .wds-swatch-color {
   width: 100px;
   height: 100px;
   border-radius: $small-medium-radius;
 }
 
-.wds-swatch-step {
-  @include h-stack(center, center);
-  @include item-font();
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  gap: $x-small-pad;
-}
-
-.wds-swatch-base-tag {
-  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
-  text-transform: uppercase;
-  background: $grey-800;
-  color: $white;
-  border-radius: $huge-radius;
-  padding: 1px $small-pad;
-}
-
-.wds-swatch-hex {
-  @include item-font();
-  font-size: 11px;
-  opacity: 0.6;
-}
-
-// Theme Definitions swatches (ThemeDefinitionRow, WebsiteDesignStyleFields.jsx)
-// render their reference text as this input instead of a plain div — typing
-// e.g. "Primary 900" and committing (blur/Enter) re-points that swatch at
-// that color. Reset to look like the plain text it replaces until touched.
-.wds-swatch-hex-input {
-  border: none;
-  background: transparent;
-  padding: 1px 2px;
-  margin: 0;
-  font: inherit;
-  color: inherit;
-  text-align: center;
-  width: 100%;
-  cursor: text;
-  border-radius: $small-radius;
-
-  &:hover {
-    background: rgba($grey-800, 0.06);
-  }
-
-  &:focus {
-    outline: none;
-    opacity: 1;
-    // No background here — a forced light/dark color would clash with
-    // whichever text color this input inherits (wds-swatches-container's
-    // white-on-black Dark Mode text included), sometimes hiding it outright.
-    background: transparent;
-    box-shadow: 0 0 0 1px $grey-400;
-  }
-}
-
-.wds-swatch-family {
-  @include item-font();
-  font-size: 11px;
-  font-weight: 600;
-  opacity: 0.6;
-}
-
+// Fill/Outline/Subtle stretch to share the row's full width evenly (like
+// the color ramp's own squares), instead of sitting fixed-width with
+// leftover space after them.
 .wds-button-row {
   @include h-stack(flex-start, center);
   gap: $medium-pad;
-  flex-wrap: wrap;
   width: 100%;
+
+  gs-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
-.wds-theme-defs {
-  @include v-stack(flex-start, stretch);
-  gap: $x-large-pad;
-  width: 100%;
-}
-
-.wds-theme-def {
-  @include v-stack(flex-start, stretch);
-  gap: $medium-pad;
-  width: 100%;
-  padding-top: $large-pad;
-  border-top: $light-border;
-}
-
-.wds-theme-def-name {
-  @include gs-font($medium-font, $bold-font-weight, normal);
-}
-
-// Sub-label distinguishing the Neutral row from the Monochromatic row
-// stacked under it (ThemeDefinitionRow, WebsiteDesignStyleFields.jsx) —
-// one step lighter/smaller than .wds-mode-label above it, since it's a
-// second level of grouping under Light/Dark Mode, not a sibling of it.
-.wds-variant-label {
-  @include item-font();
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  opacity: 0.6;
-  margin-top: $x-small-pad;
-}

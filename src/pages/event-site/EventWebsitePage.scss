@@ -16,8 +16,8 @@
 // palette hex — that's the seam for building out additional color themes.
 .es-page {
   font-family: $font-family;
-  background: var(--gs-color-background);
-  color: var(--gs-color-on-background);
+  background: var(--es-el-page-background, var(--gs-color-background));
+  color: var(--es-el-page-text-default, var(--gs-color-on-background));
   min-height: 100%;
   // App.jsx's <main> is a flex column and this page is its only child, so
   // without this the flex algorithm shrinks the page down to main's own
@@ -31,18 +31,33 @@
   // radius) — giving it the surface color here is scoped to this page only,
   // not a change to the shared component.
   .section-body {
-    background: var(--gs-color-surface-container-high);
+    background: var(--es-el-section-box-background, var(--gs-color-surface-container-high));
     color: var(--gs-color-on-surface);
   }
 
   // gs-page-section.scss leaves the section itself (not just .section-body
-  // above) background-less — scoped here the same way. Its border-bottom
-  // (also unstyled there, just "1px solid" with no color — currentColor)
-  // gets the same treatment, same theme.scss outline-variant token
-  // .es-arrow-tile's own border reads (see gs-image's border-color below).
+  // above) background-less — scoped here the same way, same
+  // es-el-page-background as .es-page's own background above (this is the
+  // page background showing through between sections, same token/color,
+  // just also set explicitly at this level). Its border-bottom (also
+  // unstyled there, just "1px solid" with no color — currentColor) gets the
+  // same treatment, same theme.scss outline-variant token .es-arrow-tile's
+  // own border reads (see gs-image's border-color below).
   gs-page-section {
-    background: var(--gs-color-background);
-    border-bottom-color: var(--gs-color-outline-variant);
+    background: var(--es-el-page-background, var(--gs-color-background));
+    border-bottom-color: var(--es-el-section-bottom-border, var(--gs-color-outline-variant));
+
+    // Direct children only — a nested gs-action-bar further down inside
+    // .section-body (a sponsor tier's own H3, a sponsor tile's own H5) is a
+    // different element with its own Site Colors entry (see
+    // .es-sponsor-tier/.es-sponsor-tile below), not this section's title.
+    > gs-action-bar.H2 h2 {
+      color: var(--es-el-section-title, var(--gs-color-on-background));
+    }
+
+    > .description {
+      color: var(--es-el-section-description, var(--gs-color-on-background));
+    }
   }
 
   // gs-image.scss's own border is a hardcoded $light-border (rgba black,
@@ -78,9 +93,9 @@
 // bg/text read Primary/On Primary, matching .es-cart-button/.es-theme-toggle/
 // .es-theme-picker below (already on-primary) — this bar no longer forces
 // gs-lib's `.dark` class on itself the way it used to, so it now actually
-// varies with the active theme (Winter/Lavender's own primary/on-primary,
-// see gs-lib/styles/theme.scss) instead of being hardcoded black/white
-// regardless of theme. The sub-nav below stays on the page's own
+// varies with the active theme (see gs-lib/styles/theme.scss) instead of
+// being hardcoded black/white regardless of theme. The sub-nav below stays
+// on the page's own
 // light/dark background/on-surface.
 //
 // --es-header-bg/--es-header-fg are local aliases (not gs-lib tokens) so
@@ -97,7 +112,7 @@
   justify-content: space-between;
   gap: 24px;
   padding: 16px;
-  background: var(--es-header-bg);
+  background: var(--es-el-header-background, var(--es-header-bg));
   color: var(--es-header-fg);
 
   // GSAppNavigationHeader pads itself ($x-large-pad) and sets its own
@@ -108,6 +123,15 @@
     padding: 0;
     font-size: $xx-small-font;
     letter-spacing: $small-medium-letter-spacing;
+
+    // Otherwise just inherits this bar's own color above — its own rule so
+    // Site Colors' Event Name element (ColorExplorationFields.jsx's
+    // ELEMENT_DEFS) can be assigned independently of the logo icon below,
+    // which reads --es-header-fg the same way but via a different property
+    // (background-color, not color).
+    .nav-header-title {
+      color: var(--es-el-header-event-name, var(--es-header-fg));
+    }
   }
 }
 
@@ -132,7 +156,7 @@
   width: 48px;
   height: 48px;
   flex-shrink: 0;
-  background-color: var(--es-header-fg);
+  background-color: var(--es-el-header-icon, var(--es-header-fg));
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-repeat: no-repeat;
@@ -171,7 +195,7 @@
 }
 
 // Cycles the page's `.gs-theme-${themeName}` class through THEME_NAMES
-// (default/winter/lavender) — same --es-header-fg as .es-theme-toggle
+// (default/golfstatus) — same --es-header-fg as .es-theme-toggle
 // above since it lives in the same header bar.
 .es-theme-picker {
   gs-button.undefined {
@@ -183,7 +207,7 @@
 .es-avatar {
   display: inline-flex;
   padding: 2px;
-  border: 2px solid var(--gs-color-outline-variant);
+  border: 2px solid var(--es-el-avatar-border, var(--gs-color-outline-variant));
   border-radius: $circle-border-radius;
   box-sizing: border-box;
 }
@@ -223,8 +247,8 @@
 // rather than that component. See the file-level comment in
 // EventWebsitePage.jsx for why.
 .es-subnav {
-  background: var(--gs-color-background);
-  border-bottom: 1px solid var(--gs-color-outline-variant);
+  background: var(--es-el-subnav-background, var(--gs-color-background));
+  border-bottom: 1px solid var(--es-el-subnav-border, var(--gs-color-outline-variant));
   overflow-x: auto;
   box-shadow: $second-layer-shadow;
 
@@ -250,6 +274,26 @@
   gap: 12px;
 }
 
+// Otherwise just inherits .section-body's own on-surface color — their own
+// rules so Site Colors' Tournament Event Name/Date/Location elements
+// (ColorExplorationFields.jsx's ELEMENT_DEFS) can each be assigned
+// independently of one another and of every other on-surface text on the
+// page. es-tournament-date/es-tournament-location are otherwise the same
+// GSInfoGroup "body-regular secondary" item type (see introInfo in
+// EventWebsitePage.jsx) — without their own class they'd be one and the
+// same selector.
+.es-tournament-event-name {
+  color: var(--es-el-tournament-event-name, var(--gs-color-on-surface));
+}
+
+.es-tournament-date {
+  color: var(--es-el-tournament-date, var(--gs-color-on-surface));
+}
+
+.es-tournament-location {
+  color: var(--es-el-tournament-location, var(--gs-color-on-surface));
+}
+
 .es-course-location-group {
   display: flex;
   flex-direction: column;
@@ -263,7 +307,7 @@
 }
 
 .es-sidebar-card {
-  border: 1px solid var(--gs-color-outline-variant);
+  border: 1px solid var(--es-el-sidebar-border, var(--gs-color-outline-variant));
   border-radius: $medium-large-border-radius;
   overflow: hidden;
 }
@@ -273,10 +317,13 @@
   width: 100%;
 }
 
+// Only used by the Live Scoring section (see EventWebsitePage.jsx) — its
+// own Site Colors element (ELEMENT_DEFS' liveScoringBodyText) covers it
+// one-to-one.
 .es-body-text {
   font-size: $small-font;
   line-height: $regular-line-height;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-live-scoring-body-text, var(--gs-color-on-surface));
   margin: 0;
 }
 
@@ -293,7 +340,7 @@
   padding: $x-large-pad;
   min-width: 200px;
   cursor: pointer;
-  background: var(--gs-color-surface-bright);
+  background: var(--es-el-arrow-tile-background, var(--gs-color-surface-bright));
   transition: $fast;
 
   &:hover {
@@ -342,8 +389,10 @@
   }
 }
 
+// Packages tiles only — Additional Pages' own arrowTile() helper (see
+// EventWebsitePage.jsx) never renders one of these.
 .es-arrow-tile-icon {
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-package-tile-icon, var(--gs-color-on-surface));
 }
 
 .es-arrow-tile-text {
@@ -352,30 +401,45 @@
   gap: 4px;
 }
 
+// Shared by Packages and Additional Pages tiles alike (both render this
+// same class), so ELEMENT_DEFS' arrowTileLabel covers both at once — Site
+// Colors has no separate Additional-Pages-only label element.
 .es-arrow-tile-label {
   font-size: $small-font;
   font-weight: $bold-font-weight;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-arrow-tile-label, var(--gs-color-on-surface));
 }
 
+// Additional Pages tiles only ("View All") — Packages' own tiles never
+// render one of these.
 .es-arrow-tile-sub {
   font-size: $small-font;
-  color: var(--gs-color-on-surface-variant);
+  color: var(--es-el-additional-pages-sub, var(--gs-color-on-surface-variant));
   opacity: .7;
 }
 
+// Shared by Packages and Additional Pages tiles alike, same as
+// .es-arrow-tile-label above.
 .es-arrow-tile-arrow {
   position: absolute;
   top: 50%;
   right: $x-large-pad;
   transform: translateY(-50%);
-  color: var(--gs-color-on-surface-variant);
+  color: var(--es-el-arrow-tile-arrow, var(--gs-color-on-surface-variant));
 }
 
 .es-sponsor-tier {
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  // Direct child only — a sponsor tile's own H5 name further down (see
+  // .es-sponsor-tile below) is a different element with its own Site
+  // Colors entry, not this tier's own header (H3, "Technology Sponsor"/
+  // "All Sponsors"/...).
+  > gs-action-bar h3 {
+    color: var(--es-el-sponsor-tier-header, var(--gs-color-on-surface));
+  }
 }
 
 .es-sponsor-tile {
@@ -388,6 +452,7 @@
   // (regular weight) as an inline style — needs !important to win over that.
   gs-action-bar h5 {
     font-weight: $bold-font-weight !important;
+    color: var(--es-el-sponsor-tile-name, var(--gs-color-on-surface));
   }
 }
 
@@ -408,7 +473,7 @@
 .es-sponsor-feature-name {
   font-size: $large-font;
   font-weight: $bold-font-weight;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-sponsor-feature-name, var(--gs-color-on-surface));
 }
 
 .es-sponsor-feature-body {
@@ -421,7 +486,7 @@
 .es-sponsor-feature-description {
   font-size: $small-font;
   line-height: $regular-line-height;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-sponsor-feature-description, var(--gs-color-on-surface));
   opacity: .7;
   margin: 0;
 }
@@ -443,7 +508,7 @@
 
 .es-donation-goal-label {
   font-size: $small-font;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-donation-goal-label, var(--gs-color-on-surface));
 }
 
 .es-donation-raised-amount {
@@ -545,7 +610,7 @@
 // same reasoning as the gs-image override below.
 .es-video-frame {
   display: block;
-  border: 1px solid var(--gs-color-outline-variant);
+  border: 1px solid var(--es-el-video-frame-border, var(--gs-color-outline-variant));
   border-radius: $medium-large-border-radius;
   background: $white;
 }

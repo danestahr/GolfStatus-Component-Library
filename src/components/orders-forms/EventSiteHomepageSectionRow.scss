@@ -1,0 +1,239 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Two siblings in a row — the card (content) and the grip (reorder), not
+// one box with the grip tucked inside it. See EventSiteHomepageSectionRow.jsx's
+// own top comment for why. This outer box (not `.ehs-row-card`) owns the
+// tile's own frame now — a light border, uniform padding, a permanent white
+// fill (square corners, no radius) around both the card and the grip gutter
+// alike. The shadow only shows up while actually being dragged (below) —
+// flat otherwise. Because the white fill is already always there,
+// `.ehs-row-card` never needs its own dragging-specific look on top of it —
+// its state (live/hidden/disabled/editing) reads exactly the same while
+// being dragged as it does at rest.
+.ehs-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $xx-large-pad $x-large-pad;
+  background: $white;
+  border: 1px solid $grey-100;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow $fast;
+
+  &--dragging {
+    transition: none;
+    box-shadow: $second-layer-shadow;
+  }
+}
+
+// Two columns, `.ehs-row-main` and `.ehs-row-preview`, `align-items: stretch`
+// (flex's own default — not declared below) so both always match whichever
+// is taller.
+.ehs-row-card {
+  flex: 1;
+  display: flex;
+  gap: $x-large-pad;
+  // Its own 24px padding, nested inside `.ehs-row`'s own 24/36 — every
+  // state below (hidden/disabled/clickable) shares this same box, just
+  // swapping the background/border color.
+  padding: $x-large-pad;
+  background: $grey-50;
+  border: 1px solid transparent;
+  border-radius: $medium-radius;
+  transition: background-color $fast, border-color $fast, box-shadow $fast;
+
+  // Whether this section is actually rendering on the live event site right
+  // now (`hasContent`, EventSiteHomepageSectionsList.jsx) — no separate
+  // status text, just the tile itself reading as an empty placeholder: no
+  // fill until hovered, dashed border all the way around instead of the
+  // solid transparent one every other state has. Combines with
+  // `.ehs-row-header--hidden`'s own muted label below.
+  &--hidden {
+    background: transparent;
+    border-width: 2px;
+    border-style: dashed;
+    border-color: $grey-300;
+
+    &:hover {
+      background: $grey-50;
+    }
+  }
+
+  // A non-editable tile (HOMEPAGE_SECTIONS' own `editable: false`) — darker
+  // than the base resting grey, no hover, no dashed border: unlike
+  // `--hidden` above this never implies "you could add this", there's
+  // genuinely nothing to edit here.
+  &--disabled {
+    background: $grey-200;
+  }
+
+  // Any editable, currently-collapsed tile (live or "Not Added" alike) —
+  // hover feedback lives on the card now, not the header, since the header
+  // itself no longer has its own padded box to visibly hover (that moved to
+  // this card when the drag handle came out of it).
+  &--clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: $grey-100;
+    }
+  }
+}
+
+// The card's left column — just the header (icon/label/pen) now that
+// editing happens on its own screen (EventSiteHomepageFields, opened via
+// EventSitePackagesListPage's `editingHomepageSectionId`) instead of
+// expanding in place. Centered vertically (`.ehs-row-preview`'s own SVG is
+// often taller than this column's own header-only content, so without this
+// the header would just sit pinned to the top of that extra height).
+.ehs-row-main {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: $x-large-pad;
+}
+
+.ehs-row-header {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  // Full opacity for the pen/grip GSButtons below (they're type-undefined,
+  // so they just inherit whatever color sits here) — same explicit-on-the-
+  // header convention as PackageCategorySection.scss's .pkgc-header.
+  color: $grey-800;
+
+  &--clickable {
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid $grey-700;
+      outline-offset: 2px;
+    }
+  }
+
+  // Same grey-800/50% muting the `--disabled` rule below uses — one
+  // consistent "not on the live site" treatment for both label and
+  // description, whether that's because it's just empty (this) or because
+  // it can't be edited at all (that).
+  &--hidden {
+    .ehs-row-label,
+    .ehs-row-description {
+      color: $grey-800;
+      opacity: 0.5;
+    }
+  }
+
+  // Both the label and the description read subtly on a disabled tile —
+  // same 50% a disabled GSButton already dims to (gs-button.scss's
+  // &.disabled), applied here since a plain div has no such state of its
+  // own to reuse.
+  &--disabled {
+    .ehs-row-label,
+    .ehs-row-description {
+      opacity: 0.5;
+    }
+  }
+}
+
+// Marks a tile whose section is actually showing on the live site right
+// now — stacked above the label/description (both live in `.ehs-row-text`,
+// a column) rather than beside them, same "no separate status text" spirit
+// as the row's own dashed/flat-grey states, just a positive counterpart to
+// those instead of a pill.
+.ehs-row-added-icon {
+  flex-shrink: 0;
+  color: $cyan-400;
+  font-size: $medium-font;
+}
+
+// Fills whatever's left in the header row next to the pen/Save controls —
+// the check icon sits 12px above `.ehs-row-labels` (the label/description
+// group), rather than an even gap all the way down this column.
+.ehs-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+}
+
+// Label and its optional description read as one block, not two rows with
+// a gap between them like the icon above has.
+.ehs-row-labels {
+  display: flex;
+  flex-direction: column;
+}
+
+// The vertical line between `.ehs-row-main` and `.ehs-row-preview` — its
+// own div (a sibling of both, see EventSiteHomepageSectionRow.jsx) rather
+// than a border on either column, so it can be skipped outright for a
+// non-editable tile instead of just recoloring it away. `align-self:
+// stretch` (its parent `.ehs-row-card`'s own default) matches
+// `.ehs-row-main`'s full height, same as `.ehs-row-preview` below.
+.ehs-row-divider {
+  flex-shrink: 0;
+  width: 1px;
+  background: $grey-200;
+
+  @include large-phone {
+    display: none;
+  }
+}
+
+// EventSiteHomepageSectionRow's own optional `preview` — currently
+// EventSiteHomepageSectionPreview, a flat Figma-exported thumbnail of that
+// section's live-site layout. Its own column, a sibling of `.ehs-row-main`
+// (and `.ehs-row-divider`) in `.ehs-row-card` (see
+// EventSiteHomepageSectionRow.jsx's `preview` comment) — same 50% share as
+// `.ehs-row-main`. This column itself still stretches to match
+// `.ehs-row-main`'s height (that div's own default `align-items: stretch`),
+// so the divider extends the full height of an open tile — but
+// `align-items: center` here keeps the thumbnail itself at its own natural
+// (aspect-ratio-preserved) size, vertically centered in that taller strip,
+// instead of stretching to fill it or sitting pinned to the top with dead
+// space below.
+.ehs-row-preview {
+  flex: 1 1 50%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+
+  // The thumbnail is a nice-to-have next to the fields, not the fields
+  // themselves — on a narrow viewport `.ehs-row-main` already needs all the
+  // width it can get, so the preview column (and its divider) drops out
+  // entirely instead of squeezing both columns down.
+  @include large-phone {
+    display: none;
+  }
+}
+
+.ehs-row-label {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+// Caption explaining a "Not Added" tile whose content actually lives on
+// another screen (EventSiteHomepageSectionRow's own `description` prop) —
+// same color/opacity as .ehs-row-label above it (full strength; the
+// `--disabled` rule below is the only thing that ever dims either of
+// them), just regular weight instead of bold to still read as secondary
+// text next to the label.
+.ehs-row-description {
+  font-size: $small-font;
+  font-weight: $regular-font-weight;
+  color: $grey-800;
+}
+
+// Sits outside `.ehs-row-card` now (see EventSiteHomepageSectionRow.jsx's
+// own top comment) — `.ehs-row`'s own padding already aligns it with the
+// header row it used to sit inside, no padding of its own needed here.
+.ehs-drag-handle {
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+

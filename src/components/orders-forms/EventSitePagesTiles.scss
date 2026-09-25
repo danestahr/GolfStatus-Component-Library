@@ -1,0 +1,87 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.esp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  padding: $x-large-pad;
+}
+
+.esp-row {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  padding: $large-pad $x-large-pad;
+  background: $white;
+  border: $light-border;
+  border-radius: $medium-large-border-radius;
+}
+
+.esp-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-pad;
+}
+
+.esp-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+  min-width: 0;
+}
+
+.esp-row-label {
+  font-size: $small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.esp-row-url {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  max-width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: $small-font;
+  color: $grey-600;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: $grey-800;
+    text-decoration: underline;
+  }
+}
+
+.esp-row-copied {
+  display: flex;
+  align-items: center;
+  gap: $small-pad;
+  color: $green;
+  font-weight: $bold-font-weight;
+}
+
+.esp-row-note {
+  font-size: $small-font;
+  color: $grey-500;
+}
+
+.esp-auction-url {
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+  max-width: 420px;
+  margin-top: $small-pad;
+}
+
+.esp-auction-url-label {
+  font-size: $x-small-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
