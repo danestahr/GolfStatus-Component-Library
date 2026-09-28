@@ -2,7 +2,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEye, faEyeSlash, faExternalLinkSquareAlt } from '@fortawesome/free-solid-svg-icons'
 
 import GSButton from '../../gs-lib/components/gs-button'
-import EventSiteTournamentPreview from './EventSiteTournamentPreview.jsx'
+import { golfstatusColors } from '../../gs-lib/helpers/Theme'
+import { loadEventSiteStyle, hasEventSiteStyle } from '../../data/eventSiteStyle.js'
+import EventSiteDeviceMockup from './EventSiteDeviceMockup.jsx'
 import './EventSitePreviewCard.scss'
 
 // Live preview of the tournament's event site, shown under the "Event Site
@@ -11,16 +13,31 @@ import './EventSitePreviewCard.scss'
 // is wired up here — a draft/not-yet-enabled site would swap this for an
 // "Enable Site" prompt, which isn't part of this round of design.
 //
-// Reuses EventSiteTournamentPreview.jsx — the same flat/uncolorized mockup
-// every other preview of this section renders — so this hub-page thumbnail
-// can't drift out of sync with what it looks like elsewhere.
+// Reuses EventSiteDeviceMockup.jsx — the shared desktop+mobile device-frame
+// mockup — so this hub-page thumbnail can't drift out of sync with what it
+// looks like elsewhere.
 export default function EventSitePreviewCard({ eventSite, onViewWebsite, onEventRegistration, isPremium }) {
   const isPrivate = eventSite.registrationVisibility === 'private'
+
+  // Same "has this tournament actually saved a custom style yet" gate
+  // EventWebsitePage.jsx's own customThemeStyle uses — a non-premium
+  // tournament, or one that's never touched Website Design and Style, has
+  // no real Primary/Secondary to show here, so both fall back to
+  // GolfStatus's own fixed brand grey (theme.scss's .gs-theme-default),
+  // same as the real site does in that case. Read fresh on every render
+  // (not read-once-on-load) — this card shows up on the same screen the
+  // admin just saved a style from, so it needs to flip the moment
+  // Save/Premium actually changes, not just on next mount.
+  const showsSavedStyle = isPremium && hasEventSiteStyle()
+  const savedStyle = showsSavedStyle ? loadEventSiteStyle() : null
+  const primaryColor = savedStyle ? savedStyle.primaryColor : golfstatusColors.grey800
+  const secondaryColor = savedStyle ? savedStyle.secondaryColor : golfstatusColors.grey800
+  const neutralTint = savedStyle ? savedStyle.neutralTint : 'neutral'
 
   return (
     <div className="efp-preview-card">
       <div className="efp-preview-thumb">
-        <EventSiteTournamentPreview isPremium={isPremium} />
+        <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} />
       </div>
 
       <div className="efp-preview-body">

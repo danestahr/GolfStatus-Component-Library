@@ -1,0 +1,176 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.edm-block {
+  @include v-stack(flex-start, stretch);
+  gap: $medium-pad;
+  // v-stack's own `display: inline-flex` shrink-wraps to content width by
+  // default — an explicit 100% is what actually stretches this to fill a
+  // definite-width ancestor (e.g. EventSitePreviewCard.scss's 300px
+  // .efp-preview-thumb), the same job `flex: 1 1 0` alone only does inside
+  // a flex *parent*, which this one isn't always rendered in.
+  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.edm-label {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  text-align: center;
+  color: $grey-800;
+}
+
+// No outer border/frame around the pair — each device below draws its own
+// window chrome (its own border, from DESKTOP_ORIGIN/MOBILE_ORIGIN's own
+// stroke in the Figma export), so a second border wrapping both just made
+// the whole thing read as a flat inset image rather than live UI.
+//
+// Sized via inline style (height only — width comes from the normal-flow
+// container, which is what EventSiteDeviceMockup.jsx's ResizeObserver
+// measures) rather than `aspect-ratio` + `transform: scale()`. Every
+// descendant rect below is likewise positioned with real px (rectStyle()
+// in that file), computed once from the measured width, not a CSS % or a
+// scaled fixed canvas — the % approach let two rects meant to be the same
+// height round to different device pixels from each other at some
+// container widths, and `transform: scale()` fixed that but softened every
+// hairline border by compositing the whole canvas through one interpolated
+// scale. Plain px keeps both layout and paint on the browser's normal,
+// non-transformed path.
+.edm-mockup {
+  position: relative;
+  width: 100%;
+}
+
+// The desktop's own visible window (border, clipping, background) — sized
+// via inline style (deskWidthPx/deskHeightPx).
+.edm-desktop-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--edm-surface, #{$white});
+  border: 1px solid var(--edm-border, #{$grey-200});
+  border-radius: $medium-radius;
+  overflow: hidden;
+}
+
+// Positioned/sized entirely via inline style (left/top/width/height —
+// phoneLeftPx/phoneTopPx/phoneWidthPx/phoneHeightPx in
+// EventSiteDeviceMockup.jsx): PHONE_HEIGHT_FRACTION the desktop's height,
+// PHONE_OVERLAP_FRACTION of the phone's own width hanging past the
+// desktop's right edge, vertically centered on it — a negative-gap style
+// overlap, not a corner hang or a fully-centered overlay. No shadow — the
+// border alone separates it from the desktop frame underneath.
+.edm-mobile {
+  position: absolute;
+  background: var(--edm-surface, #{$white});
+  border: 1px solid var(--edm-border, #{$grey-200});
+  border-radius: $medium-radius;
+  overflow: hidden;
+}
+
+// Every placeholder shape (line, card, chip, button) is one of these,
+// positioned by EventSiteDeviceMockup.jsx's own inline style (rectStyle())
+// — the export's own coordinates converted to real px, not a
+// hand-eyeballed redraw.
+.edm-rect {
+  position: absolute;
+}
+
+.edm-icon {
+  position: absolute;
+  background-color: $white;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+// The header/status bar and its two "browser chrome" bits (title bar,
+// right-side action chip) — flat black, never themed, same as the export.
+.edm-rect--header {
+  background: var(--edm-ink, #{$grey-800});
+  border-radius: $small-radius $small-radius 0 0;
+}
+
+.edm-rect--faint-on-dark {
+  background: rgba($white, 0.9);
+  border-radius: $huge-radius;
+}
+
+.edm-rect--chip {
+  background: var(--edm-ink, #{$grey-800});
+  border-radius: $small-radius;
+}
+
+.edm-rect--chip-text {
+  background: rgba($white, 0.9);
+  border-radius: $huge-radius;
+}
+
+// Subnav tab row — tab 0 (active) gets the export's own #E3E3E3 pill; every
+// other tab renders as a bare text bar on the page's own white, same as
+// the export (see edm-rect--line below for the shared text-bar look).
+.edm-rect--tab-active {
+  background: var(--edm-border, #{$grey-200});
+  border-radius: $small-radius;
+}
+
+.edm-rect--tab {
+  background: transparent;
+}
+
+.edm-rect--card-bg {
+  background: var(--edm-card-bg, #{$grey-50});
+  border-radius: $small-medium-radius;
+}
+
+.edm-rect--heading {
+  background: var(--edm-ink, #{$grey-800});
+  border-radius: $small-radius;
+}
+
+.edm-rect--line {
+  background: color-mix(in srgb, var(--edm-ink, #{$grey-800}) 50%, transparent);
+  border-radius: $huge-radius;
+}
+
+.edm-rect--card {
+  background: var(--edm-surface, #{$white});
+  border: 1px solid var(--edm-border, #{$grey-200});
+  border-radius: $small-radius;
+}
+
+// The export's own two color-bearing spots — a Fill CTA chip and an
+// Outline CTA chip, both #232323 in the flat export. Read straight off the
+// real theme tokens the same way EventWebsitePage.jsx's own Register Now
+// (Fill/Primary) and Make A Donation (Outline/Secondary) buttons do —
+// `--gs-color-primary`/`-on-primary-fill` for Fill, `--gs-color-secondary`
+// for Outline — falling back to that same flat #232323/white when nothing
+// sets them, since most places this renders aren't wrapped in a
+// `.gs-theme-*` subtree. These are the only themed part of this mockup;
+// everything else stays the export's own flat black/white/grey. Plain
+// divs, not GSButton — this is an inference of the button's color, not a
+// real interactive button.
+.edm-rect--cta-fill {
+  background: var(--gs-color-primary, #232323);
+  border-radius: $small-radius;
+}
+
+.edm-rect--cta-fill-text {
+  background: var(--gs-color-on-primary-fill, #{$white});
+  border-radius: $huge-radius;
+}
+
+.edm-rect--cta-outline {
+  background: transparent;
+  border: 1px solid var(--gs-color-secondary, #232323);
+  border-radius: $small-radius;
+  box-sizing: border-box;
+}
+
+.edm-rect--cta-outline-text {
+  background: var(--gs-color-secondary, #232323);
+  border-radius: $huge-radius;
+}

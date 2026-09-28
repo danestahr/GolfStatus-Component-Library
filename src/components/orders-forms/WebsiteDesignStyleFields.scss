@@ -20,7 +20,7 @@
 
 .wds-hex-field {
   @include v-stack(flex-start, stretch);
-  gap: $x-small-pad;
+  gap: $medium-pad;
   flex: 1 1 0;
   min-width: 0;
   position: relative; // contains .wds-hex-native-picker's absolute position
@@ -144,7 +144,34 @@
 .wds-ramp-base-bar {
   width: 100%;
   height: 56px;
-  border-radius: $small-medium-radius;
+  border: none;
+  padding: 0;
+  border-radius: $medium-radius;
+  cursor: pointer;
+  @include h-stack(center, center);
+  color: $white;
+}
+
+// Starter colors under a blank input (HexColorField) — six equal squares.
+.wds-default-swatches {
+  @include h-stack(flex-start, stretch);
+  gap: $medium-pad;
+  width: 100%;
+}
+
+.wds-default-swatch {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  border: none;
+  padding: 0;
+  border-radius: $medium-radius;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: $focus-shadow;
+  }
 }
 
 // Animates the Color Range toggle open/closed instead of popping the ramp
@@ -188,7 +215,7 @@
 // of a data table.
 .wds-ramp-row {
   @include h-stack(flex-start, stretch);
-  gap: $x-small-pad;
+  gap: $medium-pad;
   width: 100%;
 }
 
@@ -293,3 +320,15 @@
   }
 }
 
+
+// Small trash button under a color's ramp (HexColorField) — removes that color.
+.wds-hex-remove {
+  @include h-stack(flex-start, center);
+}
+
+// The leading "Edit Color" swatch — opens the native picker.
+.wds-default-swatch--edit {
+  @include h-stack(center, center);
+  background-color: $grey-100;
+  color: $grey-700;
+}

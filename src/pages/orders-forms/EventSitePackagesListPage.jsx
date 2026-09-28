@@ -62,6 +62,10 @@ import {
   PACKAGE_CATEGORY_BY_KEY,
   PACKAGE_CATEGORY_KEY_BY_CATEGORY,
   loadPackageCategoryLabels,
+  loadPackageOrder,
+  savePackageOrder,
+  loadSavedPackages,
+  saveSavedPackages,
   savePackageCategoryLabels,
 } from '../../data/eventSitePackageCategories.js'
 import './EventSitePackagesListPage.scss'
@@ -233,7 +237,7 @@ export default function EventSitePackagesListPage() {
   // `handleAddPackage`/`handleCopyPackage` below) — the hub page's own
   // inline package strip (`visiblePackages` below) reads from this same
   // list, so anything added or copied there shows up in both places.
-  const [packagesList, setPackagesList] = useState(eventSitePackages)
+  const [packagesList, setPackagesList] = useState(() => loadSavedPackages() ?? eventSitePackages)
   const packagesById = useMemo(() => Object.fromEntries(packagesList.map(pkg => [pkg.id, pkg])), [packagesList])
   // Each category's own display order (Figma "Packages") — starts sorted
   // price high to low (see `buildPackageOrder`), then only ever changes via
@@ -245,7 +249,13 @@ export default function EventSitePackagesListPage() {
   // order (category by category) instead of reading `packagesList` directly,
   // so its order always matches the Packages screen even though it has no
   // category headers of its own to group by.
-  const [packageOrder, setPackageOrder] = useState(() => buildPackageOrder(eventSitePackages))
+  const [packageOrder, setPackageOrder] = useState(() => loadPackageOrder() ?? buildPackageOrder(loadSavedPackages() ?? eventSitePackages))
+  // Mirrored to localStorage so the public Packages page reads the same
+  // order and package list (data/eventSitePackageCategories.js).
+  useEffect(() => {
+    savePackageOrder(packageOrder)
+    saveSavedPackages(packagesList)
+  }, [packageOrder, packagesList])
   // Display label per PACKAGE_CATEGORIES key, keyed the same way — starts on
   // whatever's already saved (or each category's own default label, the
   // first time), and a Save on the "Package Category" screen (see

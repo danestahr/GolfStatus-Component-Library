@@ -105,8 +105,8 @@
 // .es-theme-picker below) inherit the flip automatically instead of each
 // needing its own `.dark` override.
 .es-header-bar {
-  --es-header-bg: var(--gs-color-primary);
-  --es-header-fg: var(--gs-color-on-primary);
+  --es-header-bg: var(--es-header-ink, var(--gs-color-primary));
+  --es-header-fg: var(--es-header-on-ink, var(--gs-color-on-primary));
   display: flex;
   align-items: center;
   justify-content: space-between;

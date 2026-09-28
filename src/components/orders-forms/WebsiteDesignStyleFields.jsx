@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { faPalette, faExternalLinkSquareAlt, faRightLeft } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPalette, faExternalLinkSquareAlt, faRightLeft, faRotateLeft, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSFormSection from '../../gs-lib/components/gs-form-section'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSRadioGroup from '../../gs-lib/components/gs-radio-group'
-import { generateScale, SCALE_STEPS } from '../../gs-lib/helpers/colorScale'
+import { generateScale, SCALE_STEPS, buttonThemeVars } from '../../gs-lib/helpers/colorScale'
 import { golfstatusColors } from '../../gs-lib/helpers/Theme'
 import { DEFAULT_EVENT_SITE_STYLE } from '../../data/eventSiteStyle.js'
-import EventSiteTournamentPreview from './EventSiteTournamentPreview.jsx'
+import EventSiteDeviceMockup from './EventSiteDeviceMockup.jsx'
 import './WebsiteDesignStyleFields.scss'
 
 // Neutral is the app's own fixed greyscale (colors.scss's $grey-50...
@@ -37,6 +38,10 @@ const NEUTRAL_SWATCHES = [
 
 const HEX_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
 
+// Starter colors offered under a blank Primary/Secondary input — tapping one
+// commits it exactly like typing that hex.
+const DEFAULT_COLOR_CHOICES = ['#1D4FA8', '#3B8EA5', '#2A6B4F', '#F4A340', '#C0392B', '#4B3A9E']
+
 // <input type="color"> only accepts a full 6-digit #rrggbb — expands a
 // shorthand 3-digit hex (valid everywhere else in this file) so the native
 // picker doesn't just silently fall back to black on one.
@@ -51,9 +56,9 @@ function toFullHex(hex) {
 // kept as its own draft/commit cycle so a half-typed hex like "#1" never
 // gets pushed into generateScale mid-keystroke; only a valid 3- or 6-digit
 // hex commits on blur/Enter, anything else reverts to the last real value
-// (or back to blank, see `showEmpty` below). The palette icon reopens that
-// native picker (kept off-screen, not display:none, so browsers still let
-// it be triggered) instead of typing a hex by hand.
+// (or back to blank, see `showEmpty` below). The trailing "Edit Color"
+// button reopens that native picker (kept off-screen, not display:none, so
+// browsers still let it be triggered) instead of typing a hex by hand.
 //
 // `showEmpty` is `color === DEFAULT_EVENT_SITE_STYLE.primaryColor/
 // secondaryColor` (ColorsSection below) — this field reads blank (its own
@@ -64,7 +69,22 @@ function toFullHex(hex) {
 // (data/eventSiteStyle.js's DEFAULT_EVENT_SITE_STYLE) — only this text
 // field's own display hides it, so the input doesn't read as "already
 // customized" when nobody's touched it yet.
-function HexColorField({ label, color, onChangeColor, showEmpty }) {
+function DefaultColorSwatches({ onPick, onEdit }) {
+  return (
+    <div className="wds-default-swatches">
+      {onEdit && (
+        <button type="button" className="wds-default-swatch wds-default-swatch--edit" title="Edit Color" aria-label="Edit Color" onClick={onEdit}>
+          <FontAwesomeIcon icon={faPalette} />
+        </button>
+      )}
+      {DEFAULT_COLOR_CHOICES.map(hex => (
+        <button key={hex} type="button" className="wds-default-swatch" style={{ backgroundColor: hex }} aria-label={`Use ${hex}`} onClick={() => onPick(hex)} />
+      ))}
+    </div>
+  )
+}
+
+function HexColorField({ label, color, onChangeColor, showEmpty, onRemove }) {
   const [draft, setDraft] = useState(showEmpty ? '' : color)
   useEffect(() => setDraft(showEmpty ? '' : color), [color, showEmpty])
   const colorPickerRef = useRef(null)
@@ -87,8 +107,9 @@ function HexColorField({ label, color, onChangeColor, showEmpty }) {
         onChange={e => setDraft(e.target.value)}
         onBlur={commit}
         onSubmit={commit}
-        leftIcon={faPalette}
-        leftIconClick={openColorPicker}
+        rightIcon={faTrash}
+        rightIconClick={onRemove}
+        rightButtonProps={{ 'aria-label': `Remove ${label ?? 'color'}` }}
       />
       <input
         ref={colorPickerRef}
@@ -99,6 +120,22 @@ function HexColorField({ label, color, onChangeColor, showEmpty }) {
         value={toFullHex(color)}
         onChange={e => onChangeColor(e.target.value)}
       />
+      {showEmpty ? (
+        <DefaultColorSwatches onPick={onChangeColor} onEdit={openColorPicker} />
+      ) : (
+        <>
+          <button
+            type="button"
+            className="wds-ramp-base-bar"
+            style={{ backgroundColor: color }}
+            aria-label={`Edit ${label ?? 'color'}`}
+            onClick={openColorPicker}
+          >
+            <FontAwesomeIcon icon={faPalette} />
+          </button>
+          <ColorRampSquares color={color} mode="light" />
+        </>
+      )}
     </div>
   )
 }
@@ -121,46 +158,12 @@ function ColorRampSquares({ color, mode }) {
   )
 }
 
-// One color's own block: a centered uppercase name, a solid bar of the
-// color exactly as picked, then — once the Color Range toggle is on — its
-// light ramp bare (no box) and its dark ramp inset in a rounded black pill.
-// The ramp stays mounted either way (see .wds-ramp-reveal) and animates
-// open/closed with a 0.3s transition instead of popping in/out. No hex
-// input here anymore — both inputs sit together above, in their own row
-// (see .wds-hex-inputs).
-function ColorBlock({ label, color, showRamp }) {
-  return (
-    <div className="wds-color-block">
-      <div className="wds-color-block-label">{label}</div>
-      <div className="wds-ramp-base-bar" style={{ backgroundColor: color }} />
-      <div className={`wds-ramp-reveal${showRamp ? ' wds-ramp-reveal--open' : ''}`}>
-        <div className="wds-ramp-reveal-inner">
-          <ColorRampSquares color={color} mode="light" />
-          <div className="wds-ramp-dark-pill">
-            <ColorRampSquares color={color} mode="dark" />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// The Colors section: Primary's and Secondary's hex inputs side by side,
-// then — set apart by a 16px gap in its own grey-bordered tile — each
-// color's block (name, bar, and its ramp) side by side in a row, with the
-// Swap button sitting between them. The tile itself is the Color Range
-// toggle (tap anywhere on it) rather than a separate "View Color Range"
-// button, so the swap button stops its own click from bubbling up into
-// that toggle.
-function ColorsSection({ primaryColor, onChangePrimaryColor, secondaryColor, onChangeSecondaryColor, onSwapColors }) {
-  const [showFullRange, setShowFullRange] = useState(false)
-  const toggleFullRange = () => setShowFullRange(v => !v)
-  const onTileKeyDown = e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      toggleFullRange()
-    }
-  }
+// The Colors section: an Add Color button until a color is added, then a
+// Primary field (and, after tapping Add Color again, a Secondary field) —
+// each with its own default swatches / color bar / ramps stacked under its
+// input (HexColorField). `added` tracks which slots the admin has opened,
+// independent of whether they've picked a color yet.
+function ColorsSection({ secondaryAdded, primaryColor, onChangePrimaryColor, secondaryColor, onChangeSecondaryColor, onRemovePrimary, onRemoveSecondary }) {
   return (
     <div className="wds-scale-row">
       <div className="wds-hex-inputs">
@@ -169,49 +172,27 @@ function ColorsSection({ primaryColor, onChangePrimaryColor, secondaryColor, onC
           color={primaryColor}
           onChangeColor={onChangePrimaryColor}
           showEmpty={primaryColor === DEFAULT_EVENT_SITE_STYLE.primaryColor}
+          onRemove={onRemovePrimary}
         />
-        <HexColorField
-          label="Secondary Color"
-          color={secondaryColor}
-          onChangeColor={onChangeSecondaryColor}
-          showEmpty={secondaryColor === DEFAULT_EVENT_SITE_STYLE.secondaryColor}
-        />
-      </div>
-
-      <div
-        className="wds-colors-tile wds-colors-tile--clickable"
-        role="button"
-        tabIndex={0}
-        aria-pressed={showFullRange}
-        aria-label={showFullRange ? 'Hide color range' : 'View color range'}
-        onClick={toggleFullRange}
-        onKeyDown={onTileKeyDown}
-      >
-        <div className="wds-colors-tile-blocks">
-          <ColorBlock label="Primary" color={primaryColor} showRamp={showFullRange} />
-          <div className="wds-colors-swap">
-            <GSButton
-              type="light-grey"
-              buttonIcon={faRightLeft}
-              isFocusable
-              aria-label="Swap Primary and Secondary colors"
-              onClick={e => {
-                e.stopPropagation()
-                onSwapColors()
-              }}
-            />
-          </div>
-          <ColorBlock label="Secondary" color={secondaryColor} showRamp={showFullRange} />
-        </div>
+        {secondaryAdded && (
+          <HexColorField
+            label="Secondary Color"
+            color={secondaryColor}
+            onChangeColor={onChangeSecondaryColor}
+            showEmpty={secondaryColor === DEFAULT_EVENT_SITE_STYLE.secondaryColor}
+            onRemove={onRemoveSecondary}
+          />
+        )}
       </div>
     </div>
   )
 }
 
 const NEUTRAL_MODE_OPTIONS = [
-  { label: 'GolfStatus', value: 'neutral' },
+  { label: 'Neutral Tint', value: 'neutral' },
   { label: 'Primary Tint', value: 'primary' },
-  { label: 'Secondary Tint', value: 'secondary' },
+  // Secondary Tint hidden for now — Full Tint (Primary + Secondary) replaces it.
+  { label: 'Full Tint', value: 'full' },
 ]
 
 // Toggled off while the tournament-details preview (below) is standing in
@@ -234,8 +215,8 @@ const SHOW_NEUTRAL_RAMPS = false
 // so changing it enables Save same as they do, and Save persists it to
 // /event-site (EventWebsitePage.jsx), which reads it to decide whether its
 // own Monochromatic toggle starts on and which scale it tints with.
-function NeutralSection({ isPremium, primaryColor, secondaryColor, neutralTint, onChangeNeutralTint }) {
-  const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null
+function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeutralTint }) {
+  const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Tint has no single ramp)
   return (
     <div className="wds-scale-row">
       <GSRadioGroup
@@ -272,7 +253,7 @@ function NeutralSection({ isPremium, primaryColor, secondaryColor, neutralTint, 
         </div>
       )}
 
-      <EventSiteTournamentPreview isPremium={isPremium} />
+      <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} />
     </div>
   )
 }
@@ -291,44 +272,9 @@ const BUTTON_APPEARANCES = [
   { appearance: 'subtle', label: 'Subtle' },
 ]
 
-// The `--gs-color-*` tokens GSButton's Fill/Outline/Subtle variants read
-// (gs-lib/styles/theme.scss's role names) — computed here from this
-// screen's own Primary/Secondary scales exactly the way EventWebsitePage.jsx
-// computes them for the live site, so this preview and that site can't
-// drift apart. Set as inline style on a wrapping div (same "inject as CSS
-// custom properties" approach EventWebsitePage.jsx uses on its root div).
-function buttonPreviewStyle(primaryScale, secondaryScale, mode) {
-  // Fill/Outline's base color sits noticeably lighter in dark mode (600 ->
-  // 200) so it doesn't read as a flat, oversaturated block against a dark
-  // background — same convention EventWebsitePage.jsx's own
-  // --gs-color-primary/-secondary follow, so the two can't drift apart.
-  const primaryBase = primaryScale[mode === 'dark' ? 200 : 600]
-  const secondaryBase = secondaryScale[mode === 'dark' ? 200 : 600]
-  const primarySubtleBg = primaryScale[mode === 'dark' ? 700 : 100]
-  const secondarySubtleBg = secondaryScale[mode === 'dark' ? 700 : 100]
-  // Subtle text is pinned opposite its background's mode — 900 in light
-  // mode, 50 in dark mode — not AA-picked, same convention EventWebsitePage
-  // uses for its own Subtle buttons.
-  const subtleTextStep = mode === 'dark' ? 50 : 900
-  // Dark mode's Fill background is a light tint (primaryBase/secondaryBase
-  // above, step 200), so its text needs to be dark (900), not light (50)
-  // the way light mode's step-400 background needs.
-  const fillTextStep = mode === 'dark' ? 900 : 50
-  return {
-    '--gs-color-primary': primaryBase,
-    '--gs-color-on-primary-fill': primaryScale[fillTextStep],
-    '--gs-color-primary-subtle': primarySubtleBg,
-    '--gs-color-on-primary-subtle': primaryScale[subtleTextStep],
-    '--gs-color-secondary': secondaryBase,
-    '--gs-color-on-secondary-fill': secondaryScale[fillTextStep],
-    '--gs-color-secondary-subtle': secondarySubtleBg,
-    '--gs-color-on-secondary-subtle': secondaryScale[subtleTextStep],
-  }
-}
-
 function ButtonPreviewRow({ primaryScale, secondaryScale, mode, colorKey }) {
   return (
-    <div className="wds-button-row" style={buttonPreviewStyle(primaryScale, secondaryScale, mode)}>
+    <div className="wds-button-row" style={buttonThemeVars(primaryScale, secondaryScale, mode)}>
       {BUTTON_APPEARANCES.map(({ appearance, label }) => (
         <GSButton key={appearance} color={colorKey} appearance={appearance} title={label} isFocusable />
       ))}
@@ -367,13 +313,41 @@ export default function WebsiteDesignStyleFields({
   onChangeSecondaryColor,
   neutralTint,
   onChangeNeutralTint,
+  onChangeThemeOverrides,
 }) {
+  const primaryIsSet = primaryColor !== DEFAULT_EVENT_SITE_STYLE.primaryColor
+  const secondaryIsSet = secondaryColor !== DEFAULT_EVENT_SITE_STYLE.secondaryColor
+  const [secondaryAdded, setSecondaryAdded] = useState(secondaryIsSet)
+  // A color set from outside (e.g. loaded from a saved style) always shows.
+  const showSecondary = secondaryAdded || secondaryIsSet
+  const addColor = () => setSecondaryAdded(true)
+  const canSwap = showSecondary
+  const canReset = primaryIsSet || showSecondary || neutralTint !== DEFAULT_EVENT_SITE_STYLE.neutralTint
+
+  const removePrimary = () => {
+    onChangePrimaryColor(DEFAULT_EVENT_SITE_STYLE.primaryColor)
+  }
+  const removeSecondary = () => {
+    onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
+    setSecondaryAdded(false)
+  }
+
+  const resetColors = () => {
+    onChangePrimaryColor(DEFAULT_EVENT_SITE_STYLE.primaryColor)
+    onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
+    onChangeNeutralTint(DEFAULT_EVENT_SITE_STYLE.neutralTint)
+    onChangeThemeOverrides?.({})
+    setSecondaryAdded(false)
+  }
+
   const primaryScale = generateScale(primaryColor)
   const secondaryScale = generateScale(secondaryColor)
 
   const swapColors = () => {
-    onChangePrimaryColor(secondaryColor)
-    onChangeSecondaryColor(primaryColor)
+    // An unset slot stays unset (its own GolfStatus default) rather than
+    // handing the other slot's default across.
+    onChangePrimaryColor(secondaryIsSet ? secondaryColor : DEFAULT_EVENT_SITE_STYLE.primaryColor)
+    onChangeSecondaryColor(primaryIsSet ? primaryColor : DEFAULT_EVENT_SITE_STYLE.secondaryColor)
   }
 
   return (
@@ -382,6 +356,9 @@ export default function WebsiteDesignStyleFields({
         type="form-header H3"
         header="Website Design and Style"
         pageActions={[
+          ...(canReset
+            ? [{ type: 'light-grey', actionIcon: faRotateLeft, isFocusable: true, 'aria-label': 'Reset colors', actionClick: resetColors }]
+            : []),
           {
             buttonTitle: 'View Website',
             rightIcon: faExternalLinkSquareAlt,
@@ -394,6 +371,14 @@ export default function WebsiteDesignStyleFields({
 
       <GSFormSection
         title="Colors"
+        sectionActions={[
+          ...(canSwap
+            ? [{ type: 'light-grey', actionIcon: faRightLeft, isFocusable: true, 'aria-label': 'Swap Primary and Secondary colors', actionClick: swapColors }]
+            : []),
+          ...(showSecondary
+            ? []
+            : [{ buttonTitle: 'Add Color', actionIcon: faPlus, type: 'light-grey', isFocusable: true, actionClick: addColor }]),
+        ]}
         type="vertical xx-large-gap"
         fields={[
           {
@@ -401,11 +386,13 @@ export default function WebsiteDesignStyleFields({
             customView: true,
             value: (
               <ColorsSection
+                secondaryAdded={showSecondary}
                 primaryColor={primaryColor}
                 onChangePrimaryColor={onChangePrimaryColor}
                 secondaryColor={secondaryColor}
                 onChangeSecondaryColor={onChangeSecondaryColor}
-                onSwapColors={swapColors}
+                onRemovePrimary={removePrimary}
+                onRemoveSecondary={removeSecondary}
               />
             ),
           },
@@ -422,7 +409,6 @@ export default function WebsiteDesignStyleFields({
             customView: true,
             value: (
               <NeutralSection
-                isPremium={isPremium}
                 primaryColor={primaryColor}
                 secondaryColor={secondaryColor}
                 neutralTint={neutralTint}
@@ -433,7 +419,24 @@ export default function WebsiteDesignStyleFields({
         ]}
       />
 
-      {/* Button Styles — hidden for now, Dane's re-adding it later. */}
+      <GSFormSection
+        title="Button Styles"
+        type="vertical xx-large-gap"
+        fields={[
+          {
+            isEditable: true,
+            customView: true,
+            value: (
+              <div className="wds-scale-row">
+                <ButtonColorBlock label="Primary" colorKey="primary-color" primaryScale={primaryScale} secondaryScale={secondaryScale} />
+                {showSecondary && (
+                  <ButtonColorBlock label="Secondary" colorKey="secondary-color" primaryScale={primaryScale} secondaryScale={secondaryScale} />
+                )}
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }

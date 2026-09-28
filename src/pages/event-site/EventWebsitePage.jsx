@@ -45,6 +45,7 @@ import { loadEventSiteStyle, hasEventSiteStyle } from '../../data/eventSiteStyle
 import { loadIsPremium } from '../../data/eventSitePremium.js'
 import { loadEventSitePreview, saveEventSitePreview } from '../../data/eventSitePreview.js'
 import { PACKAGE_CATEGORIES, loadPackageCategoryLabels } from '../../data/eventSitePackageCategories.js'
+import EventSitePackagesContent from './EventSitePackagesContent.jsx'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
 import avatarSample from '../../assets/avatar-sample.png'
 import poweredByGolfstatus from '../../assets/powered-by-golfstatus.jpg'
@@ -285,6 +286,14 @@ export default function EventWebsitePage() {
     return pageVisibility[page]
   })
   const [activeTab, setActiveTab] = useState(subNavItems[0])
+  // Category tile tapped on the homepage's Packages section — the Packages
+  // page scrolls that category into view on arrival (null otherwise).
+  const [packagesScrollKey, setPackagesScrollKey] = useState(null)
+  function openPackages(categoryKey = null) {
+    setPackagesScrollKey(categoryKey)
+    setActiveTab('Packages')
+    if (!categoryKey) window.scrollTo({ top: 0 })
+  }
   // Read once on load — this prototype has no backend, so this is what
   // "reflects" a style saved from the Website Design and Style screen
   // (EventSitePackagesListPage.jsx via data/eventSiteStyle.js) here.
@@ -409,7 +418,7 @@ export default function EventWebsitePage() {
   // the saved neutralTint's own color, defaulting to Primary (e.g. if the
   // saved tint is 'neutral' but the viewer turned Monochromatic on here
   // anyway via the header toggle).
-  const monoScale = siteStyle.neutralTint === 'secondary' ? secondaryScale : primaryScale
+  const monoScale = siteStyle.neutralTint === 'secondary' || siteStyle.neutralTint === 'full' ? secondaryScale : primaryScale
   // The page's main-CTA buttons (Register Now, View Packages, View Sponsors,
   // Sponsor Website) default to Primary, matching Neutral/Primary Tint — but
   // under Secondary Tint they'd otherwise be the one thing on the page still
@@ -419,6 +428,9 @@ export default function EventWebsitePage() {
   // section's own buttons (Make A Donation/Donate Now) — those are
   // deliberately Secondary regardless of tint, matching that section's
   // hardcoded Secondary progress bar below.
+  // Full Tint: surfaces/backgrounds tint with Secondary (monoScale), text and
+  // outline roles with Primary (textScale) — a combination of both.
+  const textScale = siteStyle.neutralTint === 'full' ? primaryScale : monoScale
   const ctaColor = siteStyle.neutralTint === 'secondary' ? 'secondary-color' : 'primary-color'
 
   // Subtle buttons sit a step lighter than the base color in light mode, a
@@ -472,9 +484,17 @@ export default function EventWebsitePage() {
     // grey-100) — without this the backgrounds below (monoScale[900] in
     // dark mode) and this text sat one step apart on the same dark end of
     // the scale, unreadable.
-    '--gs-color-on-background': monoScale[themeMode === 'dark' ? 50 : 800],
-    '--gs-color-on-surface': monoScale[themeMode === 'dark' ? 50 : 800],
-    '--gs-color-on-surface-variant': monoScale[themeMode === 'dark' ? 100 : 800],
+    '--gs-color-on-background': textScale[themeMode === 'dark' ? 50 : 800],
+    '--gs-color-on-surface': textScale[themeMode === 'dark' ? 50 : 800],
+    '--gs-color-on-surface-variant': textScale[themeMode === 'dark' ? 100 : 800],
+    // Light-mode header bar: the dark ink step (800) instead of the raw
+    // primary, same as the preview mockup's header (EventSiteDeviceMockup.jsx
+    // --edm-ink). Dark mode keeps its own inverted header (.dark
+    // .es-header-bar).
+    ...(themeMode === 'light' && {
+      '--es-header-ink': monochromatic ? textScale[800] : golfstatusColors.grey800,
+      '--es-header-on-ink': golfstatusColors.white,
+    }),
     ...(monochromatic &&
       Object.fromEntries(
         Object.entries(DEFAULT_NEUTRAL_TOKENS[themeMode]).map(([token, hex]) => [
@@ -487,9 +507,11 @@ export default function EventWebsitePage() {
           // token) tints to the same 100 step under Primary/Secondary Tint,
           // in both light and dark mode, instead of following
           // monochromatize()'s light/dark-dependent grey-50/grey-800 lookup.
-          token === '--gs-color-outline-variant' || token === '--gs-color-surface-container-high'
-            ? monoScale[OUTLINE_VARIANT_MONO_STEP]
-            : monochromatize(hex, monoScale),
+          token === '--gs-color-outline-variant'
+            ? textScale[OUTLINE_VARIANT_MONO_STEP]
+            : token === '--gs-color-surface-container-high'
+              ? monoScale[OUTLINE_VARIANT_MONO_STEP] // surface scale, matching the preview's card bodies
+              : monochromatize(hex, monoScale),
         ])
       )),
     // Per-swatch riffs saved from the Website Design and Style screen's
@@ -588,7 +610,7 @@ export default function EventWebsitePage() {
               <div className="es-intro-main">
                 <GSInfoGroup dataGroups={introInfo} />
                 <div className="es-intro-actions">
-                  <GSButton color={ctaColor} appearance="fill" title={sectionButtons.tournamentDetails.registerNow} isFocusable />
+                  <GSButton color={ctaColor} appearance="fill" title={sectionButtons.tournamentDetails.registerNow} isFocusable onClick={() => openPackages()} />
                   <GSButton
                     color="secondary-color"
                     appearance="outline"
@@ -641,7 +663,7 @@ export default function EventWebsitePage() {
       <GSPageSection
         title={sectionHeaders.packages}
         sectionActions={[
-          { title: sectionButtons.packages.viewPackages, rightIcon: faArrowRight, color: ctaColor, appearance: 'fill', isFocusable: true },
+          { title: sectionButtons.packages.viewPackages, rightIcon: faArrowRight, color: ctaColor, appearance: 'fill', isFocusable: true, onClick: () => openPackages() },
         ]}
         body={[
           <GSItemList
@@ -649,7 +671,7 @@ export default function EventWebsitePage() {
             style={{ width: '100%' }}
             items={PACKAGE_CATEGORIES}
             listItem={category => (
-              <div className="es-arrow-tile" style={{ width: '100%' }} tabIndex={0}>
+              <div className="es-arrow-tile" style={{ width: '100%' }} tabIndex={0} onClick={() => openPackages(category.key)}>
                 <FontAwesomeIcon icon={category.icon} className="es-arrow-tile-icon" />
                 <div className="es-arrow-tile-label">{packageCategoryLabels[category.key] ?? category.label}</div>
                 <FontAwesomeIcon icon={faArrowRight} className="es-arrow-tile-arrow" />
@@ -920,16 +942,20 @@ export default function EventWebsitePage() {
                 ? { color: 'primary-color', appearance: 'subtle', size: 'secondary' }
                 : { type: 'transparent secondary' }),
               isFocusable: true,
-              onClick: () => setActiveTab(item),
+              onClick: () => (item === 'Packages' ? openPackages() : setActiveTab(item)),
             }))}
           />
         </nav>
       </header>
 
-      {sectionOrder.map(id => {
-        const node = sectionsById[id]
-        return node ? <Fragment key={id}>{node}</Fragment> : null
-      })}
+      {activeTab === 'Packages' ? (
+        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} />
+      ) : (
+        sectionOrder.map(id => {
+          const node = sectionsById[id]
+          return node ? <Fragment key={id}>{node}</Fragment> : null
+        })
+      )}
     </div>
   )
 }

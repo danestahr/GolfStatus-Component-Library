@@ -72,3 +72,41 @@ export function generateScale(hex400) {
 }
 
 export const SCALE_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
+
+// The `--gs-color-*` tokens GSButton's Fill/Outline/Subtle variants read
+// (gs-lib/styles/theme.scss's role names), computed from a Primary/Secondary
+// scale exactly the way EventWebsitePage.jsx computes them for the live
+// site — shared by WebsiteDesignStyleFields.jsx's own Button Styles preview
+// and EventSiteDeviceMockup.jsx's device preview, so neither can drift out
+// of sync with the real site or each other. Meant to be set as inline style
+// on a wrapping div (same "inject as CSS custom properties" approach
+// EventWebsitePage.jsx uses on its root div), not requiring a `.gs-theme-*`
+// ancestor class.
+export function buttonThemeVars(primaryScale, secondaryScale, mode) {
+  // Fill/Outline's base color sits noticeably lighter in dark mode (600 ->
+  // 200) so it doesn't read as a flat, oversaturated block against a dark
+  // background — same convention EventWebsitePage.jsx's own --gs-color-
+  // primary/-secondary follow, so the two can't drift apart.
+  const primaryBase = primaryScale[mode === 'dark' ? 200 : 600]
+  const secondaryBase = secondaryScale[mode === 'dark' ? 200 : 600]
+  const primarySubtleBg = primaryScale[mode === 'dark' ? 700 : 100]
+  const secondarySubtleBg = secondaryScale[mode === 'dark' ? 700 : 100]
+  // Subtle text is pinned opposite its background's mode — 900 in light
+  // mode, 50 in dark mode — not AA-picked, same convention EventWebsitePage
+  // uses for its own Subtle buttons.
+  const subtleTextStep = mode === 'dark' ? 50 : 900
+  // Dark mode's Fill background is a light tint (primaryBase/secondaryBase
+  // above, step 200), so its text needs to be dark (900), not light (50)
+  // the way light mode's step-400 background needs.
+  const fillTextStep = mode === 'dark' ? 900 : 50
+  return {
+    '--gs-color-primary': primaryBase,
+    '--gs-color-on-primary-fill': primaryScale[fillTextStep],
+    '--gs-color-primary-subtle': primarySubtleBg,
+    '--gs-color-on-primary-subtle': primaryScale[subtleTextStep],
+    '--gs-color-secondary': secondaryBase,
+    '--gs-color-on-secondary-fill': secondaryScale[fillTextStep],
+    '--gs-color-secondary-subtle': secondarySubtleBg,
+    '--gs-color-on-secondary-subtle': secondaryScale[subtleTextStep],
+  }
+}

@@ -60,3 +60,34 @@ export function savePackageCategoryLabels(labels) {
     // means the labels won't survive this session, not a real failure.
   }
 }
+
+// Same localStorage convention as the labels above, for the Packages
+// screen's own display state: each category's manually-reordered id list
+// (EventSitePackagesListPage.jsx's `packageOrder`) and the package list
+// itself (so added/copied packages exist on the public site too). This is
+// what the public Event Site "Packages" page (EventSitePackagesPage.jsx)
+// reads back, so a reorder or new package in the admin shows up there.
+const ORDER_STORAGE_KEY = 'gs-event-site-package-order'
+const PACKAGES_STORAGE_KEY = 'gs-event-site-packages'
+
+function readJson(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function writeJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Prototype-only persistence — see savePackageCategoryLabels.
+  }
+}
+
+export const loadPackageOrder = () => readJson(ORDER_STORAGE_KEY)
+export const savePackageOrder = order => writeJson(ORDER_STORAGE_KEY, order)
+export const loadSavedPackages = () => readJson(PACKAGES_STORAGE_KEY)
+export const saveSavedPackages = list => writeJson(PACKAGES_STORAGE_KEY, list)
