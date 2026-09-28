@@ -949,7 +949,7 @@ export default function EventWebsitePage() {
       </header>
 
       {activeTab === 'Packages' ? (
-        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} />
+        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} ctaColor={ctaColor} />
       ) : (
         sectionOrder.map(id => {
           const node = sectionsById[id]
