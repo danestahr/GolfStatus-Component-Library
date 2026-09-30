@@ -781,6 +781,29 @@ const SITE_ELEMENT_CSS_VAR = Object.fromEntries(ELEMENT_DEFS.map(def => [def.key
 // designations typed on roles with no site override slot (`sitePersisted`
 // false) and the open tab survive a refresh. Site-persisted roles already
 // survive via themeOverrides + Save.
+// Designations for roles the live site can't persist (see `sitePersisted`),
+// seeded from the designed defaults; anything stored locally wins over these.
+const DEFAULT_LOCAL_DESIGNATIONS = {
+  'golfstatus-dark-outline': { family: 'grey', step: 800 },
+  'golfstatus-dark-outlineVariant': { family: 'grey', step: 800 },
+  'golfstatus-dark-surfaceContainerLow': { family: 'black' },
+  'golfstatus-light-outline': { family: 'grey', step: 100 },
+  'golfstatus-light-surface': { family: 'grey', step: 50 },
+  'neutral-full-dark-onSurface': { family: 'secondary', step: 100 },
+  'neutral-full-dark-onSurfaceVariant': { family: 'secondary', step: 100 },
+  'neutral-full-light-onSurface': { family: 'secondary', step: 800 },
+  'neutral-full-light-onSurfaceVariant': { family: 'secondary', step: 800 },
+  'primary-full-dark-onPrimary': { family: 'primary', step: 900 },
+  'primary-full-light-onPrimary': { family: 'white' },
+  'primary-neutral-dark-onPrimary': { family: 'primary', step: 900 },
+  'primary-neutral-light-onPrimary': { family: 'white' },
+  'primary-primary-dark-onPrimary': { family: 'primary', step: 900 },
+  'primary-primary-light-onPrimary': { family: 'white' },
+  'secondary-full-dark-onSecondary': { family: 'secondary', step: 100 },
+  'secondary-neutral-dark-onSecondary': { family: 'secondary', step: 100 },
+  'secondary-primary-dark-onSecondary': { family: 'secondary', step: 100 },
+}
+
 const DESIGNATIONS_STORAGE_KEY = 'color-exploration-local-designations'
 const TAB_STORAGE_KEY = 'color-exploration-active-tab'
 
@@ -1115,7 +1138,7 @@ export default function ColorExplorationFields({
   // Secondary's own On X/Subtle roles have no site mechanism to read a
   // saved override from at all), so there's nothing to lose by resetting on
   // remount.
-  const [localDesignations, setLocalDesignations] = useState(() => readStored(DESIGNATIONS_STORAGE_KEY) ?? {})
+  const [localDesignations, setLocalDesignations] = useState(() => ({ ...DEFAULT_LOCAL_DESIGNATIONS, ...(readStored(DESIGNATIONS_STORAGE_KEY) ?? {}) }))
   useEffect(() => writeStored(DESIGNATIONS_STORAGE_KEY, localDesignations), [localDesignations])
 
   // Resolves one role definition (see liveThemeRoleDefs/golfStatusRoleDefs)

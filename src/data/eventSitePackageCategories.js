@@ -87,7 +87,11 @@ function writeJson(key, value) {
   }
 }
 
-export const loadPackageOrder = () => readJson(ORDER_STORAGE_KEY)
+// Designed default order (Add-ons: Mulligans, T-Shirt, Raffle Ticket); a saved
+// order wins over it.
+const DEFAULT_PACKAGE_ORDER = {'sponsorship': ['pkg-1', 'pkg-2', 'pkg-3', 'pkg-4'], 'team-registration': ['pkg-5'], 'player-registration': ['pkg-6'], 'addon': ['pkg-7', 'pkg-9', 'pkg-8']}
+
+export const loadPackageOrder = () => readJson(ORDER_STORAGE_KEY) ?? DEFAULT_PACKAGE_ORDER
 export const savePackageOrder = order => writeJson(ORDER_STORAGE_KEY, order)
 export const loadSavedPackages = () => readJson(PACKAGES_STORAGE_KEY)
 export const saveSavedPackages = list => writeJson(PACKAGES_STORAGE_KEY, list)
