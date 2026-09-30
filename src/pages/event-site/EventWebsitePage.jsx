@@ -587,19 +587,25 @@ export default function EventWebsitePage() {
               : monochromatize(hex, monoScale),
         ])
       )),
-    // Per-swatch riffs saved from the Website Design and Style screen's
-    // Theme Definitions row (see ROLE_TO_CSS_VAR above) — applied last so a
-    // saved override always wins over both the plain and Monochromatic
-    // values above, exactly like it does in that screen's own preview.
-    ...Object.fromEntries(
-      Object.entries(ROLE_TO_CSS_VAR)
-        .map(([roleKey, cssVar]) => {
-          const override = siteStyle.themeOverrides?.[`${themeMode}-${tint}-${roleKey}`]
-          const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
-          return hex ? [cssVar, hex] : null
-        })
-        .filter(Boolean)
-    ),
+  }
+
+  // Role riffs saved from Color Exploration/Website Design and Style. Applied
+  // under every theme (GolfStatus included) — each is keyed by tint, so the
+  // 'golfstatus' slot holds its own edits.
+  const roleStyle = !isPremium || !hasSavedStyle ? {} : {
+  // Per-swatch riffs saved from the Website Design and Style screen's
+  // Theme Definitions row (see ROLE_TO_CSS_VAR above) — applied last so a
+  // saved override always wins over both the plain and Monochromatic
+  // values above, exactly like it does in that screen's own preview.
+  ...Object.fromEntries(
+    Object.entries(ROLE_TO_CSS_VAR)
+      .map(([roleKey, cssVar]) => {
+        const override = siteStyle.themeOverrides?.[`${themeMode}-${tint}-${roleKey}`]
+        const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
+        return hex ? [cssVar, hex] : null
+      })
+      .filter(Boolean)
+  ),
   }
 
   // Applies under every theme (GolfStatus included), unlike customThemeStyle
@@ -641,7 +647,7 @@ export default function EventWebsitePage() {
   const buttonStyle = isPremium && hasSavedStyle
     ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, tint, { primaryScale, secondaryScale })
     : {}
-  const extraStyle = { ...elementStyle, ...buttonStyle }
+  const extraStyle = { ...roleStyle, ...elementStyle, ...buttonStyle }
   const pageThemeStyle = Object.keys(extraStyle).length ? { ...customThemeStyle, ...extraStyle } : customThemeStyle
 
   const sponsorsByTier = SPONSOR_TIERS.map(tier => ({

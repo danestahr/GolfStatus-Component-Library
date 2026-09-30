@@ -625,10 +625,16 @@ const TINT_THEMES = [
 // theme.scss's own `.dark` block never actually redefines
 // --gs-color-on-secondary, an existing gap in that file — light's white is
 // reused here rather than leaving this one swatch blank.
+const SITE_ROLE_KEYS = new Set([
+  'background', 'onBackground', 'surface', 'onSurface', 'onSurfaceVariant', 'surfaceBright',
+  'surfaceContainerLow', 'surfaceContainerHigh', 'surfaceContainerHigest', 'surfaceVariant',
+  'outline', 'outlineVariant', 'tertiaryContainer',
+])
+
 function golfStatusRoleDefs() {
   const forMode = mode => {
     const isDark = mode === 'dark'
-    return [
+    const roles = [
       { key: 'primary', label: 'Primary', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: null, editable: false },
       { key: 'onPrimary', label: 'On Primary', fallbackHex: isDark ? golfstatusColors.grey800 : WHITE, naturalRef: isDark ? { family: 'grey', step: 800 } : { family: 'white' }, editable: true },
       { key: 'secondary', label: 'Secondary', fallbackHex: isDark ? golfstatusColors.cyan200 : golfstatusColors.cyan700, naturalRef: null, editable: false },
@@ -647,6 +653,9 @@ function golfStatusRoleDefs() {
       { key: 'outlineVariant', label: 'Outline Variant', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey100, naturalRef: { family: 'grey', step: isDark ? 700 : 100 }, editable: true },
       { key: 'tertiaryContainer', label: 'Tertiary', fallbackHex: isDark ? golfstatusColors.green400 : golfstatusColors.green200, naturalRef: null, editable: true },
     ]
+    // Roles the live site reads (EventWebsitePage.jsx's ROLE_TO_CSS_VAR) save
+    // to themeOverrides under the 'golfstatus' tint slot and apply there.
+    return roles.map(r => (r.editable && SITE_ROLE_KEYS.has(r.key) ? { ...r, sitePersisted: true } : r))
   }
   return { light: forMode('light'), dark: forMode('dark') }
 }
@@ -860,14 +869,24 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
             className="wds-btn-field-text"
             value={refToText(override ?? defaultRef)}
             onChange={e => {
-              const next = parseDesignation(e.target.value)
+              const next = e.target.value ? parseDesignation(e.target.value) : null
               // Picking the built-in designation just clears the override.
-              onCommit(next.family === defaultRef.family && next.step === defaultRef.step ? null : next)
+              onCommit(!next || (defaultRef && next.family === defaultRef.family && next.step === defaultRef.step) ? null : next)
             }}
             aria-label={`${label} theme designation`}
           >
-            {SCALE_DESIGNATIONS.map(option => (
-              <option key={option} value={option}>{option}</option>
+            {/* GolfStatus's brand defaults (grey/cyan) aren't a scale step. */}
+            {!defaultRef && <option value="">Default</option>}
+            <optgroup label="Base">
+              <option value="White">White</option>
+              <option value="Black">Black</option>
+            </optgroup>
+            {['Neutral', 'Primary', 'Secondary'].map(family => (
+              <optgroup key={family} label={family}>
+                {SCALE_STEPS.map(step => (
+                  <option key={step} value={`${family} ${step}`}>{`${family} ${step}`}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </span>
@@ -927,8 +946,8 @@ function ButtonVariantCell({ themeKey, mode, color, appearance, parts, overrides
         label={label}
         hex={hex}
         override={override}
-        defaultRef={defaultButtonRef(mode, color, appearance, part)}
-        designationOnly={themeKey !== 'golfstatus'}
+        defaultRef={themeKey === 'golfstatus' ? null : defaultButtonRef(mode, color, appearance, part)}
+        designationOnly
         onCommit={next =>
           onChange(prev => {
             const store = { ...(prev ?? {}) }
@@ -1195,8 +1214,8 @@ export default function ColorExplorationFields({
 
   const golfStatusDefs = golfStatusRoleDefs()
   const golfStatusRoles = {
-    light: resolveGroup(golfStatusDefs.light, 'light', 'golfstatus'),
-    dark: resolveGroup(golfStatusDefs.dark, 'dark', 'golfstatus'),
+    light: resolveGroup(golfStatusDefs.light, 'light', 'golfstatus', 'golfstatus'),
+    dark: resolveGroup(golfStatusDefs.dark, 'dark', 'golfstatus', 'golfstatus'),
   }
 
   // Each TINT_THEMES entry's own three groups flattened into one list
