@@ -85,7 +85,7 @@ export const ELEMENT_SELECTORS = {
 // Every theme slot an element assignment is written to — Site Colors keeps
 // one shared assignment across all of them (setElementAssignment), plus
 // 'secondary' since the page's own tint can be that too.
-export const ELEMENT_OVERRIDE_THEMES = ['neutral', 'primary', 'secondary', 'full', 'golfstatus']
+export const ELEMENT_OVERRIDE_THEMES = ['neutral', 'neutral-two-tone', 'primary', 'secondary', 'full', 'golfstatus']
 
 const depthOf = node => {
   let depth = 0

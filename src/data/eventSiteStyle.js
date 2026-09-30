@@ -16,7 +16,7 @@ export const DEFAULT_EVENT_SITE_STYLE = {
   // EventWebsitePage.jsx to decide both whether its own Monochromatic
   // toggle starts on and which scale it substitutes into the Neutral
   // theme roles.
-  neutralTint: 'neutral',
+  neutralTint: 'golfstatus',
   // Per-swatch riffs typed into the GolfStatus (default) theme's Theme
   // Definitions row (WebsiteDesignStyleFields.jsx's wds-swatch-hex-input) —
   // keyed by "mode-monochromatic-role" (e.g. "dark-true-background"), each
@@ -361,12 +361,21 @@ export const DEFAULT_EVENT_SITE_STYLE = {
   // 'outline' | 'subtle' | 'transparent'). A button with no entry keeps the
   // variant the page gives it by default. Ids: data/eventSiteButtons.js.
   buttonStyles: {
-    'addToCart': { color: 'primary-color', appearance: 'fill' },
-    'donateNow': { color: 'primary-color', appearance: 'fill' },
-    'getAccess': { color: 'primary-color', appearance: 'outline' },
-    'makeDonation': { color: 'primary-color', appearance: 'outline' },
-    'registerNow': { color: 'primary-color', appearance: 'fill' },
-    'sponsorWebsite': { color: 'primary-color', appearance: 'subtle' },
+    'full-addToCart': { color: 'primary-color', appearance: 'fill' },
+    'full-getAccess': { color: 'secondary-color', appearance: 'outline' },
+    'golfstatus-addToCart': { color: 'primary-color', appearance: 'fill' },
+    'golfstatus-getAccess': { color: 'primary-color', appearance: 'outline' },
+    'neutral-addToCart': { color: 'primary-color', appearance: 'fill' },
+    'neutral-donateNow': { color: 'primary-color', appearance: 'fill' },
+    'neutral-getAccess': { color: 'primary-color', appearance: 'outline' },
+    'neutral-makeDonation': { color: 'primary-color', appearance: 'outline' },
+    'neutral-two-tone-addToCart': { color: 'secondary-color', appearance: 'fill' },
+    'neutral-two-tone-getAccess': { color: 'primary-color', appearance: 'outline' },
+    'neutral-two-tone-subnavSelected': { color: 'secondary-color', appearance: 'subtle' },
+    'primary-addToCart': { color: 'primary-color', appearance: 'fill' },
+    'primary-donateNow': { color: 'primary-color', appearance: 'fill' },
+    'primary-getAccess': { color: 'primary-color', appearance: 'outline' },
+    'primary-makeDonation': { color: 'primary-color', appearance: 'outline' },
   },
 }
 
@@ -424,3 +433,8 @@ export function saveEventSiteStyle(style) {
     // means the style won't survive this session, not a real failure.
   }
 }
+
+// 'neutral-two-tone' (Subtle Two-Tone) is currently a straight duplicate of
+// 'neutral' (Subtle); consumers that switch on the tint read it through this
+// so the two can diverge later in one place.
+export const normalizeNeutralTint = tint => (tint === 'neutral-two-tone' ? 'neutral' : tint)

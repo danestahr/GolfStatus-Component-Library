@@ -3,11 +3,10 @@ import { createPortal } from 'react-dom'
 import { ELEMENT_DEFS } from '../../components/orders-forms/ColorExplorationFields.jsx'
 import {
   ELEMENT_ROLES,
-  ELEMENT_OVERRIDE_THEMES,
   elementKeysAt,
   buttonVariantAt,
 } from '../../data/eventSiteElements.js'
-import { BUTTON_APPEARANCES, BUTTON_COLORS, BUTTON_IDS, buttonOverrideKey } from '../../data/eventSiteButtons.js'
+import { BUTTON_APPEARANCES, BUTTON_COLORS, BUTTON_IDS, buttonOverrideKey, buttonStyleKey } from '../../data/eventSiteButtons.js'
 import { SCALE_STEPS } from '../../gs-lib/helpers/colorScale.js'
 import './EventSiteContextMenu.scss'
 
@@ -108,13 +107,12 @@ export default function EventSiteContextMenu({
     const value = roleKey && roleKey !== def.baseRoleKey ? { role: roleKey } : null
     onChangeStyle(prev => {
       const next = { ...(prev.elementOverrides ?? {}) }
-      ;['light', 'dark'].forEach(m =>
-        ELEMENT_OVERRIDE_THEMES.forEach(theme => {
-          const key = `${m}-${theme}-${def.key}`
-          if (value) next[key] = value
-          else delete next[key]
-        })
-      )
+      // Only the theme being viewed — every theme keeps its own assignments.
+      ;['light', 'dark'].forEach(m => {
+        const key = `${m}-${tint}-${def.key}`
+        if (value) next[key] = value
+        else delete next[key]
+      })
       return { ...prev, elementOverrides: next }
     })
   }
@@ -137,10 +135,10 @@ export default function EventSiteContextMenu({
       ...prev,
       buttonStyles: {
         ...(prev.buttonStyles ?? {}),
-        [buttonVariant.id]: {
+        [buttonStyleKey(tint, buttonVariant.id)]: {
           color: `${buttonVariant.color}-color`,
           appearance: buttonVariant.appearance,
-          ...(prev.buttonStyles?.[buttonVariant.id] ?? {}),
+          ...(prev.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)] ?? {}),
           ...patch,
         },
       },
@@ -150,7 +148,7 @@ export default function EventSiteContextMenu({
     if (!buttonVariant) return
     onChangeStyle(prev => {
       const next = { ...(prev.buttonStyles ?? {}) }
-      delete next[buttonVariant.id]
+      delete next[buttonStyleKey(tint, buttonVariant.id)]
       return { ...prev, buttonStyles: next }
     })
   }
@@ -198,7 +196,7 @@ export default function EventSiteContextMenu({
     const parts = BUTTON_APPEARANCES.find(a => a.key === appearance).parts
     const button = menu.node.closest('gs-button')
     const computed = getComputedStyle(button)
-    const isSaved = !!siteStyle.buttonStyles?.[buttonVariant.id]
+    const isSaved = !!siteStyle.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)]
     return (
       <>
         <div className="es-ctx-subhead">Color</div>

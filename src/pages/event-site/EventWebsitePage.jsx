@@ -40,7 +40,7 @@ import {
   loadHomepageSectionButtons,
 } from '../../data/eventSiteHomepageSections.js'
 import { sponsors, SPONSOR_TIERS } from '../../data/mockSponsors.js'
-import { loadEventSiteStyle, hasEventSiteStyle, saveEventSiteStyle, subscribeEventSiteStyle } from '../../data/eventSiteStyle.js'
+import { loadEventSiteStyle, normalizeNeutralTint, hasEventSiteStyle, saveEventSiteStyle, subscribeEventSiteStyle } from '../../data/eventSiteStyle.js'
 import { loadIsPremium } from '../../data/eventSitePremium.js'
 import { loadEventSitePreview, saveEventSitePreview } from '../../data/eventSitePreview.js'
 import { PACKAGE_CATEGORIES, loadPackageCategoryLabels } from '../../data/eventSitePackageCategories.js'
@@ -53,7 +53,7 @@ import sponsorImagePending from '../../assets/sponsor-image-pending-2-1.jpg'
 import golfstatusAppGif from '../../assets/GolfStatusApp.gif'
 import appleDownload from '../../assets/AppleDownload.png'
 import googleDownload from '../../assets/GoogleDownload.png'
-import { buttonOverrideVars } from '../../data/eventSiteButtons.js'
+import { buttonOverrideVars, buttonStyleKey } from '../../data/eventSiteButtons.js'
 import './EventWebsitePage.scss'
 
 // Public-facing preview of a tournament's event website — reached by
@@ -101,8 +101,8 @@ import './EventWebsitePage.scss'
 // customThemeStyle's inline overrides, so it shows the base GolfStatus
 // brand colors (theme.scss's grey-800/cyan-700) instead of this event's own
 // saved Primary/Secondary.
-const TINT_OPTIONS = ['neutral', 'primary', 'full', 'golfstatus']
-const TINT_LABELS = { neutral: 'Neutral + Primary Theme', primary: 'Primary Theme', secondary: 'Secondary Theme', full: 'Full Theme', golfstatus: 'Neutral Theme' }
+const TINT_OPTIONS = ['golfstatus', 'neutral', 'neutral-two-tone', 'primary', 'full']
+const TINT_LABELS = { golfstatus: 'Grayscale', neutral: 'Subtle', 'neutral-two-tone': 'Subtle Two-Tone', primary: 'Bold', secondary: 'Secondary Theme', full: 'Bold Two-Tone' }
 const THEME_NAMES = ['default', 'golfstatus']
 
 // What `.gs-theme-${x}` class each THEME_NAMES entry actually renders —
@@ -456,7 +456,7 @@ export default function EventWebsitePage() {
   // lands back on the saved design again. monoScale below is what answers
   // "which color"; this is only "is it on".
   const [tint, setTint] = useState(siteStyle.neutralTint)
-  const monochromatic = tint !== 'neutral' && tint !== 'golfstatus'
+  const monochromatic = normalizeNeutralTint(tint) !== 'neutral' && tint !== 'golfstatus'
   // The GolfStatus Default option is the fixed .gs-theme-golfstatus preset
   // rather than a tint of the saved site style.
   const themeName = tint === 'golfstatus' ? 'golfstatus' : 'default'
@@ -497,7 +497,7 @@ export default function EventWebsitePage() {
   // to the variant the page gives it by default. Like every other saved
   // customization, ignored until a style's been saved on a premium tournament.
   const btn = (buttonId, color, appearance) => {
-    const saved = isPremium && hasSavedStyle ? siteStyle.buttonStyles?.[buttonId] : null
+    const saved = isPremium && hasSavedStyle ? siteStyle.buttonStyles?.[buttonStyleKey(tint, buttonId)] : null
     return { buttonId, color: saved?.color ?? color, appearance: saved?.appearance ?? appearance }
   }
 

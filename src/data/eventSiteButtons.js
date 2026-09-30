@@ -28,6 +28,10 @@ export const BUTTON_APPEARANCES = [
 export const buttonOverrideKey = (mode, theme, color, appearance, part) =>
   `${mode}-${theme}-${color}-${appearance}-${part}`
 
+// Named-button style picks are stored per theme so one theme's right-click
+// edit never leaks into another's.
+export const buttonStyleKey = (theme, id) => `${theme}-${id}`
+
 export const buttonVarName = (color, appearance, part) => `--gs-btn-${color}-${appearance}-${part}`
 
 export function resolveButtonOverride(override, scales) {

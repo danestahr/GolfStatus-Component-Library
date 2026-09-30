@@ -13,6 +13,7 @@ import {
   BUTTON_IDS,
   BUTTON_DEFAULTS,
   buttonOverrideKey,
+  buttonStyleKey,
   buttonVarName,
   resolveButtonOverride,
 } from '../../data/eventSiteButtons.js'
@@ -453,6 +454,9 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions }) {
 // reads as a concrete site change, not just a local preview value.
 // GolfStatus is the master theme: its slot is what every tile reads.
 const CANONICAL_THEME = 'golfstatus'
+// Subtle Two-Tone starts as a copy of Subtle but its element assignments
+// are fully independent of every other theme's.
+const SEPARATE_THEME = 'neutral-two-tone'
 const ELEMENT_DESIGNATION_HINT = 'Which role this reads from — type e.g. "On Primary" or "Secondary"'
 
 // Shared by the Theme and Site Colors tabs: the row's name (and, for
@@ -671,11 +675,13 @@ function retintNeutralDefs(neutralDefs, monoFamily, primaryScale, secondaryScale
 // designation typed under one tint theme lands in that tint's own slot on
 // the live site instead of colliding with the others'.
 const TINT_THEMES = [
-  { key: 'neutral', label: 'Neutral + Primary Theme', monochromatic: false, retintFamily: null },
-  { key: 'primary', label: 'Primary Theme', monochromatic: true, retintFamily: 'primary' },
+  { key: 'neutral', label: 'Subtle', monochromatic: false, retintFamily: null },
+  // Straight duplicate of Subtle (see normalizeNeutralTint) with its own override slots.
+  { key: 'neutral-two-tone', label: 'Subtle Two-Tone', monochromatic: false, retintFamily: null },
+  { key: 'primary', label: 'Bold', monochromatic: true, retintFamily: 'primary' },
   // Full Tint (EventWebsitePage.jsx's textScale): surfaces/backgrounds tint
   // with Secondary, text and Outline Variant with Primary.
-  { key: 'full', label: 'Full Theme', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
+  { key: 'full', label: 'Bold Two-Tone', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
 ]
 
 // GolfStatus's own fixed roles, transcribed straight from
@@ -906,10 +912,11 @@ const COLOR_TABS = [
 // other overrides under (EventWebsitePage.jsx's `tint`), so an edit made
 // under one theme only shows up when the site is on that theme.
 const BUTTON_THEMES = [
-  { key: 'neutral', label: 'Neutral + Primary Theme' },
-  { key: 'primary', label: 'Primary Theme' },
-  { key: 'full', label: 'Full Theme' },
-  { key: 'golfstatus', label: 'Neutral Theme' },
+  { key: 'golfstatus', label: 'Grayscale' },
+  { key: 'neutral', label: 'Subtle' },
+  { key: 'neutral-two-tone', label: 'Subtle Two-Tone' },
+  { key: 'primary', label: 'Bold' },
+  { key: 'full', label: 'Bold Two-Tone' },
 ]
 
 // What a button part renders as when nothing's been overridden: the tint
@@ -1070,26 +1077,41 @@ function ButtonVariantCell({ themeKey, mode, color, appearance, parts, overrides
 // Which variant each named Event Website button uses — the same
 // `buttonStyles` the /event-site right-click menu edits (EventSiteContext
 // Menu.jsx), so a pick made there shows up here and vice versa.
-function ButtonStylesSection({ buttonStyles, onChange }) {
+function ButtonStylesSection({ themes, buttonStyles, onChange }) {
+  // Picks are stored per theme, so one theme is edited at a time.
+  const [themeKey, setThemeKey] = useState(themes[0].key)
   const setStyle = (id, patch) =>
     onChange(prev => {
       const [defColor, defAppearance] = BUTTON_DEFAULTS[id]
+      const k = buttonStyleKey(themeKey, id)
       return {
         ...(prev ?? {}),
-        [id]: { color: `${defColor}-color`, appearance: defAppearance, ...(prev?.[id] ?? {}), ...patch },
+        [k]: { color: `${defColor}-color`, appearance: defAppearance, ...(prev?.[k] ?? {}), ...patch },
       }
     })
   const reset = id =>
     onChange(prev => {
       const next = { ...(prev ?? {}) }
-      delete next[id]
+      delete next[buttonStyleKey(themeKey, id)]
       return next
     })
   return (
     <section className="wds-btn-theme wds-btn-styles">
       <GSActionBar type="form-header H3" header="Button Styles" />
+      <div className="wds-btn-style-options">
+        {themes.map(t => (
+          <button
+            key={t.key}
+            type="button"
+            className={`wds-btn-style-option${themeKey === t.key ? ' is-active' : ''}`}
+            onClick={() => setThemeKey(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
       {Object.entries(BUTTON_IDS).map(([id, label]) => {
-        const saved = buttonStyles?.[id]
+        const saved = buttonStyles?.[buttonStyleKey(themeKey, id)]
         const [defColor, defAppearance] = BUTTON_DEFAULTS[id]
         const color = saved?.color ?? `${defColor}-color`
         const appearance = saved?.appearance ?? defAppearance
@@ -1133,7 +1155,7 @@ function ButtonStylesSection({ buttonStyles, onChange }) {
 function ButtonsTab({ themes, overrides, onChange, scales, buttonStyles, onChangeButtonStyles }) {
   return (
     <div className="wds-btn-tab">
-      <ButtonStylesSection buttonStyles={buttonStyles} onChange={onChangeButtonStyles} />
+      <ButtonStylesSection themes={themes} buttonStyles={buttonStyles} onChange={onChangeButtonStyles} />
       {themes.map(theme => (
         <section className="wds-btn-theme" key={theme.key}>
           <GSActionBar type="form-header H3" header={theme.label} />
@@ -1331,7 +1353,7 @@ export default function ColorExplorationFields({
   // (already one flat list, same shape as flattenedTintThemes' entries).
   // Ordered to match the Site Theme radio (Neutral Theme first).
   const siteColorThemes = [
-    { key: 'golfstatus', label: 'Neutral Theme', light: golfStatusRoles.light, dark: golfStatusRoles.dark },
+    { key: 'golfstatus', label: 'Grayscale', light: golfStatusRoles.light, dark: golfStatusRoles.dark },
     ...flattenedTintThemes,
   ]
 
@@ -1359,8 +1381,9 @@ export default function ColorExplorationFields({
   // isn't something typing into this input can produce anymore.
   const resolveElementDesignable = (def, mode, roleList, tintKey) => {
     // Assignments are shared by every theme (see setElementAssignment), so
-    // GolfStatus's slot is the one source of truth all tiles read from.
-    const storageKey = `${mode}-${CANONICAL_THEME}-${def.key}`
+    // GolfStatus's slot is the one source of truth all tiles read from —
+    // except Subtle Two-Tone, which keeps its own so it can diverge.
+    const storageKey = `${mode}-${tintKey}-${def.key}`
     const fallbackRole = roleList.find(item => item.key === def.baseRoleKey)
     // Light-mode header (EventWebsitePage.jsx's --es-header-ink/-on-ink,
     // .es-header-bar) isn't Primary/On Primary on a tinted theme: it's the
@@ -1371,7 +1394,7 @@ export default function ColorExplorationFields({
     const HEADER_TEXT_KEYS = ['headerIcon', 'headerEventName', 'headerActionIcons']
     let headerDefault
     if (mode === 'light' && tintKey !== 'golfstatus') {
-      if (tintKey === 'neutral') {
+      if (tintKey === 'neutral' || tintKey === 'neutral-two-tone') {
         // Neutral Tint keeps the plain Primary/On Primary header.
       } else if (def.key === 'headerBackground') {
         headerDefault = { hex: primaryScale[800], caption: 'Primary 800' }
@@ -1409,7 +1432,7 @@ export default function ColorExplorationFields({
   // reads (EventWebsitePage.jsx's `${mode}-${tint}-${key}`), so structure
   // stays identical across themes while each theme still resolves that role
   // to its own colors. Picking the element's own default role clears it.
-  const setElementAssignment = (def, text) => {
+  const setElementAssignment = (def, text, separate = false) => {
     const trimmed = text.trim()
     const roleKey = trimmed ? parseRoleReference(trimmed) : null
     if (trimmed && !roleKey) return
@@ -1417,6 +1440,7 @@ export default function ColorExplorationFields({
     onChangeElementOverrides(prev => {
       const next = { ...(prev ?? {}) }
       ;['light', 'dark'].forEach(mode => siteColorThemes.forEach(theme => {
+        if ((theme.key === SEPARATE_THEME) !== separate) return
         const key = `${mode}-${theme.key}-${def.key}`
         if (value) next[key] = value
         else delete next[key]
@@ -1425,8 +1449,8 @@ export default function ColorExplorationFields({
     })
   }
 
-  const elementAssignment = def => {
-    const stored = elementOverrides?.[`light-${CANONICAL_THEME}-${def.key}`]
+  const elementAssignment = (def, separate = false) => {
+    const stored = elementOverrides?.[`light-${separate ? SEPARATE_THEME : CANONICAL_THEME}-${def.key}`]
     const baseLabel = golfStatusRoles.light.find(r => r.key === def.baseRoleKey)?.label
     const current = stored?.role
       ? golfStatusRoles.light.find(r => r.key === stored.role)?.label
@@ -1487,7 +1511,7 @@ export default function ColorExplorationFields({
       {activeTab === 'theme' && (
         <RoleCompareTable
           tintThemes={[
-            { key: 'golfstatus', label: 'Neutral Theme', light: groupGolfStatusRoles(golfStatusRoles.light), dark: groupGolfStatusRoles(golfStatusRoles.dark) },
+            { key: 'golfstatus', label: 'Grayscale', light: groupGolfStatusRoles(golfStatusRoles.light), dark: groupGolfStatusRoles(golfStatusRoles.dark) },
             ...tintThemes,
           ]}
         />
@@ -1527,18 +1551,23 @@ export default function ColorExplorationFields({
                   key={def.key}
                   label={def.label}
                   cssVar={SITE_ELEMENT_CSS_VAR[def.key]}
-                  control={(() => {
-                    const { value, placeholder } = elementAssignment(def)
-                    return (
-                      <DesignationInput
-                        value={value}
-                        placeholder={placeholder}
-                        onCommit={text => setElementAssignment(def, text)}
-                        hint={ELEMENT_DESIGNATION_HINT}
-                        options={ROLE_DESIGNATIONS}
-                      />
-                    )
-                  })()}
+                  control={(
+                    <>
+                      {[false, true].map(separate => {
+                        const { value, placeholder } = elementAssignment(def, separate)
+                        return (
+                          <DesignationInput
+                            key={separate ? 'separate' : 'shared'}
+                            value={value}
+                            placeholder={placeholder}
+                            onCommit={text => setElementAssignment(def, text, separate)}
+                            hint={separate ? 'Subtle Two-Tone only' : ELEMENT_DESIGNATION_HINT}
+                            options={ROLE_DESIGNATIONS}
+                          />
+                        )
+                      })}
+                    </>
+                  )}
                   columns={siteColorThemes.map(tintTheme => ({
                     key: tintTheme.key,
                     light: resolveElementDesignable(def, 'light', tintTheme.light, tintTheme.key),

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
 import { generateScale } from '../../gs-lib/helpers/colorScale'
 import { OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
+import { normalizeNeutralTint } from '../../data/eventSiteStyle.js'
+import { buttonStyleKey } from '../../data/eventSiteButtons.js'
 import './EventSiteDeviceMockup.scss'
 
 // Pixel-accurate rebuild of the Figma "Vertical Group 2" export (the
@@ -148,8 +150,8 @@ const SUBNAV_TEXT_H = 0.773006
 // Register Now / Make A Donation chips follow the color + style saved for
 // those buttons (the same `buttonStyles` the live site's btn() reads), same
 // 600/50 step convention as the Fill/Outline defaults above.
-function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles) {
-  const saved = buttonStyles?.[buttonId]
+function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles, theme) {
+  const saved = buttonStyles?.[buttonStyleKey(theme, buttonId)]
   const color = saved?.color ? saved.color.replace('-color', '') : defColor
   const appearance = saved?.appearance ?? defAppearance
   const scale = scales[color]
@@ -165,7 +167,8 @@ function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles) {
   }
 }
 
-function ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) {
+function ctaThemeVars(primaryColor, secondaryColor, rawNeutralTint, buttonStyles) {
+  const neutralTint = normalizeNeutralTint(rawNeutralTint)
   if (!primaryColor && !secondaryColor) return undefined
   // Neutral Theme ('golfstatus') is the fixed grey preset, not a tint of
   // the saved colors — leaving every var unset lets the stylesheet's own
@@ -187,11 +190,11 @@ function ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) {
     // Neutral Tint's header is the plain Primary bar (tinted themes keep the
     // dark ink header) — same rule as EventWebsitePage.jsx's --es-header-ink.
     ...(primary && neutralTint === 'neutral' && { '--edm-header': primary[600] }),
-    ...chipVars('1', 'registerNow', neutralTint === 'secondary' ? 'secondary' : 'primary', 'fill', { primary, secondary }, buttonStyles),
-    ...chipVars('2', 'makeDonation', 'secondary', 'outline', { primary, secondary }, buttonStyles),
+    ...chipVars('1', 'registerNow', neutralTint === 'secondary' ? 'secondary' : 'primary', 'fill', { primary, secondary }, buttonStyles, rawNeutralTint),
+    ...chipVars('2', 'makeDonation', 'secondary', 'outline', { primary, secondary }, buttonStyles, rawNeutralTint),
     // Active subnav tab = the live site's subnavSelected button (Subtle
     // Primary by default, always Primary regardless of tint).
-    ...chipVars('3', 'subnavSelected', 'primary', 'subtle', { primary, secondary }, buttonStyles),
+    ...chipVars('3', 'subnavSelected', 'primary', 'subtle', { primary, secondary }, buttonStyles, rawNeutralTint),
     ...(secondary && { '--gs-color-secondary': secondary[600] }),
     ...(surfaceScale && inkScale && {
       '--edm-surface': surfaceScale[50],
@@ -207,7 +210,7 @@ function ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) {
   }
 }
 
-function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTint = 'neutral', buttonStyles }) {
+function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTint = 'golfstatus', buttonStyles }) {
   const [mockupRef, mockupWidth] = useMeasuredWidth()
 
   // Reserve enough of the container's own measured width for the desktop

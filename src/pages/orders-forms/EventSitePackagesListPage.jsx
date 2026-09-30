@@ -1279,6 +1279,7 @@ export default function EventSitePackagesListPage() {
 
       <AppSidePanel
         isOpen={panelOpen}
+        expanded={showingColorExploration}
         // Both disabled during the simulated create — nothing to back out
         // of or close mid-"save" (the timer in `handleAddFormSave` would
         // still land on the new form afterward regardless, which would be a

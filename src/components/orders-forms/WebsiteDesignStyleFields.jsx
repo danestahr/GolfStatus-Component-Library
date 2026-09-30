@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPalette, faExternalLinkSquareAlt, faRightLeft, faRotateLeft, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
-import GSButton from '../../gs-lib/components/gs-button'
 import GSFormSection from '../../gs-lib/components/gs-form-section'
 import GSinput from '../../gs-lib/components/gs-input'
 import GSRadioGroup from '../../gs-lib/components/gs-radio-group'
-import { generateScale, SCALE_STEPS, buttonThemeVars } from '../../gs-lib/helpers/colorScale'
+import { generateScale, SCALE_STEPS } from '../../gs-lib/helpers/colorScale'
 import { golfstatusColors } from '../../gs-lib/helpers/Theme'
 import { DEFAULT_EVENT_SITE_STYLE } from '../../data/eventSiteStyle.js'
 import EventSiteDeviceMockup from './EventSiteDeviceMockup.jsx'
@@ -215,12 +214,29 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
 }
 
 const NEUTRAL_MODE_OPTIONS = [
-  { label: 'Neutral Theme', value: 'golfstatus' },
-  { label: 'Neutral + Primary Theme', value: 'neutral' },
-  { label: 'Primary Theme', value: 'primary' },
-  // Secondary Theme hidden for now — Full Theme (Primary + Secondary) replaces it.
-  { label: 'Full Theme', value: 'full' },
+  { label: 'Grayscale', value: 'golfstatus' },
+  { label: 'Subtle', value: 'neutral' },
+  { label: 'Subtle Two-Tone', value: 'neutral-two-tone' },
+  { label: 'Bold', value: 'primary' },
+  { label: 'Bold Two-Tone', value: 'full' },
 ]
+
+// Which themes each color setup unlocks: nothing picked -> Grayscale only;
+// a Primary alone -> Grayscale/Subtle/Bold; Primary + Secondary -> the
+// Two-Tone variants in place of the single-color ones.
+function availableThemeValues(hasPrimary, hasSecondary) {
+  if (!hasPrimary) return ['golfstatus']
+  return hasSecondary ? ['golfstatus', 'neutral-two-tone', 'full'] : ['golfstatus', 'neutral', 'primary']
+}
+
+// A saved tint that the current colors no longer offer shows as its nearest
+// available sibling (Subtle <-> Subtle Two-Tone, Bold <-> Bold Two-Tone).
+function coerceTint(tint, allowed) {
+  if (allowed.includes(tint)) return tint
+  const twoTone = allowed.includes('full')
+  if (tint === 'neutral' || tint === 'neutral-two-tone') return twoTone ? 'neutral-two-tone' : 'neutral'
+  return twoTone ? 'full' : 'primary'
+}
 
 // Toggled off while the tournament-details preview (below) is standing in
 // for this section's own light/dark ramp squares — flip back to true to
@@ -243,12 +259,9 @@ const SHOW_NEUTRAL_RAMPS = false
 // /event-site (EventWebsitePage.jsx), which reads it to decide whether its
 // own Monochromatic toggle starts on and which scale it tints with.
 function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeutralTint, buttonStyles, hasPrimary, hasSecondary }) {
-  // Only Neutral Theme until a Primary is chosen (nothing to tint with);
-  // Full Theme additionally needs a Secondary.
-  const options = !hasPrimary
-    ? NEUTRAL_MODE_OPTIONS.filter(o => o.value === 'golfstatus')
-    : hasSecondary ? NEUTRAL_MODE_OPTIONS : NEUTRAL_MODE_OPTIONS.filter(o => o.value !== 'full')
-  if (!hasPrimary) neutralTint = 'golfstatus'
+  const allowed = availableThemeValues(hasPrimary, hasSecondary)
+  const options = NEUTRAL_MODE_OPTIONS.filter(o => allowed.includes(o.value))
+  neutralTint = coerceTint(neutralTint, allowed)
   const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Theme has no single ramp)
   return (
     <div className="wds-scale-row">
@@ -287,45 +300,6 @@ function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeu
       )}
 
       <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} buttonStyles={buttonStyles} />
-    </div>
-  )
-}
-
-// The 6 Fill/Outline/Subtle x Primary/Secondary GSButton variants (see
-// gs-button.jsx's color/appearance props) — same variants EventWebsitePage
-// uses, previewed here so a Primary/Secondary edit above shows what its
-// buttons will actually look like before saving.
-// Not color-qualified in their own title ("Fill", not "Primary Fill") —
-// each row already sits under its own "Primary"/"Secondary" block label
-// (see ButtonColorBlock), so repeating the color name on every button
-// would just be noise.
-const BUTTON_APPEARANCES = [
-  { appearance: 'fill', label: 'Fill' },
-  { appearance: 'outline', label: 'Outline' },
-  { appearance: 'subtle', label: 'Subtle' },
-]
-
-function ButtonPreviewRow({ primaryScale, secondaryScale, mode, colorKey }) {
-  return (
-    <div className="wds-button-row" style={buttonThemeVars(primaryScale, secondaryScale, mode)}>
-      {BUTTON_APPEARANCES.map(({ appearance, label }) => (
-        <GSButton key={appearance} color={colorKey} appearance={appearance} title={label} isFocusable />
-      ))}
-    </div>
-  )
-}
-
-// One color's own block, same shape as ColorBlock: a centered "Primary"/
-// "Secondary" label, its Fill/Outline/Subtle row in light mode (bare), then
-// the same row in dark mode inset in a rounded black pill.
-function ButtonColorBlock({ label, colorKey, primaryScale, secondaryScale }) {
-  return (
-    <div className="wds-color-block">
-      <div className="wds-color-block-label">{label}</div>
-      <ButtonPreviewRow primaryScale={primaryScale} secondaryScale={secondaryScale} mode="light" colorKey={colorKey} />
-      <div className="wds-ramp-dark-pill">
-        <ButtonPreviewRow primaryScale={primaryScale} secondaryScale={secondaryScale} mode="dark" colorKey={colorKey} />
-      </div>
     </div>
   )
 }
@@ -370,8 +344,9 @@ export default function WebsiteDesignStyleFields({
   const removeSecondary = () => {
     onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
     setSecondaryAdded(false)
-    // Full Theme needs both colors — drop back to Primary Theme.
+    // Two-Tone themes need both colors — drop back to the single-color sibling.
     if (neutralTint === 'full') onChangeNeutralTint('primary')
+    if (neutralTint === 'neutral-two-tone') onChangeNeutralTint('neutral')
   }
 
   const resetColors = () => {
@@ -381,9 +356,6 @@ export default function WebsiteDesignStyleFields({
     onChangeThemeOverrides?.({})
     setSecondaryAdded(false)
   }
-
-  const primaryScale = generateScale(primaryColor)
-  const secondaryScale = generateScale(secondaryColor)
 
   const swapColors = () => {
     // An unset slot stays unset (its own GolfStatus default) rather than
@@ -460,25 +432,6 @@ export default function WebsiteDesignStyleFields({
                 hasPrimary={primaryIsSet}
                 hasSecondary={showSecondary}
               />
-            ),
-          },
-        ]}
-      />
-
-      <GSFormSection
-        title="Button Styles"
-        type="vertical xx-large-gap"
-        fields={[
-          {
-            isEditable: true,
-            customView: true,
-            value: (
-              <div className="wds-scale-row">
-                <ButtonColorBlock label="Primary" colorKey="primary-color" primaryScale={primaryScale} secondaryScale={secondaryScale} />
-                {showSecondary && (
-                  <ButtonColorBlock label="Secondary" colorKey="secondary-color" primaryScale={primaryScale} secondaryScale={secondaryScale} />
-                )}
-              </div>
             ),
           },
         ]}
