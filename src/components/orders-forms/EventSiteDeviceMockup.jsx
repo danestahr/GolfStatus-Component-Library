@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
 import { generateScale } from '../../gs-lib/helpers/colorScale'
+import { OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
 import './EventSiteDeviceMockup.scss'
 
 // Pixel-accurate rebuild of the Figma "Vertical Group 2" export (the
@@ -188,11 +189,19 @@ function ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) {
     ...(primary && neutralTint === 'neutral' && { '--edm-header': primary[600] }),
     ...chipVars('1', 'registerNow', neutralTint === 'secondary' ? 'secondary' : 'primary', 'fill', { primary, secondary }, buttonStyles),
     ...chipVars('2', 'makeDonation', 'secondary', 'outline', { primary, secondary }, buttonStyles),
+    // Active subnav tab = the live site's subnavSelected button (Subtle
+    // Primary by default, always Primary regardless of tint).
+    ...chipVars('3', 'subnavSelected', 'primary', 'subtle', { primary, secondary }, buttonStyles),
     ...(secondary && { '--gs-color-secondary': secondary[600] }),
     ...(surfaceScale && inkScale && {
       '--edm-surface': surfaceScale[50],
       '--edm-card-bg': surfaceScale[100],
-      '--edm-border': inkScale[200],
+      // Card/section borders = the live site's Outline Variant, pinned to
+      // step 100 (OUTLINE_VARIANT_MONO_STEP) of the text scale. The device
+      // frame's own outline stays one step darker (200) so it still reads
+      // against the thumbnail backdrop.
+      '--edm-border': inkScale[OUTLINE_VARIANT_MONO_STEP],
+      '--edm-frame-border': inkScale[200],
       '--edm-ink': inkScale[800],
     }),
   }
