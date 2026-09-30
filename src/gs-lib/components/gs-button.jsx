@@ -30,9 +30,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
  * @property {object} style style for the component
  *
  * @property {string} color which brand color the button reads from [primary-color, secondary-color] —
- *  combines with appearance for the Event Website's Primary/Secondary Fill/Outline/Subtle variants
+ *  combines with appearance for the Event Website's Primary/Secondary Fill/Outline/Subtle/Transparent variants
  *
- * @property {string} appearance how color is applied [fill, outline, subtle]. Not named
+ * @property {string} buttonId names the button for the Event Website's right-click menu (data-button-id)
+ * @property {string} appearance how color is applied [fill, outline, subtle, transparent]. Not named
  *  "buttonStyle" — that name is already taken elsewhere (GSInput, GSActionBar, GSEmptyList)
  *  to mean "a CSS style object for this button", a different thing entirely.
  *
@@ -74,7 +75,8 @@ export default class GSButton extends Component {
       titleStyle,
       hoverType,
       color,
-      appearance
+      appearance,
+      buttonId
     } = this.props;
 
     const buttonSize = size === "secondary" || isPill ? "secondary" : "primary";
@@ -88,6 +90,7 @@ export default class GSButton extends Component {
 
     return (
       <gs-button
+        data-button-id={buttonId}
         style={style}
         tabIndex={isFocusable ? (isDisabled ? -1 : 0) : -1}
         onKeyDown={this.enterKeyPressed}

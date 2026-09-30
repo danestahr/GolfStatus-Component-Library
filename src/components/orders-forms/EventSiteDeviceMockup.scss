@@ -90,7 +90,7 @@
 // The header/status bar and its two "browser chrome" bits (title bar,
 // right-side action chip) — flat black, never themed, same as the export.
 .edm-rect--header {
-  background: var(--edm-ink, #{$grey-800});
+  background: var(--edm-header, var(--edm-ink, #{$grey-800}));
   border-radius: $small-radius $small-radius 0 0;
 }
 
@@ -154,23 +154,23 @@
 // divs, not GSButton — this is an inference of the button's color, not a
 // real interactive button.
 .edm-rect--cta-fill {
-  background: var(--gs-color-primary, #232323);
+  background: var(--edm-cta1-bg, var(--gs-color-primary, #232323));
   border-radius: $small-radius;
 }
 
 .edm-rect--cta-fill-text {
-  background: var(--gs-color-on-primary-fill, #{$white});
+  background: var(--edm-cta1-label, var(--gs-color-on-primary-fill, #{$white}));
   border-radius: $huge-radius;
 }
 
 .edm-rect--cta-outline {
-  background: transparent;
-  border: 1px solid var(--gs-color-secondary, #232323);
+  background: var(--edm-cta2-bg, transparent);
+  border: 1px solid var(--edm-cta2-border, var(--gs-color-secondary, #232323));
   border-radius: $small-radius;
   box-sizing: border-box;
 }
 
 .edm-rect--cta-outline-text {
-  background: var(--gs-color-secondary, #232323);
+  background: var(--edm-cta2-label, var(--gs-color-secondary, #232323));
   border-radius: $huge-radius;
 }

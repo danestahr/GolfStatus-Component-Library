@@ -152,8 +152,8 @@ $ramp-head-height: 116px;
 }
 
 .wds-ramp-chip-label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -164,7 +164,7 @@ $ramp-head-height: 116px;
 // "Secondary 900" is the whole interaction (see parseDesignation).
 .wds-ramp-chip-designation {
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   font-style: normal;
   text-align: center;
   opacity: 1;
@@ -179,17 +179,20 @@ $ramp-head-height: 116px;
     outline: none;
   }
 
+  // Browsers grey placeholders out by default, which vanishes on the dark
+  // backdrop — inherit the chip's own black/white instead.
   &::placeholder {
-    opacity: 0.6;
+    color: inherit;
+    opacity: 0.85;
   }
 }
 
 .wds-ramp-chip-hex {
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   font-family: monospace;
   text-align: center;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .wds-ramp-pill--light .wds-ramp-chip-label,
@@ -198,7 +201,7 @@ $ramp-head-height: 116px;
 .wds-role-chip-slot--light .wds-ramp-chip-label,
 .wds-role-chip-slot--light .wds-ramp-chip-designation,
 .wds-role-chip-slot--light .wds-ramp-chip-hex {
-  color: $grey-700;
+  color: $black;
 }
 
 .wds-ramp-pill--dark .wds-ramp-chip-label,
@@ -220,44 +223,68 @@ $ramp-head-height: 116px;
   padding: 0 $x-large-pad $x-large-pad;
 }
 
-$wds-role-label-width: 140px;
-
-.wds-role-row {
-  display: grid;
-  grid-template-columns: $wds-role-label-width repeat(3, 1fr);
-  align-items: center;
-  gap: $medium-pad 56px;
-  padding: $medium-pad 0;
+// Theme and Site Colors share these: a row's name sits above, its theme
+// tiles span the full width beneath.
+.wds-compare-row {
+  padding: $large-pad * 2 0 $x-large-pad * 2;
   border-bottom: $light-border;
+}
+
+.wds-compare-row-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $large-pad;
+  margin-bottom: $small-medium-pad;
+}
+
+.wds-compare-row-label {
+  font-weight: 600;
+  font-size: 15px;
+  color: $black;
+}
+
+.wds-compare-row-cells,
+.wds-compare-header {
+  display: grid;
+  grid-template-columns: repeat(var(--wds-theme-cols, 3), minmax(0, 1fr));
+  gap: $medium-pad $large-pad;
 }
 
 // Pinned to the top of the panel's own scroll so the theme names stay in
 // view no matter how far down the role list you've scrolled.
-.wds-role-row--header {
+.wds-compare-header {
   position: sticky;
   top: 0;
   background: $white;
   z-index: 1;
+  padding: $medium-pad 0;
   border-bottom: 2px solid $grey-200;
-}
-
-.wds-role-row-label {
-  font-weight: 600;
-  font-size: 13px;
 }
 
 .wds-role-row-theme-header {
   font-weight: 700;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: center;
+  color: $black;
 }
 
-.wds-role-group-title {
+// Section breaks (Primary/Secondary/Neutral on Theme, Sitewide/Header/...
+// on Site Colors): generous space above, a heavier rule, and a bigger title.
+.wds-role-group + .wds-role-group,
+.wds-element-group + .wds-element-group {
+  margin-top: 56px;
+}
+
+.wds-role-group-title,
+.wds-element-group-title {
   font-weight: 700;
-  font-size: 15px;
-  padding: $large-pad 0 $small-pad ($wds-role-label-width + $medium-pad);
+  font-size: 22px;
+  padding: $large-pad * 2 0 $medium-pad * 2;
+  border-top: 2px solid $grey-200;
+  margin-bottom: $small-pad;
 }
 
 .wds-role-row-theme {
@@ -272,7 +299,7 @@ $wds-role-label-width: 140px;
   flex: 1 1 0;
   min-width: 0;
   border-radius: $medium-radius;
-  padding: $large-pad;
+  padding: $medium-pad;
   box-sizing: border-box;
 }
 
@@ -293,36 +320,8 @@ $wds-role-label-width: 140px;
 // (e.g. "Background") shows how it'd actually render under every tint at
 // once — useful since a Neutral-group role's own hex genuinely differs per
 // tint, unlike Primary/Secondary's own roles.
-$wds-element-label-width: 220px;
-
 .wds-element-list {
   padding: 0 $x-large-pad $x-large-pad;
-}
-
-.wds-element-group {
-  & + & {
-    margin-top: $x-large-pad;
-  }
-}
-
-.wds-element-group-title {
-  font-weight: 700;
-  font-size: 15px;
-  padding: $large-pad 0 $small-pad;
-}
-
-.wds-element-row {
-  display: grid;
-  grid-template-columns: $wds-element-label-width repeat(3, 1fr);
-  align-items: center;
-  gap: $medium-pad 56px;
-  padding: $medium-pad 0;
-  border-bottom: $light-border;
-}
-
-.wds-element-row-label {
-  font-weight: 600;
-  font-size: 13px;
 }
 
 // An element/role's real --es-el-*/--gs-color-* variable name (ElementRow's
@@ -331,8 +330,8 @@ $wds-element-label-width: 220px;
 // themed" note.
 .wds-site-color-var {
   font-family: monospace;
-  font-size: 11px;
-  color: $grey-500;
+  font-size: 12px;
+  color: $grey-700;
   margin-top: 2px;
 }
 
@@ -389,4 +388,136 @@ $wds-element-label-width: 220px;
 .wds-svg-color-fixed {
   color: $grey-500;
   font-style: italic;
+}
+
+// Buttons tab (ButtonsTab in ColorExplorationFields.jsx) — one section per
+// theme, a Light/Dark grid of every Primary/Secondary Fill/Outline/Subtle
+// button with its two editable colors under a live preview.
+.wds-btn-theme {
+  margin-bottom: $large-pad * 2;
+}
+
+.wds-btn-grid {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr);
+  gap: $medium-pad;
+  align-items: stretch;
+}
+
+.wds-btn-grid-head {
+  font-weight: 700;
+  padding: $medium-pad 0;
+}
+
+.wds-btn-row {
+  display: contents;
+}
+
+.wds-btn-row-label {
+  font-weight: 700;
+  padding-top: $medium-pad;
+}
+
+.wds-btn-cell {
+  border-radius: $medium-radius;
+  padding: $medium-pad;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  box-sizing: border-box;
+}
+
+.wds-btn-cell--light {
+  background: $white;
+  border: $light-border;
+  color: $black;
+}
+
+.wds-btn-cell--dark {
+  background: $black;
+  color: $white;
+}
+
+.wds-btn-preview {
+  display: flex;
+}
+
+.wds-btn-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $medium-pad;
+  font-size: 12px;
+}
+
+.wds-btn-field-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wds-btn-field-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid $grey-300;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.wds-btn-field-text {
+  width: 110px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 6px;
+  font-size: 12px;
+  border: 1px solid $grey-300;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
+.wds-btn-field-swatch--static {
+  display: inline-block;
+  cursor: default;
+}
+
+select.wds-btn-field-text {
+  width: 130px;
+  color: $black;
+  background: $white;
+}
+
+select.wds-ramp-chip-designation option {
+  color: $black;
+  background: $white;
+}
+
+// Button Styles — one row per named Event Website button: color, style, reset.
+.wds-btn-styles {
+  .wds-btn-style-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gs-color-outline-variant, #eee);
+  }
+  .wds-btn-style-name { width: 160px; font-weight: 700; }
+  .wds-btn-style-options { display: flex; gap: 4px; }
+  .wds-btn-style-option,
+  .wds-btn-style-reset {
+    padding: 4px 10px;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    background: #fff;
+    color: #232323;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover:not(:disabled) { background: #f3f3f3; }
+    &:disabled { opacity: 0.4; cursor: default; }
+    &.is-active { background: #232323; border-color: #232323; color: #fff; }
+  }
 }

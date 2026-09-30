@@ -42,6 +42,18 @@ const HEX_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
 // commits it exactly like typing that hex.
 const DEFAULT_COLOR_CHOICES = ['#1D4FA8', '#3B8EA5', '#2A6B4F', '#F4A340', '#C0392B', '#4B3A9E']
 
+// Primary + Secondary starter pairs, one per DEFAULT_COLOR_CHOICES entry
+// (same order, so each gradient sits under its own solid swatch). Tapping
+// one commits both colors at once.
+const DEFAULT_COLOR_PAIRS = [
+  ['#1D4FA8', '#8B9BD8'],
+  ['#3B8EA5', '#173539'],
+  ['#2A6B4F', '#B8F5C4'],
+  ['#F4A340', '#8F3A1E'],
+  ['#C0392B', '#A32846'],
+  ['#4B3A9E', '#1A1433'],
+]
+
 // <input type="color"> only accepts a full 6-digit #rrggbb — expands a
 // shorthand 3-digit hex (valid everywhere else in this file) so the native
 // picker doesn't just silently fall back to black on one.
@@ -69,9 +81,11 @@ function toFullHex(hex) {
 // (data/eventSiteStyle.js's DEFAULT_EVENT_SITE_STYLE) — only this text
 // field's own display hides it, so the input doesn't read as "already
 // customized" when nobody's touched it yet.
-function DefaultColorSwatches({ onPick, onEdit }) {
+function DefaultColorSwatches({ onPick, onEdit, onPickPair }) {
+  // With a pairs row, the swatches share one grid so the edit button can span
+  // both rows (children auto-place around it: solids row 1, gradients row 2).
   return (
-    <div className="wds-default-swatches">
+    <div className={`wds-default-swatches${onPickPair ? ' wds-default-swatches--paired' : ''}`}>
       {onEdit && (
         <button type="button" className="wds-default-swatch wds-default-swatch--edit" title="Edit Color" aria-label="Edit Color" onClick={onEdit}>
           <FontAwesomeIcon icon={faPalette} />
@@ -80,11 +94,21 @@ function DefaultColorSwatches({ onPick, onEdit }) {
       {DEFAULT_COLOR_CHOICES.map(hex => (
         <button key={hex} type="button" className="wds-default-swatch" style={{ backgroundColor: hex }} aria-label={`Use ${hex}`} onClick={() => onPick(hex)} />
       ))}
+      {onPickPair && DEFAULT_COLOR_PAIRS.map(([primary, secondary]) => (
+        <button
+          key={primary}
+          type="button"
+          className="wds-default-swatch"
+          style={{ backgroundImage: `linear-gradient(100deg, ${primary}, ${secondary})` }}
+          aria-label={`Use ${primary} with ${secondary}`}
+          onClick={() => onPickPair(primary, secondary)}
+        />
+      ))}
     </div>
   )
 }
 
-function HexColorField({ label, color, onChangeColor, showEmpty, onRemove }) {
+function HexColorField({ label, color, onChangeColor, showEmpty, onRemove, onPickPair }) {
   const [draft, setDraft] = useState(showEmpty ? '' : color)
   useEffect(() => setDraft(showEmpty ? '' : color), [color, showEmpty])
   const colorPickerRef = useRef(null)
@@ -121,7 +145,7 @@ function HexColorField({ label, color, onChangeColor, showEmpty, onRemove }) {
         onChange={e => onChangeColor(e.target.value)}
       />
       {showEmpty ? (
-        <DefaultColorSwatches onPick={onChangeColor} onEdit={openColorPicker} />
+        <DefaultColorSwatches onPick={onChangeColor} onEdit={openColorPicker} onPickPair={onPickPair} />
       ) : (
         <>
           <button
@@ -163,7 +187,7 @@ function ColorRampSquares({ color, mode }) {
 // each with its own default swatches / color bar / ramps stacked under its
 // input (HexColorField). `added` tracks which slots the admin has opened,
 // independent of whether they've picked a color yet.
-function ColorsSection({ secondaryAdded, primaryColor, onChangePrimaryColor, secondaryColor, onChangeSecondaryColor, onRemovePrimary, onRemoveSecondary }) {
+function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrimaryColor, secondaryColor, onChangeSecondaryColor, onRemovePrimary, onRemoveSecondary }) {
   return (
     <div className="wds-scale-row">
       <div className="wds-hex-inputs">
@@ -173,6 +197,7 @@ function ColorsSection({ secondaryAdded, primaryColor, onChangePrimaryColor, sec
           onChangeColor={onChangePrimaryColor}
           showEmpty={primaryColor === DEFAULT_EVENT_SITE_STYLE.primaryColor}
           onRemove={onRemovePrimary}
+          onPickPair={secondaryAdded ? undefined : onPickPair}
         />
         {secondaryAdded && (
           <HexColorField
@@ -215,7 +240,7 @@ const SHOW_NEUTRAL_RAMPS = false
 // so changing it enables Save same as they do, and Save persists it to
 // /event-site (EventWebsitePage.jsx), which reads it to decide whether its
 // own Monochromatic toggle starts on and which scale it tints with.
-function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeutralTint }) {
+function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeutralTint, buttonStyles }) {
   const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Tint has no single ramp)
   return (
     <div className="wds-scale-row">
@@ -253,7 +278,7 @@ function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeu
         </div>
       )}
 
-      <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} />
+      <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} buttonStyles={buttonStyles} />
     </div>
   )
 }
@@ -313,6 +338,7 @@ export default function WebsiteDesignStyleFields({
   onChangeSecondaryColor,
   neutralTint,
   onChangeNeutralTint,
+  buttonStyles,
   onChangeThemeOverrides,
 }) {
   const primaryIsSet = primaryColor !== DEFAULT_EVENT_SITE_STYLE.primaryColor
@@ -323,6 +349,12 @@ export default function WebsiteDesignStyleFields({
   const addColor = () => setSecondaryAdded(true)
   const canSwap = showSecondary
   const canReset = primaryIsSet || showSecondary || neutralTint !== DEFAULT_EVENT_SITE_STYLE.neutralTint
+
+  const pickPair = (primary, secondary) => {
+    onChangePrimaryColor(primary)
+    onChangeSecondaryColor(secondary)
+    setSecondaryAdded(true)
+  }
 
   const removePrimary = () => {
     onChangePrimaryColor(DEFAULT_EVENT_SITE_STYLE.primaryColor)
@@ -387,6 +419,7 @@ export default function WebsiteDesignStyleFields({
             value: (
               <ColorsSection
                 secondaryAdded={showSecondary}
+                onPickPair={pickPair}
                 primaryColor={primaryColor}
                 onChangePrimaryColor={onChangePrimaryColor}
                 secondaryColor={secondaryColor}
@@ -413,6 +446,7 @@ export default function WebsiteDesignStyleFields({
                 secondaryColor={secondaryColor}
                 neutralTint={neutralTint}
                 onChangeNeutralTint={onChangeNeutralTint}
+                buttonStyles={buttonStyles}
               />
             ),
           },

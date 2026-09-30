@@ -211,34 +211,44 @@ gs-button {
     // -fill tokens (scale step 50) rather than --gs-color-on-primary/
     // secondary — those are shared with the header bar's bg/fg pairing
     // (EventWebsitePage.scss), which stays AA-picked independently.
+    // Each reads a dedicated `--gs-btn-*` override first (Color Exploration's
+    // Buttons tab, data/eventSiteButtons.js), falling back to the roles above.
     &.color-primary-color {
       &.style-fill {
-        background: var(--gs-color-primary);
-        color: var(--gs-color-on-primary-fill);
+        background: var(--gs-btn-primary-fill-bg, var(--gs-color-primary));
+        color: var(--gs-btn-primary-fill-text, var(--gs-color-on-primary-fill));
       }
       &.style-outline {
         background: transparent;
-        border: 2px solid var(--gs-color-primary);
-        color: var(--gs-color-primary);
+        border: 2px solid var(--gs-btn-primary-outline-border, var(--gs-color-primary));
+        color: var(--gs-btn-primary-outline-text, var(--gs-color-primary));
       }
       &.style-subtle {
-        background: var(--gs-color-primary-subtle);
-        color: var(--gs-color-on-primary-subtle);
+        background: var(--gs-btn-primary-subtle-bg, var(--gs-color-primary-subtle));
+        color: var(--gs-btn-primary-subtle-text, var(--gs-color-on-primary-subtle));
+      }
+      &.style-transparent {
+        background: transparent;
+        color: var(--gs-btn-primary-transparent-text, var(--gs-color-primary));
       }
     }
     &.color-secondary-color {
       &.style-fill {
-        background: var(--gs-color-secondary);
-        color: var(--gs-color-on-secondary-fill);
+        background: var(--gs-btn-secondary-fill-bg, var(--gs-color-secondary));
+        color: var(--gs-btn-secondary-fill-text, var(--gs-color-on-secondary-fill));
       }
       &.style-outline {
         background: transparent;
-        border: 2px solid var(--gs-color-secondary);
-        color: var(--gs-color-secondary);
+        border: 2px solid var(--gs-btn-secondary-outline-border, var(--gs-color-secondary));
+        color: var(--gs-btn-secondary-outline-text, var(--gs-color-secondary));
       }
       &.style-subtle {
-        background: var(--gs-color-secondary-subtle);
-        color: var(--gs-color-on-secondary-subtle);
+        background: var(--gs-btn-secondary-subtle-bg, var(--gs-color-secondary-subtle));
+        color: var(--gs-btn-secondary-subtle-text, var(--gs-color-on-secondary-subtle));
+      }
+      &.style-transparent {
+        background: transparent;
+        color: var(--gs-btn-secondary-transparent-text, var(--gs-color-secondary));
       }
     }
   }

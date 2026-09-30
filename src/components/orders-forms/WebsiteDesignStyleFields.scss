@@ -18,6 +18,9 @@
   }
 }
 
+// One size/radius shared by the starter swatches, gradients and ramp squares.
+$wds-swatch-height: 48px;
+
 .wds-hex-field {
   @include v-stack(flex-start, stretch);
   gap: $medium-pad;
@@ -159,10 +162,21 @@
   width: 100%;
 }
 
+.wds-default-swatches--paired {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: $wds-swatch-height;
+
+  .wds-default-swatch--edit {
+    grid-row: 1 / span 2;
+    height: auto;
+  }
+}
+
 .wds-default-swatch {
   flex: 1 1 0;
   min-width: 0;
-  height: 40px;
+  height: $wds-swatch-height;
   border: none;
   padding: 0;
   border-radius: $medium-radius;
@@ -222,8 +236,8 @@
 .wds-ramp-square {
   flex: 1 1 0;
   min-width: 0;
-  height: 48px;
-  border-radius: $small-medium-radius;
+  height: $wds-swatch-height;
+  border-radius: $medium-radius;
 }
 
 // Marks the 400 step — the value the hex input actually set — inset so the

@@ -37,7 +37,7 @@ export default function EventSitePreviewCard({ eventSite, onViewWebsite, onEvent
   return (
     <div className="efp-preview-card">
       <div className="efp-preview-thumb">
-        <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} />
+        <EventSiteDeviceMockup primaryColor={primaryColor} secondaryColor={secondaryColor} neutralTint={neutralTint} buttonStyles={savedStyle?.buttonStyles} />
       </div>
 
       <div className="efp-preview-body">

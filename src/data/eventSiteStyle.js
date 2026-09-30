@@ -37,6 +37,16 @@ export const DEFAULT_EVENT_SITE_STYLE = {
   // ELEMENT_TO_CSS_VAR into a `--es-el-*` custom property that wins over
   // that element's normal `--gs-color-*` fallback.
   elementOverrides: {},
+  // Per-button riffs typed into Color Exploration's Buttons tab — Fill/
+  // Subtle background + text, Outline border + text, per Primary/Secondary,
+  // per theme and mode. Keyed and resolved by data/eventSiteButtons.js.
+  buttonOverrides: {},
+  // Which variant each named Event Website button uses, picked from the
+  // right-click menu on /event-site — { [buttonId]: { color, appearance } }
+  // (color 'primary-color' | 'secondary-color', appearance 'fill' |
+  // 'outline' | 'subtle' | 'transparent'). A button with no entry keeps the
+  // variant the page gives it by default. Ids: data/eventSiteButtons.js.
+  buttonStyles: {},
 }
 
 // No backend for this prototype, so "Save" on the Website Design and Style
@@ -71,6 +81,18 @@ export function hasEventSiteStyle() {
   } catch {
     return false
   }
+}
+
+// Fires whenever ANOTHER tab saves the style (the browser's `storage` event
+// never fires in the tab that wrote it) — how /event-site's right-click menu
+// and Color Exploration stay in sync when they're open side by side. The
+// callback gets the freshly loaded style.
+export function subscribeEventSiteStyle(callback) {
+  const onStorage = e => {
+    if (e.key === STORAGE_KEY) callback(loadEventSiteStyle())
+  }
+  window.addEventListener('storage', onStorage)
+  return () => window.removeEventListener('storage', onStorage)
 }
 
 export function saveEventSiteStyle(style) {

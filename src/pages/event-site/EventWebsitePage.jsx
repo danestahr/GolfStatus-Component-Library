@@ -6,7 +6,6 @@ import {
   faArrowRight,
   faMoon,
   faSun,
-  faPalette,
   faCircleHalfStroke,
   faExternalLinkSquare,
 } from '@fortawesome/free-solid-svg-icons'
@@ -41,11 +40,12 @@ import {
   loadHomepageSectionButtons,
 } from '../../data/eventSiteHomepageSections.js'
 import { sponsors, SPONSOR_TIERS } from '../../data/mockSponsors.js'
-import { loadEventSiteStyle, hasEventSiteStyle } from '../../data/eventSiteStyle.js'
+import { loadEventSiteStyle, hasEventSiteStyle, saveEventSiteStyle, subscribeEventSiteStyle } from '../../data/eventSiteStyle.js'
 import { loadIsPremium } from '../../data/eventSitePremium.js'
 import { loadEventSitePreview, saveEventSitePreview } from '../../data/eventSitePreview.js'
 import { PACKAGE_CATEGORIES, loadPackageCategoryLabels } from '../../data/eventSitePackageCategories.js'
 import EventSitePackagesContent from './EventSitePackagesContent.jsx'
+import EventSiteContextMenu from './EventSiteContextMenu.jsx'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
 import avatarSample from '../../assets/avatar-sample.png'
 import poweredByGolfstatus from '../../assets/powered-by-golfstatus.jpg'
@@ -53,6 +53,7 @@ import sponsorImagePending from '../../assets/sponsor-image-pending-2-1.jpg'
 import golfstatusAppGif from '../../assets/GolfStatusApp.gif'
 import appleDownload from '../../assets/AppleDownload.png'
 import googleDownload from '../../assets/GoogleDownload.png'
+import { buttonOverrideVars } from '../../data/eventSiteButtons.js'
 import './EventWebsitePage.scss'
 
 // Public-facing preview of a tournament's event website — reached by
@@ -100,6 +101,8 @@ import './EventWebsitePage.scss'
 // customThemeStyle's inline overrides, so it shows the base GolfStatus
 // brand colors (theme.scss's grey-800/cyan-700) instead of this event's own
 // saved Primary/Secondary.
+const TINT_OPTIONS = ['neutral', 'primary', 'full', 'golfstatus']
+const TINT_LABELS = { neutral: 'Neutral', primary: 'Primary Tint', secondary: 'Secondary Tint', full: 'Full Tint', golfstatus: 'GolfStatus Default' }
 const THEME_NAMES = ['default', 'golfstatus']
 
 // What `.gs-theme-${x}` class each THEME_NAMES entry actually renders —
@@ -194,7 +197,10 @@ const ROLE_TO_CSS_VAR = {
   primaryContainer: '--gs-color-primary',
   secondaryContainer: '--gs-color-secondary',
   background: '--gs-color-background',
+  onBackground: '--gs-color-on-background',
   surface: '--gs-color-surface',
+  onSurface: '--gs-color-on-surface',
+  onSurfaceVariant: '--gs-color-on-surface-variant',
   surfaceBright: '--gs-color-surface-bright',
   surfaceContainerLow: '--gs-color-surface-container-low',
   surfaceContainerHigh: '--gs-color-surface-container-high',
@@ -241,8 +247,20 @@ const ELEMENT_TO_CSS_VAR = {
   sponsorFeatureName: '--es-el-sponsor-feature-name',
   sponsorFeatureDescription: '--es-el-sponsor-feature-description',
   videoFrameBorder: '--es-el-video-frame-border',
+  imageFrameBorder: '--es-el-image-frame-border',
+  packagesCardText: '--es-el-packages-card-text',
+  soldOutBadgeBackground: '--es-el-sold-out-badge-background',
+  soldOutBadgeText: '--es-el-sold-out-badge-text',
+  sectionBoxText: '--es-el-section-box-text',
+  avatarBackground: '--es-el-avatar-background',
+  mobileMenuIcon: '--es-el-mobile-menu-icon',
+  headerActionIcons: '--es-el-header-action-icons',
+  packageTileBorder: '--es-el-package-tile-border',
+  donationProgressTrack: '--es-el-donation-progress-track',
+  donationProgressText: '--es-el-donation-progress-text',
+  donationTileBackground: '--es-el-donation-tile-background',
+  donationTileText: '--es-el-donation-tile-text',
   donationGoalLabel: '--es-el-donation-goal-label',
-  donationProgressStart: '--es-el-donation-progress-start',
   donationProgressEnd: '--es-el-donation-progress-end',
   liveScoringBodyText: '--es-el-live-scoring-body-text',
 }
@@ -260,14 +278,20 @@ const ROLE_KEY_TO_LIVE_CSS_VAR = {
   primary: '--gs-color-primary',
   onPrimary: '--gs-color-on-primary',
   secondary: '--gs-color-secondary',
-  secondarySubtle: '--gs-color-secondary-subtle',
+  onSecondary: '--gs-color-on-secondary',
   background: '--gs-color-background',
   onBackground: '--gs-color-on-background',
+  surface: '--gs-color-surface',
   onSurface: '--gs-color-on-surface',
+  surfaceVariant: '--gs-color-surface-variant',
   onSurfaceVariant: '--gs-color-on-surface-variant',
+  surfaceContainerLow: '--gs-color-surface-container-low',
   surfaceContainerHigh: '--gs-color-surface-container-high',
+  surfaceContainerHigest: '--gs-color-surface-container-highest',
   surfaceBright: '--gs-color-surface-bright',
+  outline: '--gs-color-outline',
   outlineVariant: '--gs-color-outline-variant',
+  tertiaryContainer: '--gs-color-tertiary-container',
 }
 
 export default function EventWebsitePage() {
@@ -297,7 +321,19 @@ export default function EventWebsitePage() {
   // Read once on load — this prototype has no backend, so this is what
   // "reflects" a style saved from the Website Design and Style screen
   // (EventSitePackagesListPage.jsx via data/eventSiteStyle.js) here.
-  const [siteStyle] = useState(loadEventSiteStyle)
+  const [siteStyle, setSiteStyle] = useState(loadEventSiteStyle)
+  // Right-click menu (EventSiteContextMenu.jsx) edits element/button
+  // designations in place — written straight back to the saved style, same
+  // storage the Website Design and Style screen's Save uses.
+  const [ctxMenu, setCtxMenu] = useState(null)
+  const [pageEl, setPageEl] = useState(null)
+  // Applied to whatever's saved right now, not this tab's copy — Color
+  // Exploration may have saved since this page loaded.
+  const updateSiteStyle = updater => {
+    const next = updater(loadEventSiteStyle())
+    setSiteStyle(next)
+    saveEventSiteStyle(next)
+  }
   // Whether an admin has ever actually saved a style from that screen —
   // loadEventSiteStyle() above always returns *some* style object, even
   // when nothing's been saved (DEFAULT_EVENT_SITE_STYLE's own grey/green
@@ -306,7 +342,28 @@ export default function EventWebsitePage() {
   // that's never touched Website Design and Style has no style worth
   // reflecting, so it renders GolfStatus's own fixed brand colors instead
   // of the placeholder, same as the non-premium case right below it.
-  const [hasSavedStyle] = useState(hasEventSiteStyle)
+  const [hasSavedStyle, setHasSavedStyle] = useState(hasEventSiteStyle)
+  // Picks up a style saved from Color Exploration in another tab (including
+  // the very first save, which is what turns the custom theme on).
+  useEffect(() => {
+    const apply = style => {
+      setSiteStyle(style)
+      setHasSavedStyle(true)
+    }
+    const unsubscribe = subscribeEventSiteStyle(apply)
+    // Backstop for a missed `storage` event (e.g. a backgrounded tab): re-read
+    // the saved style whenever this tab comes back into view.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && hasEventSiteStyle()) apply(loadEventSiteStyle())
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      unsubscribe()
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [])
   // Same read-once-on-load convention as siteStyle above — a non-premium
   // tournament can't customize its theme colors (see the `website-design-
   // style` row's `premiumOnly` in EventSitePackagesListPage.jsx), so this
@@ -390,8 +447,7 @@ export default function EventWebsitePage() {
   // last had it previewing instead of resetting to Light/Default/Off.
   const [preview] = useState(loadEventSitePreview)
   const [themeMode, setThemeMode] = useState(preview.themeMode ?? 'light')
-  const [themeName, setThemeName] = useState(preview.themeName ?? THEME_NAMES[0])
-  // Whether the site opens tinted at all — unlike themeMode/themeName
+    // Whether the site opens tinted at all — unlike themeMode/themeName
   // above, this always exactly mirrors the saved Site Style radio
   // (WebsiteDesignStyleFields.jsx's Neutral/Primary/Secondary Tint) rather
   // than seeding from a previous preview session, so the site can never
@@ -403,7 +459,11 @@ export default function EventWebsitePage() {
   // deliberately excludes it from what gets persisted), so a refresh always
   // lands back on the saved design again. monoScale below is what answers
   // "which color"; this is only "is it on".
-  const [monochromatic, setMonochromatic] = useState(siteStyle.neutralTint !== 'neutral')
+  const [tint, setTint] = useState(siteStyle.neutralTint)
+  const monochromatic = tint !== 'neutral' && tint !== 'golfstatus'
+  // The GolfStatus Default option is the fixed .gs-theme-golfstatus preset
+  // rather than a tint of the saved site style.
+  const themeName = tint === 'golfstatus' ? 'golfstatus' : 'default'
 
   useEffect(() => {
     saveEventSitePreview({ themeMode, themeName })
@@ -418,7 +478,7 @@ export default function EventWebsitePage() {
   // the saved neutralTint's own color, defaulting to Primary (e.g. if the
   // saved tint is 'neutral' but the viewer turned Monochromatic on here
   // anyway via the header toggle).
-  const monoScale = siteStyle.neutralTint === 'secondary' || siteStyle.neutralTint === 'full' ? secondaryScale : primaryScale
+  const monoScale = tint === 'secondary' || tint === 'full' ? secondaryScale : primaryScale
   // The page's main-CTA buttons (Register Now, View Packages, View Sponsors,
   // Sponsor Website) default to Primary, matching Neutral/Primary Tint — but
   // under Secondary Tint they'd otherwise be the one thing on the page still
@@ -430,8 +490,20 @@ export default function EventWebsitePage() {
   // hardcoded Secondary progress bar below.
   // Full Tint: surfaces/backgrounds tint with Secondary (monoScale), text and
   // outline roles with Primary (textScale) — a combination of both.
-  const textScale = siteStyle.neutralTint === 'full' ? primaryScale : monoScale
-  const ctaColor = siteStyle.neutralTint === 'secondary' ? 'secondary-color' : 'primary-color'
+  // GolfStatus Default theme's progress bar is fixed cyan 300-600.
+  const progressScale = themeName === 'golfstatus'
+    ? { 300: golfstatusColors.cyan300, 600: golfstatusColors.cyan600 }
+    : primaryScale
+  const textScale = tint === 'full' ? primaryScale : monoScale
+  const ctaColor = tint === 'secondary' ? 'secondary-color' : 'primary-color'
+  // Props for one named button: its id (what the right-click menu edits) plus
+  // the color/appearance saved for it (siteStyle.buttonStyles), falling back
+  // to the variant the page gives it by default. Like every other saved
+  // customization, ignored until a style's been saved on a premium tournament.
+  const btn = (buttonId, color, appearance) => {
+    const saved = isPremium && hasSavedStyle ? siteStyle.buttonStyles?.[buttonId] : null
+    return { buttonId, color: saved?.color ?? color, appearance: saved?.appearance ?? appearance }
+  }
 
   // Subtle buttons sit a step lighter than the base color in light mode, a
   // step darker in dark mode (100/700); their text is pinned opposite —
@@ -491,8 +563,9 @@ export default function EventWebsitePage() {
     // primary, same as the preview mockup's header (EventSiteDeviceMockup.jsx
     // --edm-ink). Dark mode keeps its own inverted header (.dark
     // .es-header-bar).
-    ...(themeMode === 'light' && {
-      '--es-header-ink': monochromatic ? textScale[800] : golfstatusColors.grey800,
+    // Neutral Tint skips this and keeps the plain Primary/On Primary header.
+    ...(themeMode === 'light' && monochromatic && {
+      '--es-header-ink': textScale[800],
       '--es-header-on-ink': golfstatusColors.white,
     }),
     ...(monochromatic &&
@@ -521,40 +594,55 @@ export default function EventWebsitePage() {
     ...Object.fromEntries(
       Object.entries(ROLE_TO_CSS_VAR)
         .map(([roleKey, cssVar]) => {
-          const override = siteStyle.themeOverrides?.[`${themeMode}-${monochromatic}-${roleKey}`]
-          const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
-          return hex ? [cssVar, hex] : null
-        })
-        .filter(Boolean)
-    ),
-    // Per-element riffs saved from Color Exploration's own Site Colors tab
-    // (see ELEMENT_TO_CSS_VAR above) — applied last of all so a saved
-    // element override always wins over its role's own value, including a
-    // themeOverrides riff to that same role above (an element override is
-    // more specific — it names one element, not the whole role).
-    ...Object.fromEntries(
-      Object.entries(ELEMENT_TO_CSS_VAR)
-        .map(([elementKey, cssVar]) => {
-          const override = siteStyle.elementOverrides?.[`${themeMode}-${elementKey}`]
-          if (!override) return null
-          // A role reference (Site Colors' own vocabulary going forward,
-          // see ROLE_KEY_TO_LIVE_CSS_VAR above) points this element's own
-          // variable straight at that role's live variable — var(...) can
-          // nest — instead of computing a hex, so the element keeps
-          // tracking whatever that role itself resolves to. A legacy
-          // { family, step }/White/Black ref (saved before this screen
-          // switched to role references) still resolves via
-          // resolveOverrideHex.
-          if (override.role) {
-            const roleCssVar = ROLE_KEY_TO_LIVE_CSS_VAR[override.role]
-            return roleCssVar ? [cssVar, `var(${roleCssVar})`] : null
-          }
+          const override = siteStyle.themeOverrides?.[`${themeMode}-${tint}-${roleKey}`]
           const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
           return hex ? [cssVar, hex] : null
         })
         .filter(Boolean)
     ),
   }
+
+  // Applies under every theme (GolfStatus included), unlike customThemeStyle
+  // — overrides are already keyed by tint, so 'golfstatus' has its own set.
+  const elementStyle = !isPremium || !hasSavedStyle ? {} : {
+  // Per-element riffs saved from Color Exploration's own Site Colors tab
+  // (see ELEMENT_TO_CSS_VAR above) — applied last of all so a saved
+  // element override always wins over its role's own value, including a
+  // themeOverrides riff to that same role above (an element override is
+  // more specific — it names one element, not the whole role).
+  ...Object.fromEntries(
+    Object.entries(ELEMENT_TO_CSS_VAR)
+      .map(([elementKey, cssVar]) => {
+        const override = siteStyle.elementOverrides?.[`${themeMode}-${tint}-${elementKey}`]
+        if (!override) return null
+        // A role reference (Site Colors' own vocabulary going forward,
+        // see ROLE_KEY_TO_LIVE_CSS_VAR above) points this element's own
+        // variable straight at that role's live variable — var(...) can
+        // nest — instead of computing a hex, so the element keeps
+        // tracking whatever that role itself resolves to. A legacy
+        // { family, step }/White/Black ref (saved before this screen
+        // switched to role references) still resolves via
+        // resolveOverrideHex.
+        if (override.role) {
+          const roleCssVar = ROLE_KEY_TO_LIVE_CSS_VAR[override.role]
+          return roleCssVar ? [cssVar, `var(${roleCssVar})`] : null
+        }
+        const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
+        return hex ? [cssVar, hex] : null
+      })
+      .filter(Boolean)
+  ),
+  }
+
+  // Button color riffs saved from Color Exploration's Buttons tab
+  // (data/eventSiteButtons.js) apply under every theme, GolfStatus included —
+  // that theme has no customThemeStyle of its own (it stays the fixed brand
+  // preset), so these `--gs-btn-*` variables are layered on separately.
+  const buttonStyle = isPremium && hasSavedStyle
+    ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, tint, { primaryScale, secondaryScale })
+    : {}
+  const extraStyle = { ...elementStyle, ...buttonStyle }
+  const pageThemeStyle = Object.keys(extraStyle).length ? { ...customThemeStyle, ...extraStyle } : customThemeStyle
 
   const sponsorsByTier = SPONSOR_TIERS.map(tier => ({
     tier,
@@ -610,10 +698,9 @@ export default function EventWebsitePage() {
               <div className="es-intro-main">
                 <GSInfoGroup dataGroups={introInfo} />
                 <div className="es-intro-actions">
-                  <GSButton color={ctaColor} appearance="fill" title={sectionButtons.tournamentDetails.registerNow} isFocusable onClick={() => openPackages()} />
+                  <GSButton {...btn('registerNow', ctaColor, 'fill')} title={sectionButtons.tournamentDetails.registerNow} isFocusable onClick={() => openPackages()} />
                   <GSButton
-                    color="secondary-color"
-                    appearance="outline"
+                    {...btn('makeDonation', 'secondary-color', 'outline')}
                     title={sectionButtons.tournamentDetails.makeDonation}
                     isFocusable
                     // Non-premium locks to GolfStatus's own grey-800, not
@@ -663,7 +750,7 @@ export default function EventWebsitePage() {
       <GSPageSection
         title={sectionHeaders.packages}
         sectionActions={[
-          { title: sectionButtons.packages.viewPackages, rightIcon: faArrowRight, color: ctaColor, appearance: 'fill', isFocusable: true, onClick: () => openPackages() },
+          { title: sectionButtons.packages.viewPackages, rightIcon: faArrowRight, ...btn('viewPackages', ctaColor, 'fill'), isFocusable: true, onClick: () => openPackages() },
         ]}
         body={[
           <GSItemList
@@ -686,7 +773,7 @@ export default function EventWebsitePage() {
       <GSPageSection
         title={sectionHeaders.sponsors}
         sectionActions={[
-          { title: sectionButtons.sponsors.viewSponsors, rightIcon: faArrowRight, color: ctaColor, appearance: 'fill', isFocusable: true },
+          { title: sectionButtons.sponsors.viewSponsors, rightIcon: faArrowRight, ...btn('viewSponsors', ctaColor, 'fill'), isFocusable: true },
         ]}
         body={[
           ...sponsorsByTier.map(group => {
@@ -735,7 +822,7 @@ export default function EventWebsitePage() {
                       <GSActionBar
                         type="H5"
                         header={sponsor.sponsorName}
-                        pageActions={[{ actionIcon: faExternalLinkSquare, color: ctaColor, appearance: 'subtle', size: 'secondary', isFocusable: true }]}
+                        pageActions={[{ actionIcon: faExternalLinkSquare, ...btn('sponsorWebsite', ctaColor, 'subtle'), size: 'secondary', isFocusable: true }]}
                       />
                     </div>
                   )}
@@ -790,8 +877,7 @@ export default function EventWebsitePage() {
           {
             title: sectionButtons.donation.donateNow,
             rightIcon: faArrowRight,
-            color: 'secondary-color',
-            appearance: 'fill',
+            ...btn('donateNow', 'secondary-color', 'fill'),
             isFocusable: true,
             // Non-premium locks this to a flat black fill instead of
             // --gs-color-secondary's teal — same local CSS var override as
@@ -810,8 +896,7 @@ export default function EventWebsitePage() {
               value={eventSite.donationRaised}
               max={eventSite.donationGoal}
               trackStyle={{
-                background:
-                  'linear-gradient(90deg, var(--es-el-donation-progress-start, var(--gs-color-secondary-subtle)), var(--es-el-donation-progress-end, var(--gs-color-secondary)))',
+                background: `linear-gradient(90deg, ${progressScale[300]}, var(--es-el-donation-progress-end, ${progressScale[600]}))`,
               }}
             />
             <GSItemList
@@ -877,7 +962,18 @@ export default function EventWebsitePage() {
   }
 
   return (
-    <div className={`es-page gs-theme-${THEME_CLASS_NAMES[themeName] ?? themeName} ${themeMode}`} style={customThemeStyle}>
+    <div
+      ref={setPageEl}
+      className={`es-page gs-theme-${THEME_CLASS_NAMES[themeName] ?? themeName} ${themeMode}`}
+      style={pageThemeStyle}
+      // Right-click any element or button to change its designation. Shift +
+      // right-click still opens the browser's own menu.
+      onContextMenu={e => {
+        if (e.shiftKey) return
+        e.preventDefault()
+        setCtxMenu({ x: e.clientX, y: e.clientY, node: e.target })
+      }}
+    >
       <header className="es-header">
         <div className="es-header-bar">
           <div className="es-brand-row">
@@ -910,22 +1006,13 @@ export default function EventWebsitePage() {
                 onClick={() => setThemeMode(mode => (mode === 'light' ? 'dark' : 'light'))}
               />
             </div>
-            {isPremium && (
-              <div className="es-theme-picker">
-                <GSButton
-                  buttonIcon={faPalette}
-                  isFocusable
-                  aria-label={`Switch color theme (current: ${themeName})`}
-                  onClick={() => setThemeName(name => THEME_NAMES[(THEME_NAMES.indexOf(name) + 1) % THEME_NAMES.length])}
-                />
-              </div>
-            )}
             <div className="es-monochromatic-toggle">
               <GSButton
                 buttonIcon={faCircleHalfStroke}
                 isFocusable
-                aria-label={`${monochromatic ? 'Disable' : 'Enable'} monochromatic theme`}
-                onClick={() => setMonochromatic(value => !value)}
+                aria-label={`Tint: ${TINT_LABELS[tint]} (click to cycle)`}
+                title={TINT_LABELS[tint]}
+                onClick={() => setTint(t => TINT_OPTIONS[(TINT_OPTIONS.indexOf(t) + 1) % TINT_OPTIONS.length])}
               />
             </div>
             <div className="es-menu-button">
@@ -939,8 +1026,8 @@ export default function EventWebsitePage() {
             pageActions={subNavItems.map(item => ({
               title: item,
               ...(item === activeTab
-                ? { color: 'primary-color', appearance: 'subtle', size: 'secondary' }
-                : { type: 'transparent secondary' }),
+                ? { ...btn('subnavSelected', 'primary-color', 'subtle'), size: 'secondary' }
+                : { ...btn('subnavUnselected', 'primary-color', 'transparent'), size: 'secondary' }),
               isFocusable: true,
               onClick: () => (item === 'Packages' ? openPackages() : setActiveTab(item)),
             }))}
@@ -949,12 +1036,32 @@ export default function EventWebsitePage() {
       </header>
 
       {activeTab === 'Packages' ? (
-        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} ctaColor={ctaColor} />
+        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} ctaColor={ctaColor} btn={btn} />
       ) : (
         sectionOrder.map(id => {
           const node = sectionsById[id]
           return node ? <Fragment key={id}>{node}</Fragment> : null
         })
+      )}
+      {ctxMenu && pageEl && (
+        <EventSiteContextMenu
+          menu={ctxMenu}
+          pageEl={pageEl}
+          canEditButtons={isPremium && hasSavedStyle}
+          canEditElements={isPremium && hasSavedStyle}
+          blockedReason={
+            !isPremium
+              ? 'Custom colors need a premium plan.'
+              : !hasSavedStyle
+                ? 'Save a style in Website Design and Style first.'
+                : 'The GolfStatus theme is fixed — switch the theme to Default to edit elements.'
+          }
+          mode={themeMode}
+          tint={tint}
+          siteStyle={siteStyle}
+          onChangeStyle={updateSiteStyle}
+          onClose={() => setCtxMenu(null)}
+        />
       )}
     </div>
   )

@@ -13,8 +13,8 @@
   display: flex;
   justify-content: center;
   padding: 56px 24px;
-  border-bottom: 1px solid var(--gs-color-outline-variant);
-  background: var(--gs-color-background);
+  border-bottom: 1px solid var(--es-el-section-bottom-border, var(--gs-color-outline-variant));
+  background: var(--es-el-page-background, var(--gs-color-background));
   scroll-margin-top: 96px;
 }
 
@@ -35,7 +35,7 @@
   font-size: 32px;
   line-height: 1;
   font-weight: 700;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-section-title, var(--gs-color-on-surface));
 }
 
 .es-packages-section-title {
@@ -43,14 +43,14 @@
   font-size: 24px;
   line-height: 1;
   font-weight: 700;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-section-title, var(--gs-color-on-surface));
 }
 
 .es-packages-card {
-  background: var(--gs-color-surface-container-high, var(--gs-color-surface-bright));
+  background: var(--es-el-section-box-background, var(--gs-color-surface-container-high, var(--gs-color-surface-bright)));
   border-radius: 16px;
   padding: 36px 24px;
-  color: var(--gs-color-on-surface);
+  color: var(--es-el-packages-card-text, var(--gs-color-on-surface));
 }
 
 .es-packages-card-title { font-weight: 700; font-size: 24px; line-height: 1; }
@@ -81,17 +81,17 @@
   justify-content: center;
   gap: 12px;
   padding: 28px;
-  border: 4px solid var(--gs-color-outline-variant);
+  border: 4px solid var(--es-el-package-tile-border, var(--gs-color-outline-variant));
   border-radius: 8px;
-  background: var(--gs-color-surface);
-  color: var(--gs-color-on-surface);
+  background: var(--es-el-arrow-tile-background, var(--gs-color-surface));
+  color: var(--es-el-arrow-tile-label, var(--gs-color-on-surface));
   font: inherit;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: $fast;
 
-  svg { font-size: 16px; }
+  svg { font-size: 16px; color: var(--es-el-package-tile-icon, currentColor); }
   &:hover { box-shadow: 0 0 0 4px rgba($grey-700, 0.5); }
   &:focus-visible { outline: none; box-shadow: $focus-shadow; }
 }
@@ -120,8 +120,8 @@
 .es-package-sold-out {
   padding: 8px 12px;
   border-radius: 100px;
-  background: var(--gs-color-primary);
-  color: var(--gs-color-on-primary, #fff);
+  background: var(--es-el-sold-out-badge-background, var(--gs-color-primary));
+  color: var(--es-el-sold-out-badge-text, var(--gs-color-on-primary, #fff));
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;

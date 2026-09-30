@@ -144,7 +144,27 @@ const SUBNAV_TEXT_H = 0.773006
 // real Register Now (Fill/Primary) and Make A Donation (Outline/Secondary)
 // buttons. Each half is left out of the returned object (falling through to
 // its own fallback hex in the stylesheet) when that color isn't given.
-function ctaThemeVars(primaryColor, secondaryColor, neutralTint) {
+// Register Now / Make A Donation chips follow the color + style saved for
+// those buttons (the same `buttonStyles` the live site's btn() reads), same
+// 600/50 step convention as the Fill/Outline defaults above.
+function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles) {
+  const saved = buttonStyles?.[buttonId]
+  const color = saved?.color ? saved.color.replace('-color', '') : defColor
+  const appearance = saved?.appearance ?? defAppearance
+  const scale = scales[color]
+  if (!scale) return null
+  const chip = { bg: 'transparent', border: 'transparent', label: scale[600] }
+  if (appearance === 'fill') Object.assign(chip, { bg: scale[600], border: scale[600], label: scale[50] })
+  else if (appearance === 'outline') Object.assign(chip, { border: scale[600] })
+  else if (appearance === 'subtle') Object.assign(chip, { bg: scale[100], border: scale[100], label: scale[900] })
+  return {
+    [`--edm-cta${n}-bg`]: chip.bg,
+    [`--edm-cta${n}-border`]: chip.border,
+    [`--edm-cta${n}-label`]: chip.label,
+  }
+}
+
+function ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) {
   if (!primaryColor && !secondaryColor) return undefined
   const primary = primaryColor ? generateScale(primaryColor) : null
   const secondary = secondaryColor ? generateScale(secondaryColor) : null
@@ -159,6 +179,11 @@ function ctaThemeVars(primaryColor, secondaryColor, neutralTint) {
   const inkScale = neutralTint === 'full' ? primary : surfaceScale
   return {
     ...(primary && { '--gs-color-primary': primary[600], '--gs-color-on-primary-fill': primary[50] }),
+    // Neutral Tint's header is the plain Primary bar (tinted themes keep the
+    // dark ink header) — same rule as EventWebsitePage.jsx's --es-header-ink.
+    ...(primary && neutralTint === 'neutral' && { '--edm-header': primary[600] }),
+    ...chipVars('1', 'registerNow', neutralTint === 'secondary' ? 'secondary' : 'primary', 'fill', { primary, secondary }, buttonStyles),
+    ...chipVars('2', 'makeDonation', 'secondary', 'outline', { primary, secondary }, buttonStyles),
     ...(secondary && { '--gs-color-secondary': secondary[600] }),
     ...(surfaceScale && inkScale && {
       '--edm-surface': surfaceScale[50],
@@ -169,7 +194,7 @@ function ctaThemeVars(primaryColor, secondaryColor, neutralTint) {
   }
 }
 
-function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTint = 'neutral' }) {
+function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTint = 'neutral', buttonStyles }) {
   const [mockupRef, mockupWidth] = useMeasuredWidth()
 
   // Reserve enough of the container's own measured width for the desktop
@@ -194,7 +219,7 @@ function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTin
       <div className="edm-mockup" ref={mockupRef} style={{ height: `${deskHeightPx}px` }}>
         <div
           className="edm-desktop-window"
-          style={{ width: `${deskWidthPx}px`, height: `${deskHeightPx}px`, ...ctaThemeVars(primaryColor, secondaryColor, neutralTint) }}
+          style={{ width: `${deskWidthPx}px`, height: `${deskHeightPx}px`, ...ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) }}
         >
           {/* Header bar + brand icon + title bar + right-side action chip */}
           <Rect origin={DESKTOP_ORIGIN} x={0.996094} y={0.99649} w={231} h={10.3067} scale={deskScale} className="edm-rect--header" />
@@ -251,7 +276,7 @@ function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTin
         {/* The phone — PHONE_HEIGHT_FRACTION the desktop's height, hanging
             PHONE_OVERLAP_FRACTION of its own width past the desktop's right
             edge, vertically centered on it. */}
-        <div className="edm-mobile" style={{ ...ctaThemeVars(primaryColor, secondaryColor, neutralTint), left: `${phoneLeftPx}px`, top: `${phoneTopPx}px`, width: `${phoneWidthPx}px`, height: `${phoneHeightPx}px` }}>
+        <div className="edm-mobile" style={{ ...ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles), left: `${phoneLeftPx}px`, top: `${phoneTopPx}px`, width: `${phoneWidthPx}px`, height: `${phoneHeightPx}px` }}>
           {/* Status bar + brand icon + right-side action chip */}
           <Rect origin={MOBILE_ORIGIN} x={209.012} y={7.32779} w={54} h={10.5362} scale={phoneScale} className="edm-rect--header" />
           <BrandIcon origin={MOBILE_ORIGIN} x={211.218} y={9.53366} w={5.78} h={5.78} scale={phoneScale} />

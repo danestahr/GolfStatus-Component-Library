@@ -19,7 +19,9 @@ import './EventSitePackagesContent.scss'
 // `scrollToKey` is the category tile the viewer tapped on the homepage's
 // Packages section (null for Register Now / View Packages) — it scrolls that
 // category's section into view once on arrival.
-export default function EventSitePackagesContent({ categoryLabels, scrollToKey, ctaColor = 'primary-color' }) {
+const plainButton = (buttonId, color, appearance) => ({ buttonId, color, appearance })
+
+export default function EventSitePackagesContent({ categoryLabels, scrollToKey, ctaColor = 'primary-color', btn = plainButton }) {
   const sectionRefs = useRef({})
 
   const groups = useMemo(() => {
@@ -74,7 +76,7 @@ export default function EventSitePackagesContent({ categoryLabels, scrollToKey, 
               <div className="es-packages-card-title">Exclusive Packages</div>
               <div className="es-packages-card-sub">To purchase certain packages for this event, you must have a code.</div>
             </div>
-            <GSButton title="Get Access" rightIcon={faArrowRight} color={ctaColor} appearance="fill" isFocusable />
+            <GSButton title="Get Access" rightIcon={faArrowRight} {...btn('getAccess', ctaColor, 'fill')} isFocusable />
           </div>
         </div>
       </div>
@@ -84,7 +86,7 @@ export default function EventSitePackagesContent({ categoryLabels, scrollToKey, 
           <div className="es-packages-inner">
             <h2 className="es-packages-section-title">{labelFor(group)}</h2>
             {group.packages.map(pkg => (
-              <PackageTile key={pkg.id} pkg={pkg} ctaColor={ctaColor} />
+              <PackageTile key={pkg.id} pkg={pkg} ctaColor={ctaColor} btn={btn} />
             ))}
           </div>
         </section>
@@ -93,7 +95,7 @@ export default function EventSitePackagesContent({ categoryLabels, scrollToKey, 
   )
 }
 
-function PackageTile({ pkg, ctaColor }) {
+function PackageTile({ pkg, ctaColor, btn }) {
   const soldOut = pkg.remaining === 0
   return (
     <div className="es-packages-card es-package">
@@ -108,7 +110,7 @@ function PackageTile({ pkg, ctaColor }) {
         {soldOut ? (
           <span className="es-package-sold-out">Sold Out</span>
         ) : (
-          <GSButton title="Add To Cart" buttonIcon={faPlus} color={ctaColor} appearance="outline" isFocusable />
+          <GSButton title="Add To Cart" buttonIcon={faPlus} {...btn('addToCart', ctaColor, 'outline')} isFocusable />
         )}
       </div>
       {pkg.description && <p className="es-package-description">{pkg.description}</p>}

@@ -27,7 +27,7 @@ import { forms as initialForms } from '../../data/mockForms.js'
 import { orders as initialOrders } from '../../data/mockOrders.js'
 import { sponsors } from '../../data/mockSponsors.js'
 import { registeredTeams } from '../../data/mockTeams.js'
-import { loadEventSiteStyle, saveEventSiteStyle } from '../../data/eventSiteStyle.js'
+import { loadEventSiteStyle, saveEventSiteStyle, subscribeEventSiteStyle } from '../../data/eventSiteStyle.js'
 import {
   DEFAULT_HOMEPAGE_SECTION_ORDER,
   DEFAULT_SECTION_HEADERS,
@@ -517,6 +517,23 @@ export default function EventSitePackagesListPage() {
     if (showingStyle || showingColorExploration) setStyleDraft(styleSaved)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
+  // /event-site's right-click menu saves element/button changes straight to
+  // the stored style. When one lands from another tab, take it as the new
+  // saved style, and fold just what that menu edits into the draft so
+  // unsaved color edits here aren't lost (and Save can't overwrite it).
+  useEffect(
+    () =>
+      subscribeEventSiteStyle(next => {
+        setStyleSaved(next)
+        setStyleDraft(prev => ({
+          ...prev,
+          elementOverrides: next.elementOverrides,
+          buttonOverrides: next.buttonOverrides,
+          buttonStyles: next.buttonStyles,
+        }))
+      }),
+    []
+  )
 
   function openFormsPanel() {
     navigate(FORMS_PATH)
@@ -1120,14 +1137,6 @@ export default function EventSitePackagesListPage() {
   // the screen opened, see `openAddQuestion`/`openEditQuestion`).
   const canSaveQuestion =
     questionDraft.question.trim() !== '' && JSON.stringify(questionDraft) !== JSON.stringify(originalQuestionDraft)
-  const canSaveStyle =
-    styleDraft.primaryColor !== styleSaved.primaryColor ||
-    styleDraft.secondaryColor !== styleSaved.secondaryColor ||
-    styleDraft.neutralTint !== styleSaved.neutralTint ||
-    JSON.stringify(styleDraft.themeOverrides ?? {}) !== JSON.stringify(styleSaved.themeOverrides ?? {}) ||
-    JSON.stringify(styleDraft.elementOverrides ?? {}) !== JSON.stringify(styleSaved.elementOverrides ?? {})
-  // Same shared styleDraft/styleSaved as canSaveStyle above.
-  const canSaveColorExploration = canSaveStyle
   // At least one link to attach the response to, and at least one form to
   // answer questions on — the answers themselves are allowed to stay blank
   // (same "No response yet" allowance a real order's own responses get).
@@ -1171,12 +1180,12 @@ export default function EventSitePackagesListPage() {
         ]
       : showingStyle
       ? [
-          { name: 'Save', type: 'black', action: handleSaveStyle, isDisabled: !canSaveStyle },
+          { name: 'Save', type: 'black', action: handleSaveStyle },
           { name: 'Cancel', type: 'light-grey', action: handleCancelStyle },
         ]
       : showingColorExploration
       ? [
-          { name: 'Save', type: 'black', action: handleSaveColorExploration, isDisabled: !canSaveColorExploration },
+          { name: 'Save', type: 'black', action: handleSaveColorExploration },
           { name: 'Cancel', type: 'light-grey', action: handleCancelColorExploration },
         ]
       : addingResponse
@@ -1402,6 +1411,7 @@ export default function EventSitePackagesListPage() {
             onChangeSecondaryColor={secondaryColor => setStyleDraft(prev => ({ ...prev, secondaryColor }))}
             neutralTint={styleDraft.neutralTint}
             onChangeNeutralTint={neutralTint => setStyleDraft(prev => ({ ...prev, neutralTint }))}
+            buttonStyles={styleDraft.buttonStyles}
             themeOverrides={styleDraft.themeOverrides}
             onChangeThemeOverrides={updater =>
               setStyleDraft(prev => ({
@@ -1429,6 +1439,20 @@ export default function EventSitePackagesListPage() {
               setStyleDraft(prev => ({
                 ...prev,
                 elementOverrides: typeof updater === 'function' ? updater(prev.elementOverrides ?? {}) : updater,
+              }))
+            }
+            buttonOverrides={styleDraft.buttonOverrides}
+            onChangeButtonOverrides={updater =>
+              setStyleDraft(prev => ({
+                ...prev,
+                buttonOverrides: typeof updater === 'function' ? updater(prev.buttonOverrides ?? {}) : updater,
+              }))
+            }
+            buttonStyles={styleDraft.buttonStyles}
+            onChangeButtonStyles={updater =>
+              setStyleDraft(prev => ({
+                ...prev,
+                buttonStyles: typeof updater === 'function' ? updater(prev.buttonStyles ?? {}) : updater,
               }))
             }
           />
