@@ -322,6 +322,7 @@ export default function WebsiteDesignStyleFields({
   onChangeNeutralTint,
   buttonStyles,
   onChangeThemeOverrides,
+  saveCount,
 }) {
   const primaryIsSet = primaryColor !== DEFAULT_EVENT_SITE_STYLE.primaryColor
   const secondaryIsSet = secondaryColor !== DEFAULT_EVENT_SITE_STYLE.secondaryColor
@@ -329,6 +330,14 @@ export default function WebsiteDesignStyleFields({
   // A color set from outside (e.g. loaded from a saved style) always shows.
   const showSecondary = secondaryAdded || secondaryIsSet
   const addColor = () => setSecondaryAdded(true)
+  // An empty Secondary input that was opened but never given a color goes
+  // away once the style is saved.
+  const firstSave = useRef(saveCount)
+  useEffect(() => {
+    if (saveCount === firstSave.current) return
+    if (!secondaryIsSet) setSecondaryAdded(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveCount])
   const canSwap = showSecondary
   const canReset = primaryIsSet || showSecondary || neutralTint !== DEFAULT_EVENT_SITE_STYLE.neutralTint
 
@@ -430,7 +439,7 @@ export default function WebsiteDesignStyleFields({
                 onChangeNeutralTint={onChangeNeutralTint}
                 buttonStyles={buttonStyles}
                 hasPrimary={primaryIsSet}
-                hasSecondary={showSecondary}
+                hasSecondary={secondaryIsSet}
               />
             ),
           },

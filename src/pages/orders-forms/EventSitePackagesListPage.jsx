@@ -513,6 +513,7 @@ export default function EventSitePackagesListPage() {
   // starts on and which scale it substitutes in.
   const [styleSaved, setStyleSaved] = useState(loadEventSiteStyle)
   const [styleDraft, setStyleDraft] = useState(loadEventSiteStyle)
+  const [styleSaveCount, setStyleSaveCount] = useState(0)
   useEffect(() => {
     if (showingStyle || showingColorExploration) setStyleDraft(styleSaved)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -768,6 +769,7 @@ export default function EventSitePackagesListPage() {
   function handleSaveStyle() {
     setStyleSaved(styleDraft)
     saveEventSiteStyle(styleDraft)
+    setStyleSaveCount(n => n + 1)
     // Panel stays open (no navigate) — this screen's whole point is riffing
     // on colors and Theme Definitions overrides in real time, so closing it
     // on every save would interrupt that instead of supporting it. Save
@@ -1405,6 +1407,7 @@ export default function EventSitePackagesListPage() {
           />
         ) : showingStyle ? (
           <WebsiteDesignStyleFields
+            saveCount={styleSaveCount}
             isPremium={isPremium}
             primaryColor={styleDraft.primaryColor}
             onChangePrimaryColor={primaryColor => setStyleDraft(prev => ({ ...prev, primaryColor }))}
