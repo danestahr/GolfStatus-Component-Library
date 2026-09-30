@@ -334,15 +334,11 @@ export default function EventWebsitePage() {
     setSiteStyle(next)
     saveEventSiteStyle(next)
   }
-  // Whether an admin has ever actually saved a style from that screen —
-  // loadEventSiteStyle() above always returns *some* style object, even
-  // when nothing's been saved (DEFAULT_EVENT_SITE_STYLE's own grey/green
-  // placeholder colors), so this is what tells `customThemeStyle` below
-  // apart a real saved customization from that placeholder: a tournament
-  // that's never touched Website Design and Style has no style worth
-  // reflecting, so it renders GolfStatus's own fixed brand colors instead
-  // of the placeholder, same as the non-premium case right below it.
-  const [hasSavedStyle, setHasSavedStyle] = useState(hasEventSiteStyle)
+  // DEFAULT_EVENT_SITE_STYLE now carries the designed theme/element/button
+  // defaults for every theme, so a premium tournament renders from it even
+  // before anything's been saved (a saved style just replaces it). Non-premium
+  // still gets the fixed brand look via the `!isPremium` checks below.
+  const [hasSavedStyle, setHasSavedStyle] = useState(true)
   // Picks up a style saved from Color Exploration in another tab (including
   // the very first save, which is what turns the custom theme on).
   useEffect(() => {

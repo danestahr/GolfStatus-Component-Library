@@ -1,7 +1,6 @@
 import { useId } from 'react'
 import './EventSiteTournamentPreview.scss'
 import rawEventSiteSvg from '../../assets/EventSite.svg?raw'
-import { hasEventSiteStyle } from '../../data/eventSiteStyle.js'
 
 // Shared by WebsiteDesignStyleFields.jsx's own Site Theme preview,
 // EventSitePreviewCard.jsx's event-site thumbnail, EventSiteHomepageSectionsList.jsx's
@@ -45,11 +44,10 @@ function EventSiteTournamentPreview({ label, bordered = true, isPremium = true }
   // Read fresh on every render (not read-once-on-load) — this preview
   // shows up on the same screen the admin just saved from, so it needs to
   // flip the moment Save/Premium actually changes, not just on next mount.
-  const hasSavedStyle = hasEventSiteStyle()
 
   let svg = rawEventSiteSvg.replaceAll('clip0_2568_51582', `clip0_2568_51582_${clipId}`)
 
-  if (!(isPremium && hasSavedStyle)) {
+  if (!isPremium) {
     const tabBg = GOLFSTATUS_TAB_BG
     const tabText = GOLFSTATUS_TAB_TEXT
     const outline = isPremium ? GOLFSTATUS_OUTLINE : GOLFSTATUS_OUTLINE_NON_PREMIUM
