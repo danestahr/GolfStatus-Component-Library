@@ -102,7 +102,7 @@ import './EventWebsitePage.scss'
 // brand colors (theme.scss's grey-800/cyan-700) instead of this event's own
 // saved Primary/Secondary.
 const TINT_OPTIONS = ['neutral', 'primary', 'full', 'golfstatus']
-const TINT_LABELS = { neutral: 'Neutral', primary: 'Primary Tint', secondary: 'Secondary Tint', full: 'Full Tint', golfstatus: 'GolfStatus Default' }
+const TINT_LABELS = { neutral: 'Neutral + Primary Theme', primary: 'Primary Theme', secondary: 'Secondary Theme', full: 'Full Theme', golfstatus: 'Neutral Theme' }
 const THEME_NAMES = ['default', 'golfstatus']
 
 // What `.gs-theme-${x}` class each THEME_NAMES entry actually renders —
@@ -969,9 +969,10 @@ export default function EventWebsitePage() {
       className={`es-page gs-theme-${THEME_CLASS_NAMES[themeName] ?? themeName} ${themeMode}`}
       style={pageThemeStyle}
       // Right-click any element or button to change its designation. Shift +
-      // right-click still opens the browser's own menu.
+      // right-click still opens the browser's own menu. Dev-only — the
+      // handler isn't attached in a production build (import.meta.env.DEV).
       onContextMenu={e => {
-        if (e.shiftKey) return
+        if (!import.meta.env.DEV || e.shiftKey) return
         e.preventDefault()
         setCtxMenu({ x: e.clientX, y: e.clientY, node: e.target })
       }}
@@ -1012,7 +1013,7 @@ export default function EventWebsitePage() {
               <GSButton
                 buttonIcon={faCircleHalfStroke}
                 isFocusable
-                aria-label={`Tint: ${TINT_LABELS[tint]} (click to cycle)`}
+                aria-label={`Theme: ${TINT_LABELS[tint]} (click to cycle)`}
                 title={TINT_LABELS[tint]}
                 onClick={() => setTint(t => TINT_OPTIONS[(TINT_OPTIONS.indexOf(t) + 1) % TINT_OPTIONS.length])}
               />
@@ -1045,7 +1046,7 @@ export default function EventWebsitePage() {
           return node ? <Fragment key={id}>{node}</Fragment> : null
         })
       )}
-      {ctxMenu && pageEl && (
+      {import.meta.env.DEV && ctxMenu && pageEl && (
         <EventSiteContextMenu
           menu={ctxMenu}
           pageEl={pageEl}

@@ -10,8 +10,8 @@
 // black, so every step-to-step jump on a given side is the same size —
 // tints step by 0.9/4, shades by 0.9/5 (four tint steps vs. five shade
 // steps below 400, since 400 sits left of the scale's midpoint).
-const TINT_STOPS = { 300: 0.225, 200: 0.45, 100: 0.675, 50: 0.9 }
-const SHADE_STOPS = { 500: 0.18, 600: 0.36, 700: 0.54, 800: 0.72, 900: 0.9 }
+export const TINT_STOPS = { 300: 0.225, 200: 0.45, 100: 0.675, 50: 0.9 }
+export const SHADE_STOPS = { 500: 0.18, 600: 0.36, 700: 0.54, 800: 0.72, 900: 0.9 }
 
 export function hexToHsl(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255

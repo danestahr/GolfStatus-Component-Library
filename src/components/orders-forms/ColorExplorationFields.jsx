@@ -3,7 +3,7 @@ import { faPalette } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
-import { generateScale, buttonThemeVars, SCALE_STEPS } from '../../gs-lib/helpers/colorScale'
+import { generateScale, buttonThemeVars, SCALE_STEPS, hexToHsl, TINT_STOPS, SHADE_STOPS } from '../../gs-lib/helpers/colorScale'
 import { golfstatusColors } from '../../gs-lib/helpers/Theme'
 import { pickAccessibleTextColor, contrastRatio } from '../../gs-lib/helpers/contrast'
 import { resolveOverrideHex, OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
@@ -302,6 +302,76 @@ function RampRowLabels() {
   )
 }
 
+// The math behind one Primary/Secondary ramp, shown under the swatches on
+// the Color Ramps tab. Reads the same TINT_STOPS/SHADE_STOPS colorScale.js's
+// generateScale() uses, so the numbers here can't drift from the swatches.
+const round1 = n => Math.round(n * 10) / 10
+
+function RampFormula({ label, baseHex, scale }) {
+  const [h, s, l] = hexToHsl(baseHex)
+  const rows = RAMP_STEPS.map(step => {
+    if (step === 400) return { step, rule: 'Base color (as entered)', calc: `L = ${round1(l)}`, L: l }
+    if (TINT_STOPS[step] != null) {
+      const t = TINT_STOPS[step]
+      const L = l + (100 - l) * t
+      return { step, rule: `Tint, t = ${t}`, calc: `${round1(l)} + (100 − ${round1(l)}) × ${t}`, L }
+    }
+    const t = SHADE_STOPS[step]
+    const L = l * (1 - t)
+    return { step, rule: `Shade, t = ${t}`, calc: `${round1(l)} × (1 − ${t})`, L }
+  })
+  return (
+    <div className="wds-ramp-formula-group">
+      <div className="wds-ramp-group-title">{label}</div>
+      <div className="wds-ramp-formula-base">
+        Base {baseHex.toUpperCase()} → H {round1(h)}°, S {round1(s)}%, L {round1(l)}%
+      </div>
+      <table className="wds-ramp-formula-table">
+        <thead>
+          <tr><th>Step</th><th>Rule</th><th>Lightness calc</th><th>HSL</th><th>Hex</th></tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.step}>
+              <td>{r.step}</td>
+              <td>{r.rule}</td>
+              <td>{r.calc} = {round1(r.L)}</td>
+              <td>hsl({round1(h)}, {round1(s)}%, {round1(r.L)}%)</td>
+              <td>
+                <span className="wds-ramp-formula-dot" style={{ backgroundColor: scale[r.step] }} />
+                {scale[r.step]}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function RampFormulaSection({ primaryColor, secondaryColor, primaryScale, secondaryScale }) {
+  return (
+    <section className="wds-ramp-formula">
+      <div className="wds-ramp-formula-title">How the ramps are calculated</div>
+      <div className="wds-ramp-formula-intro">
+        Each ramp starts from one base color, which becomes step 400. Convert it to HSL, then hold
+        Hue (H) and Saturation (S) constant and move only Lightness (L). Tints (300 → 50) blend toward
+        white; shades (500 → 900) blend toward black. Both sides use evenly spaced stops, each
+        reaching 90% of the way to white/black at the end.
+        <ul>
+          <li><b>Tint:</b> L = L<sub>base</sub> + (100 − L<sub>base</sub>) × t &nbsp;(t: 300 = 0.225, 200 = 0.45, 100 = 0.675, 50 = 0.9)</li>
+          <li><b>Shade:</b> L = L<sub>base</sub> × (1 − t) &nbsp;(t: 500 = 0.18, 600 = 0.36, 700 = 0.54, 800 = 0.72, 900 = 0.9)</li>
+          <li>Neutral is a fixed palette, not generated.</li>
+        </ul>
+      </div>
+      <div className="wds-ramp-formula-groups">
+        <RampFormula label="Primary" baseHex={primaryColor} scale={primaryScale} />
+        <RampFormula label="Secondary" baseHex={secondaryColor} scale={secondaryScale} />
+      </div>
+    </section>
+  )
+}
+
 // One Neutral/Primary/Secondary/GolfStatus column pair — a title, an
 // optional note/control under it, and its Light/Dark RampPill columns.
 // Only the Color Ramps tab passes a `picker` (Neutral's is a fixed note;
@@ -446,7 +516,8 @@ function RoleCompareTable({ tintThemes }) {
       {THEME_TABLE_GROUPS.map(group => (
         <div key={group.key} className="wds-role-group">
           <div className="wds-role-group-title">{group.label}</div>
-          {tintThemes[0].light[group.key].map(roleDef => (
+          {/* Row labels come from a full-role theme — the fixed Neutral Theme column can lead but has fewer roles. */}
+          {(tintThemes.find(t => t.key !== 'golfstatus') ?? tintThemes[0]).light[group.key].map(roleDef => (
             <CompareRow
               key={roleDef.key}
               label={roleDef.label}
@@ -600,11 +671,11 @@ function retintNeutralDefs(neutralDefs, monoFamily, primaryScale, secondaryScale
 // designation typed under one tint theme lands in that tint's own slot on
 // the live site instead of colliding with the others'.
 const TINT_THEMES = [
-  { key: 'neutral', label: 'Neutral Tint', monochromatic: false, retintFamily: null },
-  { key: 'primary', label: 'Primary Tint', monochromatic: true, retintFamily: 'primary' },
+  { key: 'neutral', label: 'Neutral + Primary Theme', monochromatic: false, retintFamily: null },
+  { key: 'primary', label: 'Primary Theme', monochromatic: true, retintFamily: 'primary' },
   // Full Tint (EventWebsitePage.jsx's textScale): surfaces/backgrounds tint
   // with Secondary, text and Outline Variant with Primary.
-  { key: 'full', label: 'Full Tint', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
+  { key: 'full', label: 'Full Theme', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
 ]
 
 // GolfStatus's own fixed roles, transcribed straight from
@@ -835,10 +906,10 @@ const COLOR_TABS = [
 // other overrides under (EventWebsitePage.jsx's `tint`), so an edit made
 // under one theme only shows up when the site is on that theme.
 const BUTTON_THEMES = [
-  { key: 'neutral', label: 'Neutral Tint' },
-  { key: 'primary', label: 'Primary Tint' },
-  { key: 'full', label: 'Full Tint' },
-  { key: 'golfstatus', label: 'GolfStatus' },
+  { key: 'neutral', label: 'Neutral + Primary Theme' },
+  { key: 'primary', label: 'Primary Theme' },
+  { key: 'full', label: 'Full Theme' },
+  { key: 'golfstatus', label: 'Neutral Theme' },
 ]
 
 // What a button part renders as when nothing's been overridden: the tint
@@ -1258,9 +1329,10 @@ export default function ColorExplorationFields({
 
   // Site Colors' own columns: the tint themes plus GolfStatus's fixed roles
   // (already one flat list, same shape as flattenedTintThemes' entries).
+  // Ordered to match the Site Theme radio (Neutral Theme first).
   const siteColorThemes = [
+    { key: 'golfstatus', label: 'Neutral Theme', light: golfStatusRoles.light, dark: golfStatusRoles.dark },
     ...flattenedTintThemes,
-    { key: 'golfstatus', label: 'GolfStatus', light: golfStatusRoles.light, dark: golfStatusRoles.dark },
   ]
 
   // Resolves one ELEMENT_DEFS entry for one mode into a chip-ready
@@ -1385,6 +1457,8 @@ export default function ColorExplorationFields({
         const primaryItems = RAMP_STEPS.map(step => ({ key: step, hex: primaryScale[step], isBase: step === 400 }))
         const secondaryItems = RAMP_STEPS.map(step => ({ key: step, hex: secondaryScale[step], isBase: step === 400 }))
         return (
+          <>
+          <RampFormulaSection primaryColor={primaryColor} secondaryColor={secondaryColor} primaryScale={primaryScale} secondaryScale={secondaryScale} />
           <div className="wds-ramps-compare">
             <RampRowLabels />
             <RampGroup
@@ -1406,14 +1480,15 @@ export default function ColorExplorationFields({
               dark={secondaryItems}
             />
           </div>
+          </>
         )
       })()}
 
       {activeTab === 'theme' && (
         <RoleCompareTable
           tintThemes={[
+            { key: 'golfstatus', label: 'Neutral Theme', light: groupGolfStatusRoles(golfStatusRoles.light), dark: groupGolfStatusRoles(golfStatusRoles.dark) },
             ...tintThemes,
-            { key: 'golfstatus', label: 'GolfStatus', light: groupGolfStatusRoles(golfStatusRoles.light), dark: groupGolfStatusRoles(golfStatusRoles.dark) },
           ]}
         />
       )}

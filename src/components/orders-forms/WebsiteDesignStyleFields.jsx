@@ -44,14 +44,15 @@ const DEFAULT_COLOR_CHOICES = ['#1D4FA8', '#3B8EA5', '#2A6B4F', '#F4A340', '#C03
 
 // Primary + Secondary starter pairs, one per DEFAULT_COLOR_CHOICES entry
 // (same order, so each gradient sits under its own solid swatch). Tapping
-// one commits both colors at once.
+// one commits both colors at once. Each Secondary is the Primary's
+// complement — a different hue family (roughly opposite on the wheel).
 const DEFAULT_COLOR_PAIRS = [
-  ['#1D4FA8', '#8B9BD8'],
-  ['#3B8EA5', '#173539'],
-  ['#2A6B4F', '#B8F5C4'],
-  ['#F4A340', '#8F3A1E'],
-  ['#C0392B', '#A32846'],
-  ['#4B3A9E', '#1A1433'],
+  ['#1D4FA8', '#E8892B'],
+  ['#3B8EA5', '#D9694A'],
+  ['#2A6B4F', '#A83E6C'],
+  ['#F4A340', '#3F7FC4'],
+  ['#C0392B', '#2A9BA3'],
+  ['#4B3A9E', '#D4B12F'],
 ]
 
 // <input type="color"> only accepts a full 6-digit #rrggbb — expands a
@@ -214,10 +215,11 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
 }
 
 const NEUTRAL_MODE_OPTIONS = [
-  { label: 'Neutral Tint', value: 'neutral' },
-  { label: 'Primary Tint', value: 'primary' },
-  // Secondary Tint hidden for now — Full Tint (Primary + Secondary) replaces it.
-  { label: 'Full Tint', value: 'full' },
+  { label: 'Neutral Theme', value: 'golfstatus' },
+  { label: 'Neutral + Primary Theme', value: 'neutral' },
+  { label: 'Primary Theme', value: 'primary' },
+  // Secondary Theme hidden for now — Full Theme (Primary + Secondary) replaces it.
+  { label: 'Full Theme', value: 'full' },
 ]
 
 // Toggled off while the tournament-details preview (below) is standing in
@@ -240,14 +242,20 @@ const SHOW_NEUTRAL_RAMPS = false
 // so changing it enables Save same as they do, and Save persists it to
 // /event-site (EventWebsitePage.jsx), which reads it to decide whether its
 // own Monochromatic toggle starts on and which scale it tints with.
-function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeutralTint, buttonStyles }) {
-  const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Tint has no single ramp)
+function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeutralTint, buttonStyles, hasPrimary, hasSecondary }) {
+  // Only Neutral Theme until a Primary is chosen (nothing to tint with);
+  // Full Theme additionally needs a Secondary.
+  const options = !hasPrimary
+    ? NEUTRAL_MODE_OPTIONS.filter(o => o.value === 'golfstatus')
+    : hasSecondary ? NEUTRAL_MODE_OPTIONS : NEUTRAL_MODE_OPTIONS.filter(o => o.value !== 'full')
+  if (!hasPrimary) neutralTint = 'golfstatus'
+  const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Theme has no single ramp)
   return (
     <div className="wds-scale-row">
       <GSRadioGroup
         isLtr
-        options={NEUTRAL_MODE_OPTIONS}
-        selectedOption={NEUTRAL_MODE_OPTIONS.find(o => o.value === neutralTint)}
+        options={options}
+        selectedOption={options.find(o => o.value === neutralTint)}
         selectionChanged={option => onChangeNeutralTint(option.value)}
       />
       {SHOW_NEUTRAL_RAMPS && (
@@ -362,6 +370,8 @@ export default function WebsiteDesignStyleFields({
   const removeSecondary = () => {
     onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
     setSecondaryAdded(false)
+    // Full Theme needs both colors — drop back to Primary Theme.
+    if (neutralTint === 'full') onChangeNeutralTint('primary')
   }
 
   const resetColors = () => {
@@ -447,6 +457,8 @@ export default function WebsiteDesignStyleFields({
                 neutralTint={neutralTint}
                 onChangeNeutralTint={onChangeNeutralTint}
                 buttonStyles={buttonStyles}
+                hasPrimary={primaryIsSet}
+                hasSecondary={showSecondary}
               />
             ),
           },

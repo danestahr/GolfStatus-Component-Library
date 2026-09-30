@@ -101,7 +101,7 @@
 
 .edm-rect--chip {
   background: var(--edm-ink, #{$grey-800});
-  border-radius: $small-radius;
+  border-radius: 8px;
 }
 
 .edm-rect--chip-text {
@@ -114,7 +114,7 @@
 // the export (see edm-rect--line below for the shared text-bar look).
 .edm-rect--tab-active {
   background: var(--edm-border, #{$grey-200});
-  border-radius: $small-radius;
+  border-radius: 8px;
 }
 
 .edm-rect--tab {
@@ -128,7 +128,7 @@
 
 .edm-rect--heading {
   background: var(--edm-ink, #{$grey-800});
-  border-radius: $small-radius;
+  border-radius: 24px;
 }
 
 .edm-rect--line {
@@ -155,7 +155,7 @@
 // real interactive button.
 .edm-rect--cta-fill {
   background: var(--edm-cta1-bg, var(--gs-color-primary, #232323));
-  border-radius: $small-radius;
+  border-radius: 8px;
 }
 
 .edm-rect--cta-fill-text {
@@ -165,12 +165,20 @@
 
 .edm-rect--cta-outline {
   background: var(--edm-cta2-bg, transparent);
-  border: 1px solid var(--edm-cta2-border, var(--gs-color-secondary, #232323));
-  border-radius: $small-radius;
+  border: 2px solid var(--edm-cta2-border, var(--gs-color-secondary, #232323));
+  border-radius: 8px;
   box-sizing: border-box;
 }
 
 .edm-rect--cta-outline-text {
   background: var(--edm-cta2-label, var(--gs-color-secondary, #232323));
   border-radius: $huge-radius;
+}
+
+// /event-site-packages card thumbnail — tighter device-frame corners.
+.efp-preview-thumb {
+  .edm-desktop-window,
+  .edm-mobile {
+    border-radius: 4px;
+  }
 }

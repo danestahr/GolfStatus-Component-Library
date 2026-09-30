@@ -166,6 +166,10 @@ function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles) {
 
 function ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) {
   if (!primaryColor && !secondaryColor) return undefined
+  // Neutral Theme ('golfstatus') is the fixed grey preset, not a tint of
+  // the saved colors — leaving every var unset lets the stylesheet's own
+  // neutral fallbacks (header, CTA chips, surfaces) win.
+  if (neutralTint === 'golfstatus') return undefined
   const primary = primaryColor ? generateScale(primaryColor) : null
   const secondary = secondaryColor ? generateScale(secondaryColor) : null
   // Neutral Tint ('primary'/'secondary') re-tints the mockup's grey chrome
