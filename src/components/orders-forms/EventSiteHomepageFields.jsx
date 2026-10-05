@@ -1,4 +1,4 @@
-import { faArrowCircleUp, faExternalLinkSquare } from '@fortawesome/free-solid-svg-icons'
+import { faArrowCircleUp } from '@fortawesome/free-solid-svg-icons'
 
 import GSButton from '../../gs-lib/components/gs-button'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
@@ -106,6 +106,9 @@ export default function EventSiteHomepageFields({
   onChangeVideoFiles,
   header,
   onChangeHeader,
+  visible = true,
+  onChangeVisible,
+  canBeVisible = true,
   buttons = {},
   onChangeButton,
   isPremium = true,
@@ -329,17 +332,19 @@ export default function EventSiteHomepageFields({
       <GSActionBar
         type="form-header H3"
         header={title}
-        // Same "open the live site in a new tab" convention as the tile
-        // list's own "View Homepage" button (EventSiteHomepageSectionsList's
-        // `.ehs-details-banner`) — repeated here so a change can be checked
-        // against the live site without first backing out to that list.
+        // Hidden/Visible switch in place of a "View Event Site" button — Hidden
+        // removes this section from the live site. Always toggleable; saving
+        // Visible with no content flips it back to Hidden.
         pageActions={[
           {
-            buttonTitle: 'View Event Site',
-            rightIcon: faExternalLinkSquare,
-            type: 'light-grey',
-            isFocusable: true,
-            actionClick: () => window.open('/event-site', '_blank', 'noopener,noreferrer'),
+            actionType: 'toggle',
+            pageActionProps: {
+              value: visible,
+              onClick: () => onChangeVisible(!visible),
+              trueDescription: 'Visible',
+              falseDescription: 'Hidden',
+              rowReverse: true,
+            },
           },
         ]}
       />

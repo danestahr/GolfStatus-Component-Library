@@ -142,10 +142,10 @@
 // a column) rather than beside them, same "no separate status text" spirit
 // as the row's own dashed/flat-grey states, just a positive counterpart to
 // those instead of a pill.
-.ehs-row-added-icon {
-  flex-shrink: 0;
-  color: $cyan-400;
-  font-size: $medium-font;
+.ehs-row-status {
+  display: flex;
+  align-self: flex-start;
+  pointer-events: none;
 }
 
 // Fills whatever's left in the header row next to the pen/Save controls —

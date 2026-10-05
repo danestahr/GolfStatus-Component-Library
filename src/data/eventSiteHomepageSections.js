@@ -1,4 +1,6 @@
 import { eventSite } from './mockEventSite.js'
+import { eventSitePackages } from './mockEventSitePackages.js'
+import { sponsors } from './mockSponsors.js'
 
 // Whether this tournament has donations turned on at all — a real toggle
 // would live elsewhere in the app (event settings, not modeled in this
@@ -370,6 +372,64 @@ export function loadHomepageSectionHeaderVisibility() {
 export function saveHomepageSectionHeaderVisibility(visibility) {
   try {
     localStorage.setItem(HEADER_VISIBILITY_STORAGE_KEY, JSON.stringify(visibility))
+  } catch {
+    // Prototype-only persistence — a full/unavailable localStorage just
+    // means the choice won't survive this session, not a real failure.
+  }
+}
+
+// Whether a section has the content it needs to be shown on the live site —
+// the "required fields" rule behind each section's Hidden/Visible toggle. A
+// section with nothing in it can't be set to Visible. Tournament Details/
+// Additional Pages/Live Scoring are fixed marketing/nav blocks with no
+// underlying content to be missing, so they're never considered empty.
+// `draft` carries the admin's current (possibly unsaved) field values.
+export function hasHomepageSectionContent(id, draft) {
+  switch (id) {
+    case 'banner':
+      return draft.bannerFiles.length > 0
+    case 'description':
+      return draft.description.trim() !== ''
+    case 'additionalDescription':
+      return draft.additionalDescription.trim() !== ''
+    case 'registrationDetails':
+      return draft.registrationDetails.trim() !== ''
+    case 'photo':
+      return draft.photoFiles.length > 0
+    case 'video':
+      return draft.videoFiles.length > 0
+    case 'packages':
+      return eventSitePackages.length > 0
+    case 'sponsors':
+      return sponsors.length > 0
+    case 'donation':
+      return DONATIONS_ENABLED && eventSite.donationGoal > 0
+    default:
+      return true
+  }
+}
+
+// Every section's Hidden/Visible toggle (the switch on each section's edit
+// screen) — Visible by default, so the live site shows exactly what it did
+// before an admin ever touches one. Hidden removes the section from the live
+// event site entirely. Same no-backend/localStorage convention as the pairs
+// above.
+export const DEFAULT_SECTION_VISIBILITY = Object.fromEntries(HOMEPAGE_SECTIONS.map(s => [s.id, true]))
+
+const VISIBILITY_STORAGE_KEY = 'gs-event-site-homepage-visibility'
+
+export function loadHomepageSectionVisibility() {
+  try {
+    const raw = localStorage.getItem(VISIBILITY_STORAGE_KEY)
+    return raw ? { ...DEFAULT_SECTION_VISIBILITY, ...JSON.parse(raw) } : DEFAULT_SECTION_VISIBILITY
+  } catch {
+    return DEFAULT_SECTION_VISIBILITY
+  }
+}
+
+export function saveHomepageSectionVisibility(visibility) {
+  try {
+    localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(visibility))
   } catch {
     // Prototype-only persistence — a full/unavailable localStorage just
     // means the choice won't survive this session, not a real failure.

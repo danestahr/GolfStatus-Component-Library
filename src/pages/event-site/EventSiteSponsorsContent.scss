@@ -1,0 +1,22 @@
+@import '../../gs-lib/styles/media-queries.scss';
+
+.es-sponsors-card { padding: 24px; }
+
+.es-sponsors-available {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 24px;
+
+  @include tablet() { grid-template-columns: 1fr; }
+}
+
+.es-sponsors-package {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--es-el-cart-item-background, var(--gs-color-surface-bright));
+}

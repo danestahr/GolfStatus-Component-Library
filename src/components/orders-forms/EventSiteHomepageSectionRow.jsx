@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSButton from '../../gs-lib/components/gs-button'
-import { faCircleCheck, faGripLines, faPen, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faEye, faEyeSlash, faGripLines, faPen, faPlus } from '@fortawesome/free-solid-svg-icons'
 import './EventSiteHomepageSectionRow.scss'
 
 // A single tile on EventSiteHomepageSectionsList. Two siblings, not one box:
@@ -45,11 +45,10 @@ import './EventSiteHomepageSectionRow.scss'
 // another screen (Packages/Sponsors/Donation), explaining why it reads
 // "Not Added" and where to go add the data that would light it up.
 //
-// A cyan check sits above the title/description (stacked, not side by
-// side — both live in `.ehs-row-text`, which is a column) whenever the
-// section is actually rendering on the live site right now (`!hidden`) —
-// skipped for a disabled tile too (`!disabled`), even though those are
-// already `hidden` in practice (nothing to check off there either).
+// A "Visible" (green) or "Hidden" (light grey) GS pill sits below the title/description (stacked, not side by
+// side — both live in `.ehs-row-text`, which is a column) reflecting
+// whether the section is showing on the live site right now (`visible`: its
+// Hidden/Visible toggle is on AND it has content).
 //
 // `preview` is an optional element (EventSiteHomepageSectionPreview, one
 // per HOMEPAGE_SECTIONS id) sitting in its own `.ehs-row-preview` column, to
@@ -63,6 +62,7 @@ export default function EventSiteHomepageSectionRow({
   preview,
   editable,
   hidden,
+  visible,
   isDragging,
   offsetY,
   onGrabberPointerDown,
@@ -109,11 +109,17 @@ export default function EventSiteHomepageSectionRow({
             onKeyDown={editable ? e => (e.key === 'Enter' || e.key === ' ') && onClick() : undefined}
           >
             <div className="ehs-row-text">
-              {!hidden && !disabled && <FontAwesomeIcon icon={faCircleCheck} className="ehs-row-added-icon" />}
               <div className="ehs-row-labels">
                 <span className="ehs-row-label">{label}</span>
                 {description && <span className="ehs-row-description">{description}</span>}
               </div>
+              <span className="ehs-row-status">
+                {visible ? (
+                  <GSButton isPill type="green" buttonIcon={faEye} title="Visible" />
+                ) : (
+                  <GSButton isPill type="light-grey" buttonIcon={faEyeSlash} title="Hidden" />
+                )}
+              </span>
             </div>
 
             {editable &&

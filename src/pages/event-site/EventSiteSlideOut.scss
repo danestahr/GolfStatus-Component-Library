@@ -1,0 +1,196 @@
+@import '../../gs-lib/styles/theme.scss';
+@import '../../gs-lib/styles/constants.scss';
+@import '../../gs-lib/styles/golfstatus.scss';
+@import '../../gs-lib/styles/media-queries.scss';
+
+.es-slide-out-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 99;
+}
+
+gs-side-panel:has(> .es-slide-out) {
+  z-index: 100;
+  overflow-y: hidden;
+}
+
+// Same backgrounds as the site: page background for the panel, subnav
+// background for the top nav.
+.es-slide-out {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--es-el-slide-out-background, var(--es-el-page-background, var(--gs-color-background)));
+  color: var(--es-el-slide-out-text, var(--es-el-page-text-default, var(--gs-color-on-background)));
+
+  > gs-side-panel-navigation {
+    flex-shrink: 0;
+    background: var(--es-el-slide-out-nav-background, var(--es-el-subnav-background, var(--gs-color-background)));
+    color: var(--es-el-slide-out-text, var(--es-el-page-text-default, var(--gs-color-on-background)));
+    border-bottom: 1px solid var(--es-el-slide-out-border, var(--es-el-subnav-border, var(--gs-color-outline-variant)));
+    box-shadow: $first-layer-shadow;
+    z-index: 2;
+  }
+}
+
+.es-slide-out-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+
+.es-slide-out-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--es-el-slide-out-border, var(--es-el-section-bottom-border, var(--gs-color-outline-variant)));
+
+  h2 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
+}
+
+.es-slide-out-body {
+  display: flex;
+  flex-direction: column;
+  gap: $xx-large-pad;
+  @include padding($small-layout-pad $x-large-pad);
+}
+
+.es-slide-out-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  @include padding($medium-large-pad);
+  border-top: 1px solid var(--es-el-slide-out-border, var(--es-el-section-bottom-border, var(--gs-color-outline-variant)));
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  background: var(--es-el-slide-out-background, var(--es-el-page-background, var(--gs-color-background)));
+
+  // Same sizing as gs-action-drawer's list items.
+  > * {
+    flex: 1 1 0;
+    margin: $small-pad;
+    max-width: 240px;
+    @include large-phone() { max-width: 100%; }
+  }
+  gs-button { width: 100%; }
+}
+
+// Labeled text field used by the slide-out forms.
+.es-slide-out-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+
+  input, select, textarea {
+    height: 46px;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 15px;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--es-el-slide-out-field-border, var(--es-el-section-bottom-border, var(--gs-color-outline)));
+    border-radius: 8px;
+    outline: none;
+
+    &:focus { border-color: var(--gs-color-primary); box-shadow: 0 0 0 1px var(--gs-color-primary); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+
+  textarea { height: 106px; padding: 12px; resize: vertical; }
+  select { cursor: pointer; }
+  .hint { font-size: 12px; opacity: 0.7; line-height: 1.4; }
+
+  &.invalid input, &.invalid select, &.invalid textarea { border-color: var(--gs-color-error, #c0362c); }
+  .error { font-size: 12px; color: var(--gs-color-error, #c0362c); }
+}
+
+// Titled group of fields inside a slide-out body (e.g. "Player 1 Details").
+.es-slide-out-group {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  + .es-slide-out-group {
+    padding-top: $small-layout-pad;
+    border-top: 1px solid var(--es-el-slide-out-border, var(--es-el-section-bottom-border, var(--gs-color-outline-variant)));
+  }
+}
+
+.es-slide-out-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  h3 { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.2; }
+  gs-toggle .toggle-value { font-size: 14px; }
+}
+
+// Dashed upload box (sponsor images).
+.es-slide-out-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 26px;
+  border: 1px dashed var(--es-el-slide-out-field-border, var(--gs-color-outline-variant));
+  border-radius: 8px;
+  text-align: center;
+
+  img { max-width: 100%; max-height: 120px; border-radius: 4px; object-fit: contain; }
+  .hint { max-width: 300px; }
+  input[type='file'] { display: none; }
+}
+.es-slide-out-field.invalid .es-slide-out-upload { border-color: var(--gs-color-error, #c0362c); }
+
+// Select: shadowed card with a chevron after a divider (Figma Select Field).
+.es-slide-out-select {
+  position: relative;
+
+  select {
+    width: 100%;
+    height: 44px;
+    padding: 0 52px 0 16px;
+    appearance: none;
+    background: var(--es-el-slide-out-select-background, #fff);
+    color: #232323;
+    border: 1px solid transparent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    &:focus { border-color: var(--gs-color-primary); }
+  }
+
+  svg {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #232323;
+    pointer-events: none;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    right: 43px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: rgba(35, 35, 35, 0.2);
+    pointer-events: none;
+  }
+}
+
+// Text input with a trailing icon (sponsor website).
+.es-slide-out-input-icon {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  input { padding-right: 40px; }
+  svg { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 12px; pointer-events: none; }
+}

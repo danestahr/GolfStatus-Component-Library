@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faShoppingCart,
@@ -32,6 +32,7 @@ import { loadPageVisibility } from '../../data/eventSitePagesVisibility.js'
 import {
   DONATIONS_ENABLED,
   loadHomepageSectionOrder,
+  loadHomepageSectionVisibility,
   loadHomepageSectionHeaders,
   loadHomepageSectionContent,
   loadHomepageBannerImage,
@@ -45,6 +46,14 @@ import { loadIsPremium } from '../../data/eventSitePremium.js'
 import { loadEventSitePreview, saveEventSitePreview } from '../../data/eventSitePreview.js'
 import { PACKAGE_CATEGORIES, loadPackageCategoryLabels } from '../../data/eventSitePackageCategories.js'
 import EventSitePackagesContent from './EventSitePackagesContent.jsx'
+import EventSiteCartContent from './EventSiteCartContent.jsx'
+import EventSiteCartFooter from './EventSiteCartFooter.jsx'
+import EventSiteSponsorsContent from './EventSiteSponsorsContent.jsx'
+import EventSiteRegistrantsContent from './EventSiteRegistrantsContent.jsx'
+import EventSiteRoundsContent from './EventSiteRoundsContent.jsx'
+import EventSiteLeaderboardsContent from './EventSiteLeaderboardsContent.jsx'
+import EventSiteDonateContent from './EventSiteDonateContent.jsx'
+import { useEventSiteCart } from './useEventSiteCart.js'
 import EventSiteContextMenu from './EventSiteContextMenu.jsx'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
 import avatarSample from '../../assets/avatar-sample.png'
@@ -251,6 +260,16 @@ const ELEMENT_TO_CSS_VAR = {
   packagesCardText: '--es-el-packages-card-text',
   soldOutBadgeBackground: '--es-el-sold-out-badge-background',
   soldOutBadgeText: '--es-el-sold-out-badge-text',
+  cartItemBackground: '--es-el-cart-item-background',
+  cartFormIncompleteBorder: '--es-el-cart-form-incomplete-border',
+  cartFooterBackground: '--es-el-cart-footer-background',
+  cartFooterText: '--es-el-cart-footer-text',
+  cartFooterBorder: '--es-el-cart-footer-border',
+  slideOutBackground: '--es-el-slide-out-background',
+  slideOutText: '--es-el-slide-out-text',
+  slideOutNavBackground: '--es-el-slide-out-nav-background',
+  slideOutBorder: '--es-el-slide-out-border',
+  slideOutFieldBorder: '--es-el-slide-out-field-border',
   sectionBoxText: '--es-el-section-box-text',
   avatarBackground: '--es-el-avatar-background',
   mobileMenuIcon: '--es-el-mobile-menu-icon',
@@ -294,6 +313,23 @@ const ROLE_KEY_TO_LIVE_CSS_VAR = {
   tertiaryContainer: '--gs-color-tertiary-container',
 }
 
+// The page's content scrolls inside App.jsx's <main>, not the window, so
+// scroll resets/restores have to target that container.
+function getScroller(el) {
+  for (let node = el?.parentElement; node; node = node.parentElement) {
+    const overflowY = getComputedStyle(node).overflowY
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) return node
+  }
+  return document.scrollingElement
+}
+
+const newHistoryId = () => Math.random().toString(36).slice(2)
+
+const AUCTION_URL = 'https://www.golfstatus.com'
+const CART_SLUG = 'cart'
+const viewSlug = label => label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+const viewPath = ({ tab, cart }) => `/event-site/${cart ? CART_SLUG : viewSlug(tab)}`
+
 export default function EventWebsitePage() {
   // Read once on load — same convention as siteStyle etc. below — so a page
   // hidden from the Event Site Pages screen (EventSitePagesTiles.jsx, via
@@ -309,14 +345,86 @@ export default function EventWebsitePage() {
     if (page === 'Donate') return DONATIONS_ENABLED
     return pageVisibility[page]
   })
-  const [activeTab, setActiveTab] = useState(subNavItems[0])
+  // Each view has its own URL (/event-site/packages, /event-site/cart, ...),
+  // so a reload or shared link lands on the same view.
+  const initialSlug = window.location.pathname.replace(/^\/event-site\/?/, '').replace(/\/$/, '')
+  const [activeTab, setActiveTab] = useState(subNavItems.find(item => viewSlug(item) === initialSlug) ?? subNavItems[0])
+  // 'Cart' isn't a sub-nav tab — it's reached from the header's cart icon or
+  // the sticky footer's Continue — so it's its own view on top of activeTab.
+  const [showCart, setShowCart] = useState(initialSlug === CART_SLUG)
+  const cart = useEventSiteCart()
+  const [donationAmount, setDonationAmount] = useState('')
+  const donationValue = Number(donationAmount) || 0
   // Category tile tapped on the homepage's Packages section — the Packages
   // page scrolls that category into view on arrival (null otherwise).
   const [packagesScrollKey, setPackagesScrollKey] = useState(null)
-  function openPackages(categoryKey = null) {
+
+  // Moving between views (tabs, Cart) is real browser history: going to a new
+  // view starts it at the top, and Back/Forward return to the view with the
+  // scroll position it was left at. Positions are kept per history entry.
+  const scrollPositions = useRef(new Map())
+  const currentEntryId = useRef(null)
+  const pendingScroll = useRef(null)
+  const pageElRef = useRef(null)
+
+  useEffect(() => {
+    currentEntryId.current = newHistoryId()
+    window.history.replaceState({ ...window.history.state, esId: currentEntryId.current, esView: { tab: activeTab, cart: showCart } }, '', viewPath({ tab: activeTab, cart: showCart }))
+    const onPop = () => {
+      const state = window.history.state
+      if (!state?.esView) return
+      scrollPositions.current.set(currentEntryId.current, getScroller(pageElRef.current)?.scrollTop ?? 0)
+      currentEntryId.current = state.esId
+      pendingScroll.current = scrollPositions.current.get(state.esId) ?? 0
+      setPackagesScrollKey(null)
+      setActiveTab(state.esView.tab)
+      setShowCart(state.esView.cart)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Runs after the new view renders. Late-loading media (the banner comes
+  // from IndexedDB) can leave the page too short at first for a deep scroll
+  // position to stick, so it retries briefly.
+  useLayoutEffect(() => {
+    const target = pendingScroll.current
+    if (target == null) return
+    pendingScroll.current = null
+    const apply = () => {
+      const scroller = getScroller(pageElRef.current)
+      if (scroller) scroller.scrollTop = target
+    }
+    apply()
+    if (target > 0) {
+      const timers = [100, 400].map(ms => setTimeout(apply, ms))
+      return () => timers.forEach(clearTimeout)
+    }
+  }, [activeTab, showCart])
+
+  function goToView(next, categoryKey = null) {
+    const scroller = getScroller(pageElRef.current)
+    if (next.tab === activeTab && next.cart === showCart) {
+      if (!categoryKey && scroller) scroller.scrollTop = 0
+      return
+    }
+    scrollPositions.current.set(currentEntryId.current, scroller?.scrollTop ?? 0)
+    currentEntryId.current = newHistoryId()
+    window.history.pushState({ ...window.history.state, esId: currentEntryId.current, esView: next }, '', viewPath(next))
+    pendingScroll.current = 0
     setPackagesScrollKey(categoryKey)
-    setActiveTab('Packages')
-    if (!categoryKey) window.scrollTo({ top: 0 })
+    setActiveTab(next.tab)
+    setShowCart(next.cart)
+  }
+  const openCart = () => goToView({ tab: activeTab, cart: true })
+  const openPackages = (categoryKey = null) => goToView({ tab: 'Packages', cart: false }, categoryKey)
+  // Sticky footer's Continue: from a browsing page it opens the cart; from the
+  // cart itself it jumps to whatever the next step asks for.
+  function continueFromFooter() {
+    if (!showCart) return openCart()
+    const target = { contact: 'es-cart-contact', forms: 'es-cart-packages' }[cart.nextStep.target]
+    document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
   // Read once on load — this prototype has no backend, so this is what
   // "reflects" a style saved from the Website Design and Style screen
@@ -373,6 +481,8 @@ export default function EventWebsitePage() {
   // same read-once-on-load convention as siteStyle above. See sectionsById
   // below for how each HOMEPAGE_SECTIONS id maps to a block of this page.
   const [sectionOrder] = useState(loadHomepageSectionOrder)
+  // Hidden sections (each section's Hidden/Visible toggle) are skipped entirely.
+  const [sectionVisibility] = useState(loadHomepageSectionVisibility)
   // Custom titles for the sections below that have one (every section
   // except Banner Image and Tournament Details — see DEFAULT_SECTION_HEADERS'
   // own comment) — same read-once-on-load convention as sectionOrder above,
@@ -965,15 +1075,21 @@ export default function EventWebsitePage() {
 
   return (
     <div
-      ref={setPageEl}
+      ref={el => {
+        pageElRef.current = el
+        setPageEl(el)
+      }}
       className={`es-page gs-theme-${THEME_CLASS_NAMES[themeName] ?? themeName} ${themeMode}`}
       style={pageThemeStyle}
-      // Right-click any element or button to change its designation. Shift +
-      // right-click still opens the browser's own menu. Dev-only — the
-      // handler isn't attached in a production build (import.meta.env.DEV).
-      onContextMenu={e => {
-        if (!import.meta.env.DEV || e.shiftKey) return
+      // Cmd + click (Ctrl + click on non-Mac) any element or button to change
+      // its designation. Right-click is left alone so the browser's Inspect
+      // still works. Capture phase so the click doesn't also fire the
+      // element's own handler. Dev-only — the handler isn't attached in a
+      // production build (import.meta.env.DEV).
+      onClickCapture={e => {
+        if (!import.meta.env.DEV || !(e.metaKey || e.ctrlKey)) return
         e.preventDefault()
+        e.stopPropagation()
         setCtxMenu({ x: e.clientX, y: e.clientY, node: e.target })
       }}
     >
@@ -996,7 +1112,7 @@ export default function EventWebsitePage() {
           </div>
           <div className="es-header-actions">
             <div className="es-cart-button">
-              <GSButton buttonIcon={faShoppingCart} isFocusable aria-label="Cart" />
+              <GSButton buttonIcon={faShoppingCart} isFocusable aria-label="Cart" onClick={openCart} />
             </div>
             <div className="es-avatar">
               <img className="es-avatar-image" src={avatarSample} alt="" />
@@ -1028,23 +1144,53 @@ export default function EventWebsitePage() {
             type="large-pad"
             pageActions={subNavItems.map(item => ({
               title: item,
-              ...(item === activeTab
+              ...(item === activeTab && !showCart
                 ? { ...btn('subnavSelected', 'primary-color', 'subtle'), size: 'secondary' }
                 : { ...btn('subnavUnselected', 'primary-color', 'transparent'), size: 'secondary' }),
               isFocusable: true,
-              onClick: () => (item === 'Packages' ? openPackages() : setActiveTab(item)),
+              // Auction lives on golfstatus.com — no page of its own here.
+              onClick: () => (item === 'Auction' ? window.open(AUCTION_URL, '_blank', 'noopener,noreferrer') : goToView({ tab: item, cart: false })),
             }))}
           />
         </nav>
       </header>
 
-      {activeTab === 'Packages' ? (
-        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} ctaColor={ctaColor} btn={btn} />
+      {showCart ? (
+        <EventSiteCartContent cart={cart} ctaColor={ctaColor} btn={btn} onBrowsePackages={() => openPackages()} />
+      ) : activeTab === 'Packages' ? (
+        <EventSitePackagesContent categoryLabels={packageCategoryLabels} scrollToKey={packagesScrollKey} ctaColor={ctaColor} btn={btn} onAddToCart={cart.add} />
+      ) : activeTab === 'Sponsors' ? (
+        <EventSiteSponsorsContent description={eventSite.tournamentName} ctaColor={ctaColor} btn={btn} onViewPackages={openPackages} />
+      ) : activeTab === 'Registrants' ? (
+        <EventSiteRegistrantsContent eventName={eventSite.tournamentName} ctaColor={ctaColor} btn={btn} onViewPackages={openPackages} />
+      ) : activeTab === 'Rounds' ? (
+        <EventSiteRoundsContent ctaColor={ctaColor} btn={btn} />
+      ) : activeTab === 'Leaderboards' ? (
+        <EventSiteLeaderboardsContent ctaColor={ctaColor} btn={btn} donationSection={sectionsById.donation} />
+      ) : activeTab === 'Donate' && DONATIONS_ENABLED ? (
+        <EventSiteDonateContent
+          raised={eventSite.donationRaised}
+          goal={eventSite.donationGoal}
+          amount={donationAmount}
+          onAmountChange={setDonationAmount}
+        />
       ) : (
         sectionOrder.map(id => {
+          if (sectionVisibility[id] === false) return null
           const node = sectionsById[id]
           return node ? <Fragment key={id}>{node}</Fragment> : null
         })
+      )}
+      {activeTab === 'Donate' && !showCart && donationValue > 0 ? (
+        <EventSiteCartFooter
+          step="Next Step: Review & Checkout"
+          sub={`Donation: $${formatMoney(donationValue)}`}
+          ctaColor={ctaColor}
+          btn={btn}
+          onContinue={() => {}}
+        />
+      ) : (
+        cart.count > 0 && <EventSiteCartFooter cart={cart} ctaColor={ctaColor} btn={btn} onContinue={continueFromFooter} />
       )}
       {import.meta.env.DEV && ctxMenu && pageEl && (
         <EventSiteContextMenu

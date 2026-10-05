@@ -1,0 +1,59 @@
+@import '../../gs-lib/styles/media-queries.scss';
+
+.es-rounds-meta { font-size: 14px; line-height: 1.4; opacity: 0.7; margin-top: 8px; }
+.es-rounds-summary { display: flex; flex-direction: column; }
+.es-rounds-courses { font-size: 14px; font-weight: 700; margin-top: 12px; }
+.es-rounds-link { display: block; margin-top: 12px; font-size: 14px; color: inherit; }
+
+.es-rounds-facility {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+  @include tablet() { grid-template-columns: 1fr; }
+}
+
+.es-rounds-map {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  iframe { width: 100%; height: 240px; border: 0; border-radius: 8px; }
+}
+.es-rounds-map-link {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: inherit;
+  text-decoration: none;
+  background: var(--es-el-cart-item-background, var(--gs-color-surface-bright));
+}
+
+.es-rounds-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; @include tablet() { grid-template-columns: 1fr; } }
+.es-rounds-link-tile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: end;
+  text-align: left;
+  gap: 8px;
+  > :first-child { grid-column: 1; }
+  .es-rounds-link-arrow { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+}
+
+.es-rounds-tee { display: flex; flex-direction: column; gap: 24px; }
+.es-rounds-scorecards { display: flex; flex-direction: column; gap: 16px; overflow-x: auto; }
+@media (min-width: 1100px) { .es-rounds-scorecards { flex-direction: row; } }
+.es-rounds-half { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 460px; }
+.es-rounds-row { display: grid; grid-template-columns: repeat(9, 1fr) 1.3fr; gap: 3px; }
+.es-rounds-row-label { font-size: 8px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.6; margin-bottom: 2px; }
+.es-rounds-hole,
+.es-rounds-cell,
+.es-rounds-total { text-align: center; font-size: 10px; padding: 5px 0; border-radius: 4px; }
+.es-rounds-hole { font-weight: 700; background: var(--gs-color-on-surface); color: var(--gs-color-surface); }
+.es-rounds-cell { background: var(--es-el-cart-item-background, var(--gs-color-surface-bright)); }
+.es-rounds-total { font-weight: 700; }
+.es-rounds-tee-nav { display: flex; justify-content: center; gap: 8px; }

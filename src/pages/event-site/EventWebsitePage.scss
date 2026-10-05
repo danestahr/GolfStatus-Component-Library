@@ -206,15 +206,13 @@
 
 .es-avatar {
   display: inline-flex;
-  padding: 2px;
-  border: 2px solid var(--es-el-avatar-border, var(--gs-color-outline-variant));
   border-radius: $circle-border-radius;
   box-sizing: border-box;
 }
 
 .es-avatar-image {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: $circle-border-radius;
   object-fit: cover;
   background: var(--es-el-avatar-background, var(--gs-color-outline-variant));

@@ -1,0 +1,43 @@
+{
+  ".es-packages-card": {
+    "padding-bottom": "24",
+    "gap": "16",
+    "border-radius": "16",
+    "padding-right": "24",
+    "padding-left": "24",
+    "padding-top": "24"
+  },
+  "div.es-packages-card:nth-child(1)": {
+    "padding-top": "56",
+    "padding-bottom": "56"
+  },
+  ".es-packages-inner": {
+    "gap": "16"
+  },
+  ".es-registrant-tile": {
+    "padding-top": "24",
+    "padding-bottom": "24"
+  },
+  "div.es-registrant-tile:nth-child(17) div.es-registrant-people:nth-child(2) div.es-registrant-person:nth-child(4) span:nth-child(2)": {
+    "font-size": "14"
+  },
+  ".grid": {
+    "gap": "16"
+  },
+  ".es-sponsor-tile": {
+    "gap": "12"
+  },
+  ".es-sponsors-package": {
+    "padding-top": "24",
+    "padding-right": "24",
+    "padding-bottom": "24",
+    "padding-left": "24"
+  },
+  ".es-package-name": {
+    "font-size": "14"
+  },
+  "div.es-packages-band:nth-child(2) div.es-packages-inner:nth-child(1) div.es-packages-card:nth-child(2)": {
+    "padding-top": "56",
+    "padding-bottom": "56"
+  }
+}

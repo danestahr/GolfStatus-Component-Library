@@ -15,10 +15,44 @@
   padding: 56px 24px;
   border-bottom: 1px solid var(--es-el-section-bottom-border, var(--gs-color-outline-variant));
   background: var(--es-el-page-background, var(--gs-color-background));
-  scroll-margin-top: 96px;
+  scroll-margin-top: var(--es-sticky-h, 96px);
 }
 
-.es-packages-title-band { padding: 24px 24px 25px; }
+// Sticks under the sticky .es-header (its height is measured into
+// --es-header-h by EventSitePackagesContent).
+.es-packages-title-band {
+  padding: 24px 24px 25px;
+  position: sticky;
+  top: var(--es-header-h, 0px);
+  z-index: 5;
+}
+
+.es-packages-title-row {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  // Button height, so the band doesn't grow when the category buttons appear.
+  min-height: 40px;
+}
+
+.es-packages-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+
+  &.is-visible {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .es-packages-inner {
   width: 100%;
@@ -29,8 +63,6 @@
 }
 
 .es-packages-title {
-  width: 100%;
-  max-width: 1080px;
   margin: 0;
   font-size: 32px;
   line-height: 1;
@@ -39,7 +71,7 @@
 }
 
 .es-packages-section-title {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 24px;
   line-height: 1;
   font-weight: 700;
@@ -49,7 +81,7 @@
 .es-packages-card {
   background: var(--es-el-section-box-background, var(--gs-color-surface-container-high, var(--gs-color-surface-bright)));
   border-radius: 16px;
-  padding: 36px 24px;
+  padding: 24px;
   color: var(--es-el-packages-card-text, var(--gs-color-on-surface));
 }
 
@@ -107,11 +139,11 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 36px 24px;
+  padding: 24px;
 }
 
 .es-package-top { display: flex; align-items: center; gap: 24px; }
-.es-package-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.es-package-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .es-package-name { font-weight: 700; font-size: 16px; line-height: 1.4; }
 .es-package-price { font-weight: 700; font-size: 14px; line-height: 1.4; }
 .es-package-available { font-size: 14px; line-height: 1.4; opacity: 0.7; }

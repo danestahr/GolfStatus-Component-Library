@@ -121,7 +121,7 @@ function AppShell() {
             <Route path="/orders" element={<OrdersDraft1Page />} />
             <Route path="/orders/:id" element={<OrdersDraft1Page />} />
             <Route path="/orders/:id/responses" element={<OrdersDraft1Page />} />
-            <Route path="/event-site" element={<EventWebsitePage />} />
+            <Route path="/event-site/*" element={<EventWebsitePage />} />
           </Routes>
         </main>
 

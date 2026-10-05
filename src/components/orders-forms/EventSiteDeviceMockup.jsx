@@ -65,7 +65,7 @@ const TOTAL_RATIO = DESKTOP_ORIGIN.w + OVERHANG_RATIO
 // floating-point precision and handing the DOM concrete values avoids
 // both — layout and paint happen through the browser's normal (crisp,
 // non-transformed) path, just recomputed on resize.
-function useMeasuredWidth() {
+export function useMeasuredWidth() {
   const ref = useRef(null)
   const [width, setWidth] = useState(0)
   useEffect(() => {
@@ -88,11 +88,11 @@ function useMeasuredWidth() {
 // as soft/uneven. Snapping every edge to the pixel grid (same idea as
 // Figma's own "snap to pixel grid") is what makes a 1px line render as an
 // actual crisp 1px line instead of a blurred ~1.5px one, consistently.
-function snap(value) {
+export function snap(value) {
   return Math.round(value)
 }
 
-function rectStyle(origin, x, y, w, h, scale) {
+export function rectStyle(origin, x, y, w, h, scale) {
   return {
     left: `${snap((x - origin.x) * scale)}px`,
     top: `${snap((y - origin.y) * scale)}px`,
@@ -167,7 +167,7 @@ function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles, th
   }
 }
 
-function ctaThemeVars(primaryColor, secondaryColor, rawNeutralTint, buttonStyles) {
+export function ctaThemeVars(primaryColor, secondaryColor, rawNeutralTint, buttonStyles) {
   const neutralTint = normalizeNeutralTint(rawNeutralTint)
   if (!primaryColor && !secondaryColor) return undefined
   // Neutral Theme ('golfstatus') is the fixed grey preset, not a tint of

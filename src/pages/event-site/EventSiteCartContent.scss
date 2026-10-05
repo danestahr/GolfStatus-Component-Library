@@ -1,0 +1,129 @@
+@import '../../gs-lib/styles/theme.scss';
+@import '../../gs-lib/styles/constants.scss';
+@import '../../gs-lib/styles/media-queries.scss';
+
+// Builds on the Packages page's .es-packages-* bands/cards (EventSitePackagesContent.scss).
+.es-cart-title-row {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+
+  .es-packages-title { flex: 1; }
+}
+
+.es-cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+// --- Contact details -------------------------------------------------------
+.es-cart-contact {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 56px 24px;
+
+  @include tablet() { flex-direction: column; align-items: stretch; }
+}
+
+.es-cart-contact-text { flex: 1; min-width: 0; }
+.es-cart-contact-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.es-cart-contact-summary { flex: 1; display: flex; align-items: center; gap: 16px; }
+
+.es-cart-contact-avatar {
+  width: 54px;
+  height: 54px;
+  box-sizing: content-box;
+  border: 2px solid var(--gs-color-outline-variant);
+  border-radius: 100px;
+  padding: 2px;
+  object-fit: cover;
+}
+
+// --- You Might Also Like ---------------------------------------------------
+.es-cart-suggestions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 36px 24px;
+}
+
+.es-cart-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 8px;
+  background: var(--es-el-cart-item-background, var(--gs-color-surface-bright));
+}
+
+.es-cart-suggestion-text { min-width: 0; display: flex; flex-direction: column; }
+
+// --- My Packages -----------------------------------------------------------
+.es-cart-package { display: flex; flex-direction: column; gap: 24px; }
+
+.es-cart-package-top { display: flex; align-items: center; gap: 24px; }
+.es-cart-package-details { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.es-cart-qty {
+  width: 162px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--es-el-cart-item-background, var(--gs-color-surface-bright));
+}
+
+.es-cart-qty-value { flex: 1; text-align: center; font-weight: 700; font-size: 16px; line-height: 1.4; }
+
+.es-cart-forms { display: flex; flex-direction: column; gap: 12px; }
+
+.es-cart-forms-label {
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.es-cart-form {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--es-el-cart-item-background, var(--gs-color-surface-bright));
+
+  // Amber outline from the Figma's outline-error token (no theme role for it).
+  &.incomplete { border-color: var(--es-el-cart-form-incomplete-border, #ffbd33); }
+
+  @include tablet() { flex-direction: column; align-items: stretch; }
+}
+
+.es-cart-form-details { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.es-cart-form-status {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 100px;
+  background: var(--gs-color-surface-container-highest);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+
+  svg { font-size: 12px; }
+  &.complete { background: var(--gs-color-tertiary-container); color: var(--gs-color-on-tertiary-container); }
+}

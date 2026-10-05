@@ -1,17 +1,14 @@
+import EventSiteSectionSvg from './EventSiteSectionSvg.jsx'
 import './EventSiteHomepageSectionPreview.scss'
 
-// EventSiteHomepageSectionRow's own `preview` slot — a plain, static export
-// of that section's live-site layout (see EventSiteHomepageSectionsList.jsx's
-// SECTION_PREVIEW_IMAGES, one Figma-exported .svg per section under
-// src/assets). Tournament Details used to show a colorized wireframe here
-// instead (recolored to track the Primary/Secondary/Neutral Tint picker —
-// see EventSiteTournamentPreview.jsx), which this replaces for now so every
-// tile's preview reads consistently: flat, uncolorized, straight from its
-// own export.
-export default function EventSiteHomepageSectionPreview({ src, bordered = true }) {
+// EventSiteHomepageSectionRow's own `preview` slot — a themed, component-
+// built rebuild of that section's live-site layout (see
+// EventSiteSectionSvg.jsx / data/eventSiteSectionScenes.js), recolored by
+// the saved Site Theme the same way EventSiteDeviceMockup is.
+export default function EventSiteHomepageSectionPreview({ sectionId, bordered = true, ...theme }) {
   return (
     <div className={`ehsp-preview${bordered ? ' ehsp-preview--bordered' : ''}`}>
-      <img src={src} alt="" />
+      <EventSiteSectionSvg sectionId={sectionId} {...theme} />
     </div>
   )
 }

@@ -1,0 +1,35 @@
+@import '../../gs-lib/styles/media-queries.scss';
+
+.es-leaderboards-sponsors { padding: 24px; }
+.es-leaderboards-banners { display: flex; gap: 8px; flex-direction: row; }
+
+.es-leaderboard-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  @include tablet() { flex-direction: column; align-items: flex-start; }
+}
+
+.es-leaderboard-who { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.es-leaderboard-rank { font-size: 10px; opacity: 0.7; }
+.es-leaderboard-name { font-size: 14px; font-weight: 700; }
+
+.es-leaderboard-star {
+  margin-top: 4px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--es-el-cart-item-background, var(--gs-color-surface-bright));
+  color: inherit;
+  cursor: pointer;
+  font-size: 10px;
+  opacity: 0.45;
+  &.is-starred { color: var(--gs-color-primary); opacity: 1; }
+}
+
+.es-leaderboard-stats { display: flex; gap: 24px; }
+.es-leaderboard-stat { min-width: 44px; }
+.es-leaderboard-stat-label { font-size: 10px; opacity: 0.6; }
+.es-leaderboard-stat-value { font-size: 10px; font-weight: 700; }

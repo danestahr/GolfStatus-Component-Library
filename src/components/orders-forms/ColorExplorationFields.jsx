@@ -810,6 +810,18 @@ export const ELEMENT_DEFS = [
   { key: 'soldOutBadgeBackground', label: 'Sold Out Badge Background', section: 'Packages & Additional Pages', baseRoleKey: 'primary' },
   { key: 'soldOutBadgeText', label: 'Sold Out Badge Text', section: 'Packages & Additional Pages', baseRoleKey: 'onPrimary' },
 
+  { key: 'cartItemBackground', label: 'Cart Item Background (suggestions, quantity, forms)', section: 'Cart', baseRoleKey: 'surfaceBright' },
+  { key: 'cartFormIncompleteBorder', label: 'Incomplete Form Border', section: 'Cart', baseRoleKey: 'outline' },
+  { key: 'cartFooterBackground', label: 'Next Step Footer Background', section: 'Cart', baseRoleKey: 'background' },
+  { key: 'cartFooterText', label: 'Next Step Footer Text', section: 'Cart', baseRoleKey: 'onBackground' },
+  { key: 'cartFooterBorder', label: 'Next Step Footer Border', section: 'Cart', baseRoleKey: 'outlineVariant' },
+
+  { key: 'slideOutBackground', label: 'Slide Out Background', section: 'Slide Outs', baseRoleKey: 'background' },
+  { key: 'slideOutText', label: 'Slide Out Text', section: 'Slide Outs', baseRoleKey: 'onBackground' },
+  { key: 'slideOutNavBackground', label: 'Slide Out Nav Background', section: 'Slide Outs', baseRoleKey: 'background' },
+  { key: 'slideOutBorder', label: 'Slide Out Dividers', section: 'Slide Outs', baseRoleKey: 'outlineVariant' },
+  { key: 'slideOutFieldBorder', label: 'Slide Out Field Border', section: 'Slide Outs', baseRoleKey: 'outline' },
+
   { key: 'sponsorTierHeader', label: 'Tier Header', section: 'Sponsors', baseRoleKey: 'onSurface' },
   { key: 'sponsorTileName', label: 'Sponsor Tile Name', section: 'Sponsors', baseRoleKey: 'onSurface' },
   { key: 'sponsorFeatureName', label: 'Feature Sponsor Name', section: 'Sponsors', baseRoleKey: 'onSurface' },

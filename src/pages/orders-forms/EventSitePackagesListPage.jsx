@@ -35,6 +35,9 @@ import {
   isHomepageSectionEditable,
   loadHomepageSectionOrder,
   saveHomepageSectionOrder,
+  hasHomepageSectionContent,
+  loadHomepageSectionVisibility,
+  saveHomepageSectionVisibility,
   loadHomepageSectionHeaders,
   saveHomepageSectionHeaders,
   loadHomepageSectionContent,
@@ -467,6 +470,7 @@ export default function EventSitePackagesListPage() {
       sectionOrder: loadHomepageSectionOrder(),
       sectionHeaders: loadHomepageSectionHeaders(),
       sectionButtons: loadHomepageSectionButtons(),
+      sectionVisibility: loadHomepageSectionVisibility(),
     }
   }
   const [homepageDraft, setHomepageDraft] = useState(loadHomepageDraft)
@@ -562,9 +566,15 @@ export default function EventSitePackagesListPage() {
   // batched keystroke or not — this returns it unchanged, it's only here to
   // read it safely.
   function handleSaveHomepageSection(id) {
-    setHomepageDraft(current => {
+    setHomepageDraft(latest => {
+      // Visible with no content can't go live — flip it to Hidden on save.
+      const current =
+        latest.sectionVisibility?.[id] !== false && !hasHomepageSectionContent(id, latest)
+          ? { ...latest, sectionVisibility: { ...latest.sectionVisibility, [id]: false } }
+          : latest
       saveHomepageSectionHeaders(current.sectionHeaders)
       saveHomepageSectionButtons(current.sectionButtons)
+      saveHomepageSectionVisibility(current.sectionVisibility)
       saveHomepageSectionContent({
         description: current.description,
         additionalDescription: current.additionalDescription,
@@ -599,6 +609,10 @@ export default function EventSitePackagesListPage() {
   // to revert to.
   function captureHomepageSectionSnapshot(id) {
     const d = homepageDraft
+    return { visible: d.sectionVisibility[id], ...captureHomepageSectionFields(id, d) }
+  }
+
+  function captureHomepageSectionFields(id, d) {
     switch (id) {
       case 'banner':
         return { bannerFiles: d.bannerFiles }
@@ -632,6 +646,7 @@ export default function EventSitePackagesListPage() {
   function restoreHomepageSectionSnapshot(id, snapshot) {
     setHomepageDraft(prev => ({
       ...prev,
+      sectionVisibility: { ...prev.sectionVisibility, [id]: snapshot.visible },
       ...('header' in snapshot ? { sectionHeaders: { ...prev.sectionHeaders, [id]: snapshot.header } } : {}),
       ...('bannerFiles' in snapshot ? { bannerFiles: snapshot.bannerFiles } : {}),
       ...('description' in snapshot ? { description: snapshot.description } : {}),
@@ -1342,12 +1357,16 @@ export default function EventSitePackagesListPage() {
             photoFiles={homepageDraft.photoFiles}
             videoFiles={homepageDraft.videoFiles}
             headers={homepageDraft.sectionHeaders}
+            visibility={homepageDraft.sectionVisibility}
             onEditSection={openHomepageSectionPanel}
             isPremium={isPremium}
           />
         ) : editingHomepageSectionId === 'photo' ? (
           <EventSiteHomepageFields
             section="photo"
+            visible={homepageDraft.sectionVisibility['photo']}
+            onChangeVisible={visible => setHomepageDraft(prev => ({ ...prev, sectionVisibility: { ...prev.sectionVisibility, ['photo']: visible } }))}
+            canBeVisible={hasHomepageSectionContent('photo', homepageDraft)}
             title={sectionTileLabel('photo', HOMEPAGE_SECTION_BY_ID.photo.label, homepageDraft.sectionHeaders, isPremium)}
             photoFiles={homepageDraft.photoFiles}
             onChangePhotoFiles={files => setHomepageDraft(prev => ({ ...prev, photoFiles: files }))}
@@ -1358,6 +1377,9 @@ export default function EventSitePackagesListPage() {
         ) : editingHomepageSectionId === 'video' ? (
           <EventSiteHomepageFields
             section="video"
+            visible={homepageDraft.sectionVisibility['video']}
+            onChangeVisible={visible => setHomepageDraft(prev => ({ ...prev, sectionVisibility: { ...prev.sectionVisibility, ['video']: visible } }))}
+            canBeVisible={hasHomepageSectionContent('video', homepageDraft)}
             title={sectionTileLabel('video', HOMEPAGE_SECTION_BY_ID.video.label, homepageDraft.sectionHeaders, isPremium)}
             videoFiles={homepageDraft.videoFiles}
             onChangeVideoFiles={files => setHomepageDraft(prev => ({ ...prev, videoFiles: files }))}
@@ -1368,6 +1390,9 @@ export default function EventSitePackagesListPage() {
         ) : editingHomepageSectionId ? (
           <EventSiteHomepageFields
             section={editingHomepageSectionId}
+            visible={homepageDraft.sectionVisibility[editingHomepageSectionId]}
+            onChangeVisible={visible => setHomepageDraft(prev => ({ ...prev, sectionVisibility: { ...prev.sectionVisibility, [editingHomepageSectionId]: visible } }))}
+            canBeVisible={hasHomepageSectionContent(editingHomepageSectionId, homepageDraft)}
             title={sectionTileLabel(
               editingHomepageSectionId,
               HOMEPAGE_SECTION_BY_ID[editingHomepageSectionId].label,

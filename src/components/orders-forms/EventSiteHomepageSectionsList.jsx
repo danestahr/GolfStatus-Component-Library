@@ -2,46 +2,15 @@ import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import { useDragToReorder } from '../../gs-lib/hooks/useDragToReorder.js'
 import EventSiteHomepageSectionRow from './EventSiteHomepageSectionRow.jsx'
 import EventSiteHomepageSectionPreview from './EventSiteHomepageSectionPreview.jsx'
-import { DONATIONS_ENABLED, HOMEPAGE_SECTION_BY_ID, isHomepageSectionEditable } from '../../data/eventSiteHomepageSections.js'
-import { eventSite } from '../../data/mockEventSite.js'
-import { eventSitePackages } from '../../data/mockEventSitePackages.js'
-import { sponsors } from '../../data/mockSponsors.js'
-import bannerPreview from '../../assets/Banner.svg'
-import tournamentDetailsPreview from '../../assets/Tournament Details.svg'
-import tournamentDetailsGolfStatusPreview from '../../assets/Tournament Details GolfStatus.svg'
-import descriptionPreview from '../../assets/Event Description.svg'
-import additionalDescriptionPreview from '../../assets/Addtional Event Description.svg'
-import registrationDetailsPreview from '../../assets/Registration Details.svg'
-import packagesPreview from '../../assets/Packages.svg'
-import sponsorsPreview from '../../assets/Sponsors.svg'
-import photoPreview from '../../assets/Photos.svg'
-import videoPreview from '../../assets/Video.svg'
-import donationPreview from '../../assets/Donations.svg'
-import additionalPagesPreview from '../../assets/Addtional Pages.svg'
-import liveScoringPreview from '../../assets/Live Scoring.svg'
+import { golfstatusColors } from '../../gs-lib/helpers/Theme'
+import { loadEventSiteStyle, hasEventSiteStyle } from '../../data/eventSiteStyle.js'
+import {
+  DONATIONS_ENABLED,
+  HOMEPAGE_SECTION_BY_ID,
+  hasHomepageSectionContent,
+  isHomepageSectionEditable,
+} from '../../data/eventSiteHomepageSections.js'
 import './EventSiteHomepageSectionsList.scss'
-
-// One static Figma-exported thumbnail per HOMEPAGE_SECTIONS id, shown as
-// each tile's own `preview` (EventSiteHomepageSectionRow) — see
-// EventSiteHomepageSectionPreview.jsx's own top comment for why these are
-// flat/uncolorized. `tournamentDetails` alone swaps to a GolfStatus-colored
-// export while `isPremium` is off (see its own render below) — same "no
-// theme customization while non-premium" exception EventSiteTournamentPreview's
-// own comment describes.
-const SECTION_PREVIEW_IMAGES = {
-  banner: bannerPreview,
-  tournamentDetails: tournamentDetailsPreview,
-  description: descriptionPreview,
-  additionalDescription: additionalDescriptionPreview,
-  registrationDetails: registrationDetailsPreview,
-  packages: packagesPreview,
-  sponsors: sponsorsPreview,
-  photo: photoPreview,
-  video: videoPreview,
-  donation: donationPreview,
-  additionalPages: additionalPagesPreview,
-  liveScoring: liveScoringPreview,
-}
 
 // A section with nothing in it wouldn't actually render on the public event
 // site, so its tile shows a muted "Not Added" pill instead — editable ones
@@ -50,30 +19,7 @@ const SECTION_PREVIEW_IMAGES = {
 // whatever's really there. Tournament Details/Additional Pages/Live Scoring
 // have no such underlying list in this prototype (they're fixed marketing/
 // nav blocks in EventWebsitePage.jsx), so they're never considered empty.
-function hasContent(id, draft) {
-  switch (id) {
-    case 'banner':
-      return draft.bannerFiles.length > 0
-    case 'description':
-      return draft.description.trim() !== ''
-    case 'additionalDescription':
-      return draft.additionalDescription.trim() !== ''
-    case 'registrationDetails':
-      return draft.registrationDetails.trim() !== ''
-    case 'photo':
-      return draft.photoFiles.length > 0
-    case 'video':
-      return draft.videoFiles.length > 0
-    case 'packages':
-      return eventSitePackages.length > 0
-    case 'sponsors':
-      return sponsors.length > 0
-    case 'donation':
-      return DONATIONS_ENABLED && eventSite.donationGoal > 0
-    default:
-      return true
-  }
-}
+const hasContent = hasHomepageSectionContent
 
 // Every "Not Added" tile gets a muted caption, instead of leaving the
 // admin to guess why it reads that way — see EventSiteHomepageSectionRow's
@@ -148,6 +94,7 @@ export default function EventSiteHomepageSectionsList({
   photoFiles,
   videoFiles,
   headers,
+  visibility,
   onEditSection,
   isPremium,
 }) {
@@ -176,6 +123,15 @@ export default function EventSiteHomepageSectionsList({
     handleGrabberPointerDown,
   } = useDragToReorder(order, isPremium ? onReorder : undefined)
 
+  // Same "has this tournament actually saved a style" gate
+  // EventSitePreviewCard uses — non-premium (or never-styled) falls back to
+  // GolfStatus's fixed grey. Read fresh each render so the tiles flip the
+  // moment a style is saved.
+  const savedStyle = isPremium && hasEventSiteStyle() ? loadEventSiteStyle() : null
+  const primaryColor = savedStyle ? savedStyle.primaryColor : golfstatusColors.grey800
+  const secondaryColor = savedStyle ? savedStyle.secondaryColor : golfstatusColors.grey800
+  const neutralTint = savedStyle ? savedStyle.neutralTint : 'golfstatus'
+
   return (
     <div className="ordr1-list">
       <GSActionBar type="form-header H3" header="Event Site Homepage" />
@@ -186,17 +142,25 @@ export default function EventSiteHomepageSectionsList({
           if (!fixed) return null
 
           const hidden = !hasContent(id, draft)
-          const previewSrc =
-            id === 'tournamentDetails' && !isPremium ? tournamentDetailsGolfStatusPreview : SECTION_PREVIEW_IMAGES[id]
 
           return (
             <EventSiteHomepageSectionRow
               key={id}
               label={sectionTileLabel(id, fixed.label, headers, isPremium)}
               description={sectionDescription(id, hidden)}
-              preview={previewSrc ? <EventSiteHomepageSectionPreview src={previewSrc} bordered /> : undefined}
+              preview={
+                <EventSiteHomepageSectionPreview
+                  sectionId={id}
+                  primaryColor={primaryColor}
+                  secondaryColor={secondaryColor}
+                  neutralTint={neutralTint}
+                  buttonStyles={savedStyle?.buttonStyles}
+                  bordered
+                />
+              }
               editable={isHomepageSectionEditable(id, isPremium)}
               hidden={hidden}
+              visible={!hidden && visibility?.[id] !== false}
               isDragging={id === draggingId}
               offsetY={id === draggingId ? dragOffsetY : (flashOffsets[id] ?? 0)}
               onGrabberPointerDown={e => handleGrabberPointerDown(e, id)}

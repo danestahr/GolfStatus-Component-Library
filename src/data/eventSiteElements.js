@@ -31,15 +31,17 @@ export const ELEMENT_ROLES = [
 // (compiled from the nested SCSS). A right-clicked node belongs to an
 // element when it, or an ancestor, matches one of these.
 export const ELEMENT_SELECTORS = {
-  pageBackground: ['.es-page', '.es-page gs-page-section', '.es-packages-band'],
+  pageBackground: ['.es-page', '.es-page gs-page-section', '.es-packages-band', '.es-donate-band'],
   pageTextDefault: ['.es-page'],
-  sectionBoxBackground: ['.es-page .section-body', '.es-packages-card'],
+  sectionBoxBackground: ['.es-page .section-body', '.es-packages-card', '.es-donate-card'],
   sectionBoxText: ['.es-page .section-body'],
-  sectionBottomBorder: ['.es-page gs-page-section', '.es-packages-band'],
+  sectionBottomBorder: ['.es-page gs-page-section', '.es-packages-band', '.es-donate-band'],
   sectionTitle: [
     '.es-page gs-page-section > gs-action-bar.H2 h2',
     '.es-packages-title',
     '.es-packages-section-title',
+    '.es-donate-title',
+    '.es-donate-heading',
   ],
   sectionDescription: ['.es-page gs-page-section > .description'],
   imageFrameBorder: ['.es-page gs-image'],
@@ -73,13 +75,23 @@ export const ELEMENT_SELECTORS = {
   donationProgressTrack: ['.es-donation-body gs-progress-bar'],
   donationProgressText: ['.es-donation-body gs-progress-bar .percentage-value'],
   donationGoalLabel: ['.es-donation-goal-label'],
-  donationTileBackground: ['.es-donation-tile gs-button'],
-  donationTileText: ['.es-donation-tile gs-button'],
+  donationTileBackground: ['.es-donation-tile gs-button', '.es-donate-tile'],
+  donationTileText: ['.es-donation-tile gs-button', '.es-donate-tile'],
   videoFrameBorder: ['.es-video-frame'],
-  packagesCardText: ['.es-packages-card'],
+  packagesCardText: ['.es-packages-card', '.es-donate-card'],
   packageTileBorder: ['.es-packages-start-tile'],
   soldOutBadgeBackground: ['.es-package-sold-out'],
   soldOutBadgeText: ['.es-package-sold-out'],
+  cartItemBackground: ['.es-cart-suggestion', '.es-cart-qty', '.es-cart-form', '.es-sponsors-package'],
+  cartFormIncompleteBorder: ['.es-cart-form.incomplete'],
+  cartFooterBackground: ['.es-cart-footer'],
+  cartFooterText: ['.es-cart-footer'],
+  cartFooterBorder: ['.es-cart-footer'],
+  slideOutBackground: ['.es-slide-out', '.es-slide-out-footer'],
+  slideOutText: ['.es-slide-out'],
+  slideOutNavBackground: ['.es-slide-out > gs-side-panel-navigation'],
+  slideOutBorder: ['.es-slide-out-heading', '.es-slide-out-footer'],
+  slideOutFieldBorder: ['.es-slide-out-field input'],
 }
 
 // Every theme slot an element assignment is written to — Site Colors keeps
