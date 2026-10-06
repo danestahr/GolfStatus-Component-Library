@@ -1,4 +1,3 @@
-import { grey500 } from '../gs-lib/helpers/Theme'
 
 // Theme.js's own green500 ("#FFAB22") and green300 ("#FFC54C") are actually
 // orange — confirmed against the design team's Figma export, which gives
