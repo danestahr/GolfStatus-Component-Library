@@ -294,6 +294,7 @@ const ELEMENT_TO_CSS_VAR = {
   headerActionIcons: '--es-el-header-action-icons',
   packageTileBorder: '--es-el-package-tile-border',
   donationProgressTrack: '--es-el-donation-progress-track',
+  donationProgressBorder: '--es-el-donation-progress-border',
   donationProgressText: '--es-el-donation-progress-text',
   donationTileBackground: '--es-el-donation-tile-background',
   donationTileText: '--es-el-donation-tile-text',
@@ -583,7 +584,7 @@ export default function EventWebsitePage() {
   // deliberately excludes it from what gets persisted), so a refresh always
   // lands back on the saved design again. monoScale below is what answers
   // "which color"; this is only "is it on".
-  const [tint, setTint] = useState(siteStyle.neutralTint)
+  const [tint, setTint] = useState(siteStyle.primaryColor ? siteStyle.neutralTint : 'golfstatus')
   const monochromatic = normalizeNeutralTint(tint) !== 'neutral' && tint !== 'golfstatus'
   // The GolfStatus Default option is the fixed .gs-theme-golfstatus preset
   // rather than a tint of the saved site style.
@@ -645,6 +646,17 @@ export default function EventWebsitePage() {
   // theme system has no separate "just the buttons" token.
   const primaryBase = primaryScale[themeMode === 'dark' ? 200 : 600]
   const secondaryBase = secondaryScale[themeMode === 'dark' ? 200 : 600]
+
+  // A slot with no color picked yet inherits the Grayscale theme's own
+  // Primary/On Primary (Secondary/On Secondary) rather than the grey scale.
+  const grayRoles = (key, onKey, hasColor) => {
+    if (hasColor) return null
+    const dark = themeMode === 'dark'
+    const [base, on] = key === 'primary'
+      ? [dark ? golfstatusColors.white : golfstatusColors.grey800, dark ? golfstatusColors.grey800 : golfstatusColors.white]
+      : [dark ? golfstatusColors.cyan200 : golfstatusColors.cyan700, golfstatusColors.white]
+    return { [`--gs-color-${key}`]: base, [`--gs-color-${onKey}`]: on }
+  }
 
   const customThemeStyle = themeName !== 'default' || !isPremium || !hasSavedStyle ? undefined : {
     '--gs-color-primary': primaryBase,
@@ -711,6 +723,8 @@ export default function EventWebsitePage() {
               : monochromatize(hex, monoScale),
         ])
       )),
+    ...grayRoles('primary', 'on-primary', !!siteStyle.primaryColor),
+    ...grayRoles('secondary', 'on-secondary', !!siteStyle.secondaryColor),
   }
 
   // Role riffs saved from Color Exploration/Website Design and Style. Applied
@@ -1102,10 +1116,9 @@ export default function EventWebsitePage() {
       // Cmd + click (Ctrl + click on non-Mac) any element or button to change
       // its designation. Right-click is left alone so the browser's Inspect
       // still works. Capture phase so the click doesn't also fire the
-      // element's own handler. Dev-only — the handler isn't attached in a
-      // production build (import.meta.env.DEV).
+      // element's own handler.
       onClickCapture={e => {
-        if (!import.meta.env.DEV || !(e.metaKey || e.ctrlKey || e.altKey)) return
+        if (!(e.metaKey || e.ctrlKey || e.altKey)) return
         e.preventDefault()
         e.stopPropagation()
         setCtxMenu({ x: e.clientX, y: e.clientY, node: e.target })
@@ -1211,7 +1224,7 @@ export default function EventWebsitePage() {
       ) : (
         cart.count > 0 && <EventSiteCartFooter cart={cart} ctaColor={ctaColor} btn={btn} onContinue={continueFromFooter} />
       )}
-      {import.meta.env.DEV && ctxMenu && pageEl && (
+      {ctxMenu && pageEl && (
         <EventSiteContextMenu
           menu={ctxMenu}
           pageEl={pageEl}

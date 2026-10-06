@@ -37,7 +37,7 @@ export default function PackageCard({ pkg, onClick }) {
         <div className="efp-pkg-sub">{pkg.remaining == null ? 'Unlimited' : pkg.remaining} Remaining</div>
       </div>
 
-      <GSButton type={`status ${STATUS_TYPE[meta.className]}`} title={meta.label} buttonIcon={meta.icon} isPill hoverType="none" style={{ cursor: 'default' }} />
+      <GSButton type={`status ${STATUS_TYPE[meta.className]}`} title={meta.label} buttonIcon={meta.icon} isPill hoverType="none" style={{ cursor: 'default', alignSelf: 'flex-start' }} />
     </div>
   )
 }

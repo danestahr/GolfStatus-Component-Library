@@ -31,7 +31,7 @@
   line-height: 1.2;
 }
 
-// Green 400 from the Figma — a success cue, deliberately not a theme role.
-.es-cart-footer-icon { font-size: 16px; color: #86e99a; }
+// Success cue — follows the theme's Tertiary role.
+.es-cart-footer-icon { font-size: 16px; color: var(--gs-color-tertiary-container); }
 
 .es-cart-footer-sub { font-size: 14px; line-height: 1.4; opacity: 0.7; }

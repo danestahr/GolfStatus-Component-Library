@@ -187,7 +187,7 @@ function ColorRampSquares({ color, mode }) {
 // each with its own default swatches / color bar / ramps stacked under its
 // input (HexColorField). `added` tracks which slots the admin has opened,
 // independent of whether they've picked a color yet.
-function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrimaryColor, secondaryColor, onChangeSecondaryColor, onRemovePrimary, onRemoveSecondary }) {
+function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrimaryColor, primaryIsSet, secondaryColor, onChangeSecondaryColor, secondaryIsSet, onRemovePrimary, onRemoveSecondary }) {
   return (
     <div className="wds-scale-row">
       <div className="wds-hex-inputs">
@@ -195,7 +195,7 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
           label="Primary Color"
           color={primaryColor}
           onChangeColor={onChangePrimaryColor}
-          showEmpty={primaryColor === DEFAULT_EVENT_SITE_STYLE.primaryColor}
+          showEmpty={!primaryIsSet}
           onRemove={onRemovePrimary}
           onPickPair={secondaryAdded ? undefined : onPickPair}
         />
@@ -204,7 +204,7 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
             label="Secondary Color"
             color={secondaryColor}
             onChangeColor={onChangeSecondaryColor}
-            showEmpty={secondaryColor === DEFAULT_EVENT_SITE_STYLE.secondaryColor}
+            showEmpty={!secondaryIsSet}
             onRemove={onRemoveSecondary}
           />
         )}
@@ -233,6 +233,7 @@ function availableThemeValues(hasPrimary, hasSecondary) {
 // available sibling (Subtle <-> Subtle Two-Tone, Bold <-> Bold Two-Tone).
 function coerceTint(tint, allowed) {
   if (allowed.includes(tint)) return tint
+  if (allowed.length === 1) return allowed[0]
   const twoTone = allowed.includes('full')
   if (tint === 'neutral' || tint === 'neutral-two-tone') return twoTone ? 'neutral-two-tone' : 'neutral'
   return twoTone ? 'full' : 'primary'
@@ -265,12 +266,15 @@ function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeu
   const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Theme has no single ramp)
   return (
     <div className="wds-scale-row">
-      <GSRadioGroup
-        isLtr
-        options={options}
-        selectedOption={options.find(o => o.value === neutralTint)}
-        selectionChanged={option => onChangeNeutralTint(option.value)}
-      />
+      {/* Nothing to choose until a color unlocks a second theme. */}
+      {options.length > 1 && (
+        <GSRadioGroup
+          isLtr
+          options={options}
+          selectedOption={options.find(o => o.value === neutralTint)}
+          selectionChanged={option => onChangeNeutralTint(option.value)}
+        />
+      )}
       {SHOW_NEUTRAL_RAMPS && (
         <div className="wds-colors-tile">
           {tintColor ? (
@@ -324,8 +328,10 @@ export default function WebsiteDesignStyleFields({
   onChangeThemeOverrides,
   saveCount,
 }) {
-  const primaryIsSet = primaryColor !== DEFAULT_EVENT_SITE_STYLE.primaryColor
-  const secondaryIsSet = secondaryColor !== DEFAULT_EVENT_SITE_STYLE.secondaryColor
+  // The default style has no Primary/Secondary at all ('') — set means a
+  // real hex, so any preset (even one matching an old default) counts.
+  const primaryIsSet = !!primaryColor
+  const secondaryIsSet = !!secondaryColor
   const [secondaryAdded, setSecondaryAdded] = useState(secondaryIsSet)
   // A color set from outside (e.g. loaded from a saved style) always shows.
   const showSecondary = secondaryAdded || secondaryIsSet
@@ -413,8 +419,10 @@ export default function WebsiteDesignStyleFields({
                 onPickPair={pickPair}
                 primaryColor={primaryColor}
                 onChangePrimaryColor={onChangePrimaryColor}
+                primaryIsSet={primaryIsSet}
                 secondaryColor={secondaryColor}
                 onChangeSecondaryColor={onChangeSecondaryColor}
+                secondaryIsSet={secondaryIsSet}
                 onRemovePrimary={removePrimary}
                 onRemoveSecondary={removeSecondary}
               />

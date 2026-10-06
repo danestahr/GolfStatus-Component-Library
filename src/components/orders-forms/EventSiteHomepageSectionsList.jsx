@@ -130,7 +130,8 @@ export default function EventSiteHomepageSectionsList({
   const savedStyle = isPremium && hasEventSiteStyle() ? loadEventSiteStyle() : null
   const primaryColor = savedStyle ? savedStyle.primaryColor : golfstatusColors.grey800
   const secondaryColor = savedStyle ? savedStyle.secondaryColor : golfstatusColors.grey800
-  const neutralTint = savedStyle ? savedStyle.neutralTint : 'golfstatus'
+  // No Primary picked -> Grayscale, whatever tint was saved.
+  const neutralTint = savedStyle?.primaryColor ? savedStyle.neutralTint : 'golfstatus'
 
   return (
     <div className="ordr1-list">

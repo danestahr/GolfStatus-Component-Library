@@ -74,6 +74,7 @@ export const ELEMENT_SELECTORS = {
   sponsorFeatureName: ['.es-sponsor-feature-name'],
   sponsorFeatureDescription: ['.es-sponsor-feature-description'],
   donationProgressTrack: ['.es-donation-body gs-progress-bar'],
+  donationProgressBorder: ['.es-donation-body gs-progress-bar'],
   donationProgressText: ['.es-donation-body gs-progress-bar .percentage-value'],
   donationGoalLabel: ['.es-donation-goal-label'],
   donationTileBackground: ['.es-donation-tile gs-button', '.es-donate-tile'],
