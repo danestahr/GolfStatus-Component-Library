@@ -502,7 +502,7 @@
     background: var(--es-el-donation-progress-track, var(--gs-color-surface-container-highest));
     // Keeps the track's edge visible when the section background is close
     // to the track color.
-    border: 2px solid var(--gs-color-outline-variant);
+    border: 2px solid var(--es-el-donation-progress-border, var(--gs-color-outline-variant));
 
     .percentage-value {
       opacity: 1;

@@ -294,6 +294,7 @@ const ELEMENT_TO_CSS_VAR = {
   headerActionIcons: '--es-el-header-action-icons',
   packageTileBorder: '--es-el-package-tile-border',
   donationProgressTrack: '--es-el-donation-progress-track',
+  donationProgressBorder: '--es-el-donation-progress-border',
   donationProgressText: '--es-el-donation-progress-text',
   donationTileBackground: '--es-el-donation-tile-background',
   donationTileText: '--es-el-donation-tile-text',

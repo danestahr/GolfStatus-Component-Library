@@ -849,6 +849,7 @@ export const ELEMENT_DEFS = [
   { key: 'imageFrameBorder', label: 'Image Frame Border (photos, sponsor logos)', section: 'Media', baseRoleKey: 'outlineVariant' },
 
   { key: 'donationGoalLabel', label: 'Goal Label', section: 'Donation', baseRoleKey: 'onSurface' },
+  { key: 'donationProgressBorder', label: 'Progress Bar Border', section: 'Donation', baseRoleKey: 'outlineVariant' },
   { key: 'donationProgressTrack', label: 'Progress Bar Track', section: 'Donation', baseRoleKey: 'surfaceContainerHighest' },
   { key: 'donationProgressText', label: 'Progress Bar Percentage', section: 'Donation', baseRoleKey: 'onSurface' },
   { key: 'donationTileBackground', label: 'Amount Tile Background', section: 'Donation', baseRoleKey: 'surfaceBright' },

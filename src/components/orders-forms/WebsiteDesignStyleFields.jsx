@@ -233,6 +233,7 @@ function availableThemeValues(hasPrimary, hasSecondary) {
 // available sibling (Subtle <-> Subtle Two-Tone, Bold <-> Bold Two-Tone).
 function coerceTint(tint, allowed) {
   if (allowed.includes(tint)) return tint
+  if (allowed.length === 1) return allowed[0]
   const twoTone = allowed.includes('full')
   if (tint === 'neutral' || tint === 'neutral-two-tone') return twoTone ? 'neutral-two-tone' : 'neutral'
   return twoTone ? 'full' : 'primary'

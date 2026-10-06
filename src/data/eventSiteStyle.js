@@ -15,7 +15,7 @@ export const DEFAULT_EVENT_SITE_STYLE = {
   // EventWebsitePage.jsx to decide both whether its own Monochromatic
   // toggle starts on and which scale it substitutes into the Neutral
   // theme roles.
-  neutralTint: 'neutral-two-tone',
+  neutralTint: 'golfstatus',
   // Per-swatch riffs typed into the GolfStatus (default) theme's Theme
   // Definitions row (WebsiteDesignStyleFields.jsx's wds-swatch-hex-input) —
   // keyed by "mode-monochromatic-role" (e.g. "dark-true-background"), each
