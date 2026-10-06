@@ -45,6 +45,8 @@ export default function EventSiteContactSlideOut({ isOpen, onClose, initial, onS
         </>
       }
     >
+      <div className="es-slide-out-group">
+      <div className="es-slide-out-group-list">
       {FIELDS.map(({ key, label, type, autoComplete }) => {
         const invalid = submitted && !values[key].trim()
         return (
@@ -62,6 +64,8 @@ export default function EventSiteContactSlideOut({ isOpen, onClose, initial, onS
           </div>
         )
       })}
+      </div>
+      </div>
     </EventSiteSlideOut>
   )
 }

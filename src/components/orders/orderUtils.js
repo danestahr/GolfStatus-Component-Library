@@ -22,6 +22,14 @@ export function entityNameFor(orderId, fillLevel, packageName, contactName) {
   return contactName
 }
 
+// Maps a STATUS_META className to its GSButton `status` variant (gs-button.scss)
+export const STATUS_TYPE = {
+  active: 'active',
+  pending: 'inactive',
+  warning: 'warning',
+  inactive: 'error',
+}
+
 export const STATUS_META = {
   paid:      { label: 'Paid',      className: 'active' },
   pending:   { label: 'Pending',   className: 'pending' },

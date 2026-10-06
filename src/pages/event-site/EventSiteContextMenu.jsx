@@ -7,6 +7,7 @@ import {
   buttonVariantAt,
 } from '../../data/eventSiteElements.js'
 import { BUTTON_APPEARANCES, BUTTON_COLORS, BUTTON_IDS, buttonOverrideKey, buttonStyleKey } from '../../data/eventSiteButtons.js'
+import { NODE_STYLE_PROPS, selectorFor } from '../../data/eventSiteNodeStyles.js'
 import { SCALE_STEPS } from '../../gs-lib/helpers/colorScale.js'
 import './EventSiteContextMenu.scss'
 
@@ -67,7 +68,8 @@ export default function EventSiteContextMenu({
 
   const buttonVariant = useMemo(() => buttonVariantAt(menu.node), [menu.node])
   const elementKeys = useMemo(() => elementKeysAt(menu.node, VALID_KEYS), [menu.node])
-  const [selected, setSelected] = useState(buttonVariant ? 'button' : elementKeys[0])
+  const [selected, setSelected] = useState(buttonVariant ? 'button' : elementKeys[0] ?? 'node')
+  const [scope, setScope] = useState('one')
 
   // Keep the menu on screen.
   useLayoutEffect(() => {
@@ -276,9 +278,108 @@ export default function EventSiteContextMenu({
     )
   }
 
+  // ---- Any element (free-form CSS) --------------------------------------
+  const nodeSelector = useMemo(() => selectorFor(menu.node, pageEl, scope), [menu.node, pageEl, scope])
+  const setNodeProp = (key, value) => {
+    onChangeStyle(prev => {
+      const all = { ...(prev.nodeStyles ?? {}) }
+      const props = { ...(all[nodeSelector] ?? {}) }
+      if (value === '' || value == null) delete props[key]
+      else props[key] = value
+      if (Object.keys(props).length) all[nodeSelector] = props
+      else delete all[nodeSelector]
+      return { ...prev, nodeStyles: all }
+    })
+  }
+  const resetNode = () => {
+    onChangeStyle(prev => {
+      const all = { ...(prev.nodeStyles ?? {}) }
+      delete all[nodeSelector]
+      return { ...prev, nodeStyles: all }
+    })
+  }
+
+  const renderNodePanel = () => {
+    const saved = siteStyle.nodeStyles?.[nodeSelector] ?? {}
+    const computed = getComputedStyle(menu.node)
+    const live = {
+      background: toHex(computed.backgroundColor),
+      color: toHex(computed.color),
+      borderColor: toHex(computed.borderTopColor),
+      borderWidth: parseFloat(computed.borderTopWidth) || 0,
+      borderRadius: parseFloat(computed.borderTopLeftRadius) || 0,
+      padding: parseFloat(computed.paddingTop) || 0,
+      gap: parseFloat(computed.rowGap) || 0,
+      fontSize: parseFloat(computed.fontSize) || 0,
+      fontWeight: computed.fontWeight,
+    }
+    return (
+      <>
+        <div className="es-ctx-options">
+          {[['one', 'This element'], ['all', 'All like this']].map(([key, label]) => (
+            <button key={key} type="button" className={`es-ctx-option${scope === key ? ' is-active' : ''}`} onClick={() => setScope(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {NODE_STYLE_PROPS.map(prop => (
+          <div className="es-ctx-part" key={prop.key}>
+            <span className="es-ctx-part-label">{prop.label}</span>
+            {prop.kind === 'color' && (
+              <>
+                <input
+                  type="color"
+                  className="es-ctx-color"
+                  value={saved[prop.key]?.startsWith('#') ? saved[prop.key] : live[prop.key]}
+                  onChange={e => setNodeProp(prop.key, e.target.value)}
+                  aria-label={`${prop.label} custom color`}
+                />
+                <select
+                  className="es-ctx-select"
+                  value={saved[prop.key]?.startsWith('var(') ? saved[prop.key] : saved[prop.key] ? 'custom' : ''}
+                  onChange={e => e.target.value !== 'custom' && setNodeProp(prop.key, e.target.value)}
+                  aria-label={`${prop.label} designation`}
+                >
+                  <option value="">Default</option>
+                  {saved[prop.key] && !saved[prop.key].startsWith('var(') && <option value="custom">Custom {saved[prop.key]}</option>}
+                  {ELEMENT_ROLES.map(role => (
+                    <option key={role.key} value={`var(${role.cssVar})`}>{role.label}</option>
+                  ))}
+                  <option value="transparent">Transparent</option>
+                </select>
+              </>
+            )}
+            {prop.kind === 'px' && (
+              <input
+                type="number"
+                min="0"
+                className="es-ctx-select"
+                placeholder={String(Math.round(live[prop.key]))}
+                value={saved[prop.key] ?? ''}
+                onChange={e => setNodeProp(prop.key, e.target.value)}
+                aria-label={prop.label}
+              />
+            )}
+            {prop.kind === 'weight' && (
+              <select className="es-ctx-select" value={saved[prop.key] ?? ''} onChange={e => setNodeProp(prop.key, e.target.value)} aria-label={prop.label}>
+                <option value="">Default ({live.fontWeight})</option>
+                {[300, 400, 500, 600, 700, 800].map(w => <option key={w} value={w}>{w}</option>)}
+              </select>
+            )}
+          </div>
+        ))}
+        <button type="button" className="es-ctx-reset" disabled={!Object.keys(saved).length} onClick={resetNode}>
+          Reset this element
+        </button>
+        <div className="es-ctx-foot">{nodeSelector}</div>
+      </>
+    )
+  }
+
   const chips = [
     ...(buttonVariant ? [{ id: 'button', label: `${BUTTON_IDS[buttonVariant.id] ?? 'Button'} button` }] : []),
     ...elementKeys.map(key => ({ id: key, label: DEFS_BY_KEY[key].label })),
+    { id: 'node', label: 'Any style' },
   ]
 
   return createPortal(
@@ -291,7 +392,9 @@ export default function EventSiteContextMenu({
       <div className="es-ctx-head">
         {selected === 'button'
           ? `${BUTTON_IDS[buttonVariant.id] ?? 'Button'} button`
-          : DEFS_BY_KEY[selected]?.label}
+          : selected === 'node'
+            ? `<${menu.node.tagName.toLowerCase()}> style`
+            : DEFS_BY_KEY[selected]?.label}
       </div>
       {chips.length > 1 && (
         <div className="es-ctx-chips" aria-label="Elements under the cursor">
@@ -307,7 +410,7 @@ export default function EventSiteContextMenu({
           ))}
         </div>
       )}
-      {selected === 'button' ? renderButtonPanel() : renderElementPanel()}
+      {selected === 'button' ? renderButtonPanel() : selected === 'node' ? renderNodePanel() : renderElementPanel()}
     </div>,
     document.body
   )

@@ -1,4 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import GSButton from '../../gs-lib/components/gs-button'
+import { STATUS_TYPE } from '../orders/orderUtils'
 import { faGripLines } from '@fortawesome/free-solid-svg-icons'
 import SponsorDetails from './SponsorDetails.jsx'
 import './SponsorRow.scss'
@@ -53,7 +55,7 @@ export default function SponsorRow({ sponsor, showGrabber, isDragging, offsetY, 
             <FontAwesomeIcon icon={faGripLines} />
           </span>
         ) : (
-          <span className={`spn-status-pill ${status.className}`}>{status.label}</span>
+          <GSButton type={`status ${STATUS_TYPE[status.className]}`} title={status.label} isPill hoverType="none" style={{ cursor: 'default' }} />
         )}
       </div>
     </div>

@@ -201,7 +201,7 @@ function CartPackage({ item, cart, ctaColor, btn }) {
                 <GSButton
                   title={done ? 'Edit Details' : 'Add Details'}
                   buttonIcon={faPen}
-                  {...btn('addDetails', ctaColor, done ? 'subtle' : 'fill')}
+                  {...(done ? btn('addDetails', ctaColor, 'subtle') : { buttonId: 'addDetails', type: 'error' })}
                   onClick={() => (SlideOut ? setOpenKey(key) : cart.toggleForm(key))}
                   isFocusable
                 />

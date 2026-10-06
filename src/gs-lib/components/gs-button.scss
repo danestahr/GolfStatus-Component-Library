@@ -146,6 +146,17 @@ gs-button {
       }
     }
 
+    &.error {
+      background: $orange-200;
+      color: $black;
+      &:active {
+        background: $orange-200;
+      }
+      &:focus {
+        background: $orange;
+      }
+    }
+
     &.transparent {
       background: transparent;
 
@@ -199,6 +210,10 @@ gs-button {
       &.warning {
         background: $orange-200;
         color: $orange-800;
+      }
+      &.error {
+        background: $orange-200;
+        color: $black;
       }
     }
 

@@ -39,5 +39,17 @@
   "div.es-packages-band:nth-child(2) div.es-packages-inner:nth-child(1) div.es-packages-card:nth-child(2)": {
     "padding-top": "56",
     "padding-bottom": "56"
+  },
+  "div.es-slide-out-group:nth-child(1)": {
+    "gap": "36"
+  },
+  ".es-slide-out-group": {
+    "display": "flex",
+    "flex-wrap": "nowrap",
+    "flex-direction": "column",
+    "gap": "16"
+  },
+  ".es-slide-out-body": {
+    "gap": "0"
   }
 }

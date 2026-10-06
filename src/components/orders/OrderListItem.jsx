@@ -1,4 +1,5 @@
-import { formatMoney, STATUS_META } from './orderUtils'
+import { formatMoney, STATUS_META, STATUS_TYPE } from './orderUtils'
+import GSButton from '../../gs-lib/components/gs-button'
 import './OrderListItem.scss'
 
 export default function OrderListItem({ order, onClick }) {
@@ -30,7 +31,7 @@ export default function OrderListItem({ order, onClick }) {
 
       <div className="ord-row-side">
         <div className="ord-row-amount">${formatMoney(order.amount)}</div>
-        <span className={`ord-status-pill ${status.className}`}>{status.label}</span>
+        <GSButton type={`status ${STATUS_TYPE[status.className]}`} title={status.label} isPill hoverType="none" style={{ cursor: 'default' }} />
       </div>
     </div>
   )

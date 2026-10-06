@@ -46,63 +46,69 @@ export default function EventSiteSponsorSlideOut({ isOpen, onClose, initial, con
     >
       <div className="es-slide-out-group">
         <div className="es-slide-out-group-header"><h3>Sponsor Information</h3></div>
-        <div className={`es-slide-out-field${submitted && !values.name.trim() ? ' invalid' : ''}`}>
-          <label htmlFor="es-sponsor-name">Sponsor Name *</label>
-          <input id="es-sponsor-name" placeholder="Sponsor Name" value={values.name} onChange={e => set('name', e.target.value)} />
-          {submitted && !values.name.trim() && <span className="error">Required</span>}
-        </div>
-        <div className="es-slide-out-field">
-          <label htmlFor="es-sponsor-website">Sponsor Website</label>
-          <div className="es-slide-out-input-icon">
-            <input id="es-sponsor-website" type="url" placeholder="Sponsor Website" value={values.website} onChange={e => set('website', e.target.value)} />
-            <FontAwesomeIcon icon={faExternalLinkSquare} />
+        <div className="es-slide-out-group-list">
+          <div className={`es-slide-out-field${submitted && !values.name.trim() ? ' invalid' : ''}`}>
+            <label htmlFor="es-sponsor-name">Sponsor Name *</label>
+            <input id="es-sponsor-name" placeholder="Sponsor Name" value={values.name} onChange={e => set('name', e.target.value)} />
+            {submitted && !values.name.trim() && <span className="error">Required</span>}
           </div>
-          <span className="hint">e.g. www.sponsorwebsite.com</span>
-        </div>
-        <div className="es-slide-out-field">
-          <label htmlFor="es-sponsor-message">In-App Sponsor Message</label>
-          <textarea id="es-sponsor-message" placeholder="In-App Sponsor Message" value={values.message} onChange={e => set('message', e.target.value)} />
-          <span className="hint">This message will be shown in the sponsor details section of GolfStatus app.</span>
+          <div className="es-slide-out-field">
+            <label htmlFor="es-sponsor-website">Sponsor Website</label>
+            <div className="es-slide-out-input-icon">
+              <input id="es-sponsor-website" type="url" placeholder="Sponsor Website" value={values.website} onChange={e => set('website', e.target.value)} />
+              <FontAwesomeIcon icon={faExternalLinkSquare} />
+            </div>
+            <span className="hint">e.g. www.sponsorwebsite.com</span>
+          </div>
+          <div className="es-slide-out-field">
+            <label htmlFor="es-sponsor-message">In-App Sponsor Message</label>
+            <textarea id="es-sponsor-message" placeholder="In-App Sponsor Message" value={values.message} onChange={e => set('message', e.target.value)} />
+            <span className="hint">This message will be shown in the sponsor details section of GolfStatus app.</span>
+          </div>
         </div>
       </div>
 
       <div className="es-slide-out-group">
         <div className="es-slide-out-group-header"><h3>Sponsor Images</h3></div>
-        <ImageUpload
-          label="Sponsor Image"
-          ratio="2:1"
-          value={values.image}
-          onChange={v => set('image', v)}
-          invalid={submitted && !values.image}
-          ctaColor={ctaColor}
-          btn={btn}
-        />
-        <ImageUpload
-          label="In-App Sponsor Image"
-          ratio="4:1"
-          value={values.appImage}
-          onChange={v => set('appImage', v)}
-          invalid={submitted && !values.appImage}
-          ctaColor={ctaColor}
-          btn={btn}
-        />
+        <div className="es-slide-out-group-list">
+          <ImageUpload
+            label="Sponsor Image"
+            ratio="2:1"
+            value={values.image}
+            onChange={v => set('image', v)}
+            invalid={submitted && !values.image}
+            ctaColor={ctaColor}
+            btn={btn}
+          />
+          <ImageUpload
+            label="In-App Sponsor Image"
+            ratio="4:1"
+            value={values.appImage}
+            onChange={v => set('appImage', v)}
+            invalid={submitted && !values.appImage}
+            ctaColor={ctaColor}
+            btn={btn}
+          />
+        </div>
       </div>
 
       <div className="es-slide-out-group">
         <div className="es-slide-out-group-header"><h3>Sponsor Contact</h3></div>
-        <div className={`es-slide-out-field${submitted && !values.contactName.trim() ? ' invalid' : ''}`}>
-          <label htmlFor="es-sponsor-contact-name">Full Name *</label>
-          <input id="es-sponsor-contact-name" autoComplete="name" placeholder="Full Name" value={values.contactName} onChange={e => set('contactName', e.target.value)} />
-          {submitted && !values.contactName.trim() && <span className="error">Required</span>}
-        </div>
-        <div className={`es-slide-out-field${submitted && !values.contactEmail.trim() ? ' invalid' : ''}`}>
-          <label htmlFor="es-sponsor-contact-email">Email Address *</label>
-          <input id="es-sponsor-contact-email" type="email" autoComplete="email" placeholder="Email Address" value={values.contactEmail} onChange={e => set('contactEmail', e.target.value)} />
-          {submitted && !values.contactEmail.trim() && <span className="error">Required</span>}
-        </div>
-        <div className="es-slide-out-field">
-          <label htmlFor="es-sponsor-contact-phone">Phone Number</label>
-          <input id="es-sponsor-contact-phone" type="tel" autoComplete="tel" placeholder="Phone Number" value={values.contactPhone} onChange={e => set('contactPhone', e.target.value)} />
+        <div className="es-slide-out-group-list">
+          <div className={`es-slide-out-field${submitted && !values.contactName.trim() ? ' invalid' : ''}`}>
+            <label htmlFor="es-sponsor-contact-name">Full Name *</label>
+            <input id="es-sponsor-contact-name" autoComplete="name" placeholder="Full Name" value={values.contactName} onChange={e => set('contactName', e.target.value)} />
+            {submitted && !values.contactName.trim() && <span className="error">Required</span>}
+          </div>
+          <div className={`es-slide-out-field${submitted && !values.contactEmail.trim() ? ' invalid' : ''}`}>
+            <label htmlFor="es-sponsor-contact-email">Email Address *</label>
+            <input id="es-sponsor-contact-email" type="email" autoComplete="email" placeholder="Email Address" value={values.contactEmail} onChange={e => set('contactEmail', e.target.value)} />
+            {submitted && !values.contactEmail.trim() && <span className="error">Required</span>}
+          </div>
+          <div className="es-slide-out-field">
+            <label htmlFor="es-sponsor-contact-phone">Phone Number</label>
+            <input id="es-sponsor-contact-phone" type="tel" autoComplete="tel" placeholder="Phone Number" value={values.contactPhone} onChange={e => set('contactPhone', e.target.value)} />
+          </div>
         </div>
       </div>
     </EventSiteSlideOut>

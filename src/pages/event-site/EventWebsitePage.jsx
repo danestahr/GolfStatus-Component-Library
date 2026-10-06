@@ -55,6 +55,7 @@ import EventSiteLeaderboardsContent from './EventSiteLeaderboardsContent.jsx'
 import EventSiteDonateContent from './EventSiteDonateContent.jsx'
 import { useEventSiteCart } from './useEventSiteCart.js'
 import EventSiteContextMenu from './EventSiteContextMenu.jsx'
+import { nodeStylesCss } from '../../data/eventSiteNodeStyles.js'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
 import avatarSample from '../../assets/avatar-sample.png'
 import poweredByGolfstatus from '../../assets/powered-by-golfstatus.jpg'
@@ -253,6 +254,7 @@ const ELEMENT_TO_CSS_VAR = {
   additionalPagesSub: '--es-el-additional-pages-sub',
   sponsorTierHeader: '--es-el-sponsor-tier-header',
   sponsorTileName: '--es-el-sponsor-tile-name',
+  registrantTileBackground: '--es-el-registrant-tile-background',
   sponsorFeatureName: '--es-el-sponsor-feature-name',
   sponsorFeatureDescription: '--es-el-sponsor-feature-description',
   videoFrameBorder: '--es-el-video-frame-border',
@@ -270,6 +272,22 @@ const ELEMENT_TO_CSS_VAR = {
   slideOutNavBackground: '--es-el-slide-out-nav-background',
   slideOutBorder: '--es-el-slide-out-border',
   slideOutFieldBorder: '--es-el-slide-out-field-border',
+  formSectionBackground: '--es-el-form-section-background',
+  formSectionBorder: '--es-el-form-section-border',
+  textFieldBackground: '--es-el-text-field-background',
+  textFieldText: '--es-el-text-field-text',
+  textAreaBackground: '--es-el-text-area-background',
+  textAreaText: '--es-el-text-area-text',
+  textAreaBorder: '--es-el-text-area-border',
+  dropdownBackground: '--es-el-dropdown-background',
+  dropdownText: '--es-el-dropdown-text',
+  dropdownBorder: '--es-el-dropdown-border',
+  toggleOnTrack: '--es-el-toggle-on-track',
+  toggleOffTrack: '--es-el-toggle-off-track',
+  toggleKnob: '--es-el-toggle-knob',
+  fileUploadBackground: '--es-el-file-upload-background',
+  fileUploadBorder: '--es-el-file-upload-border',
+  fileUploadText: '--es-el-file-upload-text',
   sectionBoxText: '--es-el-section-box-text',
   avatarBackground: '--es-el-avatar-background',
   mobileMenuIcon: '--es-el-mobile-menu-icon',
@@ -1087,12 +1105,13 @@ export default function EventWebsitePage() {
       // element's own handler. Dev-only — the handler isn't attached in a
       // production build (import.meta.env.DEV).
       onClickCapture={e => {
-        if (!import.meta.env.DEV || !(e.metaKey || e.ctrlKey)) return
+        if (!import.meta.env.DEV || !(e.metaKey || e.ctrlKey || e.altKey)) return
         e.preventDefault()
         e.stopPropagation()
         setCtxMenu({ x: e.clientX, y: e.clientY, node: e.target })
       }}
     >
+      {siteStyle.nodeStyles && <style>{nodeStylesCss(siteStyle.nodeStyles)}</style>}
       <header className="es-header">
         <div className="es-header-bar">
           <div className="es-brand-row">

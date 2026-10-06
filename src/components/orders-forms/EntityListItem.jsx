@@ -1,4 +1,5 @@
-import { formatMoney } from '../orders/orderUtils'
+import { formatMoney, STATUS_TYPE } from '../orders/orderUtils'
+import GSButton from '../../gs-lib/components/gs-button'
 import './EntityListItem.scss'
 
 // Generic list row shared by the Orders and Forms tile pages (Sponsors,
@@ -28,7 +29,7 @@ export default function EntityListItem({ primary, secondaryLines = [], tertiaryL
 
       <div className="efi-row-side">
         {amount != null && <div className="efi-row-amount">${formatMoney(amount)}</div>}
-        {statusLabel && <span className={`efi-status-pill ${statusClassName}`}>{statusLabel}</span>}
+        {statusLabel && <GSButton type={`status ${STATUS_TYPE[statusClassName]}`} title={statusLabel} isPill hoverType="none" style={{ cursor: 'default' }} />}
       </div>
     </div>
   )

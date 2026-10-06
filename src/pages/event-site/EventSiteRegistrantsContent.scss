@@ -1,6 +1,6 @@
 .es-registrant-card { padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
 .es-registrant-tiles { display: flex; flex-direction: column; gap: 12px; }
-.es-registrant-tile { background: #f3f3f3; border-radius: 8px; padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+.es-registrant-tile { background: var(--es-el-registrant-tile-background, #f3f3f3); border-radius: 8px; padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
 .es-registrant-team-name { font-weight: 700; font-size: 14px; }
 .es-registrant-people { display: flex; flex-wrap: wrap; gap: 8px 24px; }
 .es-registrant-person {

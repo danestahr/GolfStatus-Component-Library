@@ -3,7 +3,7 @@ import GSButton from '../../gs-lib/components/gs-button'
 import OrderFormSection from './OrderFormSection.jsx'
 import OrderLineItemRow from './OrderLineItemRow.jsx'
 import OrderFormResponses from './OrderFormResponses.jsx'
-import { formatMoney, STATUS_META } from './orderUtils.js'
+import { formatMoney, STATUS_META, STATUS_TYPE } from './orderUtils.js'
 import './OrderDetailPanel.scss'
 import '../orders/OrderListItem.scss'
 
@@ -52,7 +52,7 @@ export default function OrderDetailPanel({ order, onEditResponses, onSaveAnswer 
           </div>
           <div className="ord-row-side">
             <div className="ord-row-amount">${formatMoney(order.amount)}</div>
-            <span className={`ord-status-pill ${status.className}`}>{status.label}</span>
+            <GSButton type={`status ${STATUS_TYPE[status.className]}`} title={status.label} isPill hoverType="none" style={{ cursor: 'default' }} />
           </div>
         </div>
 

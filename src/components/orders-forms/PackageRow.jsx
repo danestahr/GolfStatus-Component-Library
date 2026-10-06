@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faClone, faEye, faEyeSlash, faGripLines } from '@fortawesome/free-solid-svg-icons'
 import GSButton from '../../gs-lib/components/gs-button'
-import { formatMoney } from '../orders/orderUtils'
+import { formatMoney, STATUS_TYPE } from '../orders/orderUtils'
 import './PackageRow.scss'
 
 const STATUS_META = {
@@ -42,10 +42,7 @@ export default function PackageRow({ pkg, onCopy, showGrabber, isDragging, offse
           <div className="pkgr-row-sub">{pkg.remaining == null ? 'Unlimited' : pkg.remaining} Remaining</div>
         </div>
 
-        <span className={`pkgr-status-pill ${meta.className}`}>
-          <FontAwesomeIcon icon={meta.icon} />
-          {meta.label}
-        </span>
+        <GSButton type={`status ${STATUS_TYPE[meta.className]}`} title={meta.label} buttonIcon={meta.icon} isPill hoverType="none" style={{ cursor: 'default' }} />
       </div>
 
       <GSButton
