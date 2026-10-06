@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { faPalette } from '@fortawesome/free-solid-svg-icons'
+import { faPalette, faDownload } from '@fortawesome/free-solid-svg-icons'
 import GSActionBar from '../../gs-lib/components/gs-action-bar'
 import GSButton from '../../gs-lib/components/gs-button'
 import GSinput from '../../gs-lib/components/gs-input'
@@ -17,6 +17,7 @@ import {
   buttonVarName,
   resolveButtonOverride,
 } from '../../data/eventSiteButtons.js'
+import { zipFiles } from '../../data/zip.js'
 import './WebsiteDesignStyleFields.scss'
 import './ColorExplorationFields.scss'
 
@@ -1489,9 +1490,160 @@ export default function ColorExplorationFields({
     return { value: current, placeholder: baseLabel }
   }
 
+  // One ES module per theme (Grayscale + the four tints, in the order the
+  // Theme tab shows them), zipped into one download. Same shape the devs'
+  // own theme files use: each token has a light/dark pair of CSS-style
+  // props (color / backgroundColor / borderColor), valued with the color's
+  // designation (white, grey800, primary600, ...) instead of a hex. Tokens
+  // this page doesn't define are listed in the devs' order, marked unused,
+  // with no value. A `null` spec = unused.
+  const downloadThemes = () => {
+    const tokenSpecs = [
+      ['primary', { color: 'primary' }],
+      ['secondary', { color: 'secondary' }],
+      ['primaryContainer', { backgroundColor: 'primary', color: 'onPrimary' }],
+      ['secondaryContainer', { backgroundColor: 'secondary', color: 'onSecondary' }],
+      ['secondaryContainerHigh', null],
+      ['background', { backgroundColor: 'background', color: 'onBackground' }],
+      ['surface', { backgroundColor: 'surface', color: 'onSurface' }],
+      ['surfaceDim', null],
+      ['surfaceBright', { backgroundColor: 'surfaceBright', color: 'onSurface' }],
+      ['surfaceVariant', { backgroundColor: 'surfaceVariant', color: 'onSurfaceVariant' }],
+      ['surfaceContainer', null],
+      ['surfaceContainerLowest', null],
+      ['surfaceContainerLow', { backgroundColor: 'surfaceContainerLow', color: 'onSurface' }],
+      ['surfaceContainerHigh', { backgroundColor: 'surfaceContainerHigh', color: 'onSurface' }],
+      // The library spells this token "Higest" (single h) — kept so it overrides.
+      ['surfaceContainerHigest', { backgroundColor: 'surfaceContainerHigest', color: 'onSurface' }],
+      ['outline', { borderColor: 'outline' }],
+      ['outlineVariant', { borderColor: 'outlineVariant' }],
+      ['scrim', null],
+      ['error', null],
+      ['errorContainer', null],
+      ['tertiary', null],
+      ['tertiaryContainer', { backgroundColor: 'tertiaryContainer', color: 'onSurface' }],
+    ]
+    // File/export names the devs expect, by Theme-tab theme.
+    const THEME_FILE_NAMES = {
+      golfstatus: 'grayscaleTheme',
+      neutral: 'subtleTheme',
+      'neutral-two-tone': 'subtleTwoToneTheme',
+      primary: 'boldTheme',
+      full: 'boldTwoToneTheme',
+    }
+    const palette = { ...golfstatusColors }
+    const normHex = hex => {
+      const h = String(hex).toLowerCase()
+      return /^#[0-9a-f]{3}$/.test(h) ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h
+    }
+    const hexToName = (hex, names) => names.find(name => typeof palette[name] === 'string' && normHex(palette[name]) === normHex(hex))
+    // Numbered/base names (grey800, white) win over aliases (cyan, brightGreen).
+    const paletteNames = Object.keys(palette).sort((x, y) => Number(/\d$|^(white|black)$/.test(y)) - Number(/\d$|^(white|black)$/.test(x)))
+    const scaleNames = {}
+    ;[['primary', primaryScale], ['secondary', secondaryScale]].forEach(([family, scale]) =>
+      SCALE_STEPS.forEach(step => { scaleNames[`${family}${step}`] = scale[step] })
+    )
+    const designationName = text => {
+      const [family, step] = text.split(' ')
+      if (family === 'White') return 'white'
+      if (family === 'Black') return 'black'
+      return `${family === 'Neutral' ? 'grey' : family.toLowerCase()}${step}`
+    }
+    // Name a role's color: its designation if it has one, else whichever
+    // known palette color / brand scale step matches its hex.
+    const nameFor = (role, theme) => {
+      if (!role) return null
+      if (role.designation) return designationName(role.designation)
+      if (theme.key !== 'golfstatus') {
+        const scaleName = Object.keys(scaleNames).find(n => normHex(scaleNames[n]) === normHex(role.hex))
+        if (scaleName) return scaleName
+      }
+      return hexToName(role.hex, paletteNames) ?? JSON.stringify(role.hex.toUpperCase())
+    }
+    // "How the ramps are calculated" (Color Ramps tab), as comments.
+    const r1 = n => Math.round(n * 10) / 10
+    const rampTable = (label, baseHex, scale) => {
+      const [h, sat, l] = hexToHsl(baseHex)
+      return [
+        `// ${label}: base ${baseHex.toUpperCase()} -> H ${r1(h)}deg, S ${r1(sat)}%, L ${r1(l)}%`,
+        ...[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map(step => {
+          if (step === 400) return `//   ${step}  base color (as entered), L = ${r1(l)}  ${scale[step]}`
+          if (TINT_STOPS[step] != null) {
+            const t = TINT_STOPS[step]
+            return `//   ${step}  tint, t = ${t}: ${r1(l)} + (100 - ${r1(l)}) x ${t} = ${r1(l + (100 - l) * t)}  ${scale[step]}`
+          }
+          const t = SHADE_STOPS[step]
+          return `//   ${step}  shade, t = ${t}: ${r1(l)} x (1 - ${t}) = ${r1(l * (1 - t))}  ${scale[step]}`
+        }),
+      ]
+    }
+    const rampDoc = [
+      '// --- How the color ramps are created ---',
+      '// Each ramp starts from one base color, which becomes step 400. Convert it to HSL, then hold',
+      '// Hue (H) and Saturation (S) constant and move only Lightness (L). Tints (300 -> 50) blend toward',
+      '// white; shades (500 -> 900) blend toward black. Both sides use evenly spaced stops, each',
+      '// reaching 90% of the way to white/black at the end.',
+      '//   Tint:  L = L_base + (100 - L_base) x t   (t: 300 = 0.225, 200 = 0.45, 100 = 0.675, 50 = 0.9)',
+      '//   Shade: L = L_base x (1 - t)              (t: 500 = 0.18, 600 = 0.36, 700 = 0.54, 800 = 0.72, 900 = 0.9)',
+      '//   Neutral is a fixed palette, not generated.',
+      '//',
+      ...rampTable('Primary', primaryColor, primaryScale),
+      '//',
+      ...rampTable('Secondary', secondaryColor, secondaryScale),
+    ]
+    const files = siteColorThemes.map(theme => {
+      const name = THEME_FILE_NAMES[theme.key]
+      const used = new Set()
+      const tokens = tokenSpecs.filter(([, props]) => props).map(([token, props]) => {
+        const modes = ['light', 'dark'].map(mode => {
+          const lines = Object.entries(props).map(([prop, roleKey]) => {
+            const value = nameFor(theme[mode].find(role => role.key === roleKey), theme)
+            used.add(value)
+            return `      ${prop}: ${value},`
+          })
+          return `    ${mode}: {\n${lines.join('\n')}\n    },`
+        })
+        return `  ${token}: {\n${modes.join('\n')}\n  },`
+      })
+      // primary/secondary scale steps aren't in the library — defined here.
+      const scaleDefs = Object.keys(scaleNames).filter(n => used.has(n)).map(n => `const ${n} = ${JSON.stringify(scaleNames[n].toUpperCase())};`)
+      const header = [
+        '// Color names (white, grey800, cyan700, ...) are the library\'s Theme.js constants.',
+        ...(scaleDefs.length ? ['// primaryN / secondaryN are this theme\'s brand color scale steps:', ...scaleDefs] : []),
+        '',
+      ]
+      // Tokens this page doesn't define: listed, commented out, as unused.
+      const unusedTokens = tokenSpecs.filter(([, props]) => !props).map(([token]) => `  // ${token}: {}, // not used`)
+      const body = [...tokens, '  // --- Not used (no value set) ---', ...unusedTokens]
+      // Scale steps the theme above doesn't reference, kept for reference.
+      const unusedScaleDefs = Object.keys(scaleNames).filter(n => !used.has(n)).map(n => `// const ${n} = ${JSON.stringify(scaleNames[n].toUpperCase())}; // not used`)
+      return {
+        name: `${name}.js`,
+        content: [
+          header.join('\n'),
+          `\nexport const ${name} = {\n${body.join('\n')}\n};\n`,
+          '// --- Primary / Secondary designations not used by this theme ---',
+          ...unusedScaleDefs,
+          '',
+          ...rampDoc,
+        ].join('\n') + '\n',
+      }
+    })
+    const url = URL.createObjectURL(zipFiles(files))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'event-site-themes.zip'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="ordr1-list">
-      <GSActionBar type="form-header H3" header="Color Exploration" />
+      <GSActionBar
+        type="form-header H3"
+        header="Color Exploration"
+        pageActions={[{ buttonTitle: 'Download Themes (.zip)', rightIcon: faDownload, type: 'light-grey', isFocusable: true, actionClick: downloadThemes }]}
+      />
 
       <nav className="wds-color-tabs">
         <GSActionBar

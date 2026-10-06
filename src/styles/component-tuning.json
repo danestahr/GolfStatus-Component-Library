@@ -51,5 +51,8 @@
   },
   ".es-slide-out-body": {
     "gap": "0"
+  },
+  ".split-view-content": {
+    "gap": "12"
   }
 }
