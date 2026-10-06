@@ -42,7 +42,7 @@ export default function PackageRow({ pkg, onCopy, showGrabber, isDragging, offse
           <div className="pkgr-row-sub">{pkg.remaining == null ? 'Unlimited' : pkg.remaining} Remaining</div>
         </div>
 
-        <GSButton type={`status ${STATUS_TYPE[meta.className]}`} title={meta.label} buttonIcon={meta.icon} isPill hoverType="none" style={{ cursor: 'default', alignSelf: 'flex-start' }} />
+        <GSButton type={`status ${STATUS_TYPE[meta.className]}`} title={meta.label} buttonIcon={meta.icon} isPill hoverType="none" style={{ cursor: 'default' }} />
       </div>
 
       <GSButton

@@ -59,11 +59,7 @@ export function hslToHex(h, s, l) {
 }
 
 // Plug in a single 400 hex; get back the full 50-900 scale, keyed by step.
-// An unset color ('') renders as a neutral grey scale rather than throwing.
-const UNSET_COLOR_FALLBACK = '#7A7A7A'
-
 export function generateScale(hex400) {
-  hex400 = hex400 || UNSET_COLOR_FALLBACK
   const [h, s, l] = hexToHsl(hex400)
   const scale = { 400: hex400.toUpperCase() }
   for (const [step, t] of Object.entries(TINT_STOPS)) {

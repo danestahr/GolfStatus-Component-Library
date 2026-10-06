@@ -32,8 +32,7 @@ export default function EventSitePreviewCard({ eventSite, onViewWebsite, onEvent
   const savedStyle = showsSavedStyle ? loadEventSiteStyle() : null
   const primaryColor = savedStyle ? savedStyle.primaryColor : golfstatusColors.grey800
   const secondaryColor = savedStyle ? savedStyle.secondaryColor : golfstatusColors.grey800
-  // No Primary picked -> Grayscale, whatever tint was saved.
-  const neutralTint = savedStyle?.primaryColor ? savedStyle.neutralTint : 'golfstatus'
+  const neutralTint = savedStyle ? savedStyle.neutralTint : 'golfstatus'
 
   return (
     <div className="efp-preview-card">

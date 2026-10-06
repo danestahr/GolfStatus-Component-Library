@@ -7,16 +7,15 @@
 export const GREEN_500_FALLBACK = '#59C56F'
 
 export const DEFAULT_EVENT_SITE_STYLE = {
-  // No Primary/Secondary until the admin picks one ('' = unset).
-  primaryColor: '',
-  secondaryColor: '',
+  primaryColor: '#C0392B',
+  secondaryColor: '#2A9BA3',
   // Which scale the Neutral section's white-to-black reference ramp is
   // tinted with — 'neutral' (the app's own fixed grey), 'primary', or
   // 'secondary' (WebsiteDesignStyleFields.jsx's NeutralSection). Read by
   // EventWebsitePage.jsx to decide both whether its own Monochromatic
   // toggle starts on and which scale it substitutes into the Neutral
   // theme roles.
-  neutralTint: 'golfstatus',
+  neutralTint: 'neutral-two-tone',
   // Per-swatch riffs typed into the GolfStatus (default) theme's Theme
   // Definitions row (WebsiteDesignStyleFields.jsx's wds-swatch-hex-input) —
   // keyed by "mode-monochromatic-role" (e.g. "dark-true-background"), each
