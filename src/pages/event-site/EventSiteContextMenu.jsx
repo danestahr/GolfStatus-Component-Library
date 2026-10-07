@@ -122,7 +122,7 @@ export default function EventSiteContextMenu({
   // ---- Button override ---------------------------------------------------
   const setButtonPart = (part, override) => {
     if (!buttonVariant) return
-    const key = buttonOverrideKey(mode, tint, buttonVariant.color, buttonVariant.appearance, part)
+    const key = buttonOverrideKey(mode, buttonVariant.color, buttonVariant.appearance, part)
     onChangeStyle(prev => {
       const next = { ...(prev.buttonOverrides ?? {}) }
       if (override) next[key] = override
@@ -203,7 +203,7 @@ export default function EventSiteContextMenu({
       <>
         <div className="es-ctx-subhead">Color</div>
         <div className="es-ctx-options">
-          {BUTTON_COLORS.map(option => (
+          {BUTTON_COLORS.filter(option => tint !== 'golfstatus' || option.key === 'neutral').map(option => (
             <button
               key={option.key}
               type="button"
@@ -231,7 +231,7 @@ export default function EventSiteContextMenu({
           Reset to default
         </button>
         {SHOW_BUTTON_COLOR_OVERRIDES && parts.map(([part, label]) => {
-          const key = buttonOverrideKey(mode, tint, color, appearance, part)
+          const key = buttonOverrideKey(mode, color, appearance, part)
           const override = siteStyle.buttonOverrides?.[key] ?? null
           const liveHex = toHex(computed[PART_CSS[part]])
           return (

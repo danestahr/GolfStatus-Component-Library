@@ -18,6 +18,7 @@ import {
   resolveButtonOverride,
 } from '../../data/eventSiteButtons.js'
 import { zipFiles } from '../../data/zip.js'
+import { ELEMENT_ROLES } from '../../data/eventSiteElements.js'
 import './WebsiteDesignStyleFields.scss'
 import './ColorExplorationFields.scss'
 
@@ -134,14 +135,14 @@ function parseDesignation(text, impliedFamily) {
 }
 
 // The inverse of parseDesignation — how a { family, step } reference reads
-// back as text. `grey` displays as "Neutral" (this screen's own naming for
+// back as text. `grey` displays as "Grey" (this screen's own naming for
 // that scale, see NEUTRAL_SCALE above) rather than monochromatic.js's
 // internal "grey" family name.
 function refToText(ref) {
   if (!ref) return ''
   if (ref.family === 'white') return 'White'
   if (ref.family === 'black') return 'Black'
-  if (ref.family === 'grey') return `Neutral ${ref.step}`
+  if (ref.family === 'grey') return `Grey ${ref.step}`
   if (ref.family === 'primary') return `Primary ${ref.step}`
   if (ref.family === 'secondary') return `Secondary ${ref.step}`
   return ''
@@ -167,8 +168,16 @@ function compactRefText(ref) {
 // step forever.
 const ROLE_LABEL_TO_KEY = {
   'primary': 'primary',
+  'primary container': 'primaryContainer',
+  'on primary container': 'onPrimary',
+  'primary container variant': 'primaryContainerVariant',
+  'on primary container variant': 'onPrimaryContainerVariant',
   'on primary': 'onPrimary',
   'secondary': 'secondary',
+  'secondary container': 'secondaryContainer',
+  'on secondary container': 'onSecondary',
+  'secondary container variant': 'secondaryContainerVariant',
+  'on secondary container variant': 'onSecondaryContainerVariant',
   'on secondary': 'onSecondary',
   'background': 'background',
   'on background': 'onBackground',
@@ -199,10 +208,10 @@ function parseRoleReference(text) {
 const SCALE_DESIGNATIONS = [
   'White',
   'Black',
-  ...['Primary', 'Secondary', 'Neutral'].flatMap(family => SCALE_STEPS.map(step => `${family} ${step}`)),
+  ...['Primary', 'Secondary', 'Grey'].flatMap(family => SCALE_STEPS.map(step => `${family} ${step}`)),
 ]
 // Theme roles only — an element points at a role, never a raw scale step.
-const ROLE_DESIGNATIONS = ['Primary', 'On Primary', 'On Primary Fill', 'Primary Subtle', 'On Primary Subtle', 'Secondary', 'On Secondary', 'On Secondary Fill', 'Secondary Subtle', 'On Secondary Subtle', 'Background', 'On Background', 'Surface', 'On Surface', 'Surface Variant', 'On Surface Variant', 'Surface Container Low', 'Surface Container High', 'Surface Container Highest', 'Surface Bright', 'Outline', 'Outline Variant', 'Placeholder', 'Tertiary', 'On Tertiary']
+const ROLE_DESIGNATIONS = ['Primary', 'Primary Container', 'On Primary Container', 'Primary Container Variant', 'On Primary Container Variant', 'On Primary Fill', 'Primary Subtle', 'On Primary Subtle', 'Secondary', 'Secondary Container', 'On Secondary Container', 'Secondary Container Variant', 'On Secondary Container Variant', 'On Secondary Fill', 'Secondary Subtle', 'On Secondary Subtle', 'Background', 'On Background', 'Surface', 'On Surface', 'Surface Variant', 'On Surface Variant', 'Surface Container Low', 'Surface Container High', 'Surface Container Highest', 'Surface Bright', 'Outline', 'Outline Variant', 'Placeholder', 'Tertiary', 'On Tertiary']
 
 function DesignationInput({ value, onCommit, hint, placeholder, options = SCALE_DESIGNATIONS }) {
   // A dropdown, not free text: `value` is the assigned designation, else the
@@ -363,7 +372,7 @@ function RampFormulaSection({ primaryColor, secondaryColor, primaryScale, second
         <ul>
           <li><b>Tint:</b> L = L<sub>base</sub> + (100 − L<sub>base</sub>) × t &nbsp;(t: 300 = 0.225, 200 = 0.45, 100 = 0.675, 50 = 0.9)</li>
           <li><b>Shade:</b> L = L<sub>base</sub> × (1 − t) &nbsp;(t: 500 = 0.18, 600 = 0.36, 700 = 0.54, 800 = 0.72, 900 = 0.9)</li>
-          <li>Neutral is a fixed palette, not generated.</li>
+          <li>Grey is a fixed palette, not generated.</li>
         </ul>
       </div>
       <div className="wds-ramp-formula-groups">
@@ -414,7 +423,7 @@ const THEME_TABLE_GROUPS = [
 // backdrop each (wds-role-chip-slot--light/--dark), same idea as
 // wds-ramp-pill's own backdrop, just sized to one chip instead of a whole
 // column of them.
-function RoleCompareCell({ light, dark, designationHint, designationOptions }) {
+function RoleCompareCell({ light, dark, designationHint, designationOptions, single }) {
   return (
     <div className="wds-role-row-theme">
       <div className="wds-role-chip-slot wds-role-chip-slot--light">
@@ -428,7 +437,7 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions }) {
           designationOptions={designationOptions}
         />
       </div>
-      <div className="wds-role-chip-slot wds-role-chip-slot--dark">
+      {!single && <div className="wds-role-chip-slot wds-role-chip-slot--dark">
         <RampChip
           caption={dark.caption}
           hex={dark.hex}
@@ -438,7 +447,7 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions }) {
           designationPlaceholder={dark.placeholder}
           designationOptions={designationOptions}
         />
-      </div>
+      </div>}
     </div>
   )
 }
@@ -455,7 +464,7 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions }) {
 // reads as a concrete site change, not just a local preview value.
 // GolfStatus is the master theme: its slot is what every tile reads.
 const CANONICAL_THEME = 'golfstatus'
-// Subtle Two-Tone starts as a copy of Subtle but its element assignments
+// Subtle starts as a copy of Subtle but its element assignments
 // are fully independent of every other theme's.
 const SEPARATE_THEME = 'neutral-two-tone'
 const ELEMENT_DESIGNATION_HINT = 'Which role this reads from — type e.g. "On Primary" or "Secondary"'
@@ -475,7 +484,7 @@ function CompareRow({ label, cssVar, columns, designationHint, designationOption
       </div>
       <div className="wds-compare-row-cells">
         {columns.map(column => (
-          <RoleCompareCell key={column.key} light={column.light} dark={column.dark} designationHint={designationHint} designationOptions={designationOptions} />
+          <RoleCompareCell key={column.key} light={column.light} dark={column.dark} single={column.single} designationHint={designationHint} designationOptions={designationOptions} />
         ))}
       </div>
     </div>
@@ -528,6 +537,8 @@ function RoleCompareTable({ tintThemes }) {
               label={roleDef.label}
               columns={tintThemes.map(theme => ({
                 key: theme.key,
+                // Primary/Secondary are just the chosen colors — no dark mode.
+                single: roleDef.key === 'primary' || roleDef.key === 'secondary',
                 light: theme.light[group.key].find(r => r.key === roleDef.key) ?? BLANK_ROLE,
                 dark: theme.dark[group.key].find(r => r.key === roleDef.key) ?? BLANK_ROLE,
               }))}
@@ -560,8 +571,9 @@ function RoleCompareTable({ tintThemes }) {
 function liveThemeRoleDefs(primaryScale, secondaryScale) {
   const forMode = mode => {
     const isDark = mode === 'dark'
-    const primaryBase = primaryScale[isDark ? 200 : 600]
-    const secondaryBase = secondaryScale[isDark ? 200 : 600]
+    // Primary/Secondary: the chosen colors, same in light and dark.
+    const primaryBase = primaryScale[400]
+    const secondaryBase = secondaryScale[400]
     // pickAccessibleTextColor (contrast.js) picks whichever of these two
     // steps actually wins — recomputed here (via the same exported
     // contrastRatio) just to know *which* step it picked, for naturalRef.
@@ -569,12 +581,18 @@ function liveThemeRoleDefs(primaryScale, secondaryScale) {
     const onSecondaryStep = contrastRatio(secondaryBase, secondaryScale[800]) >= contrastRatio(secondaryBase, secondaryScale[100]) ? 800 : 100
     return {
       primary: [
-        { key: 'primary', label: 'Primary', fallbackHex: primaryBase, naturalRef: null, editable: false },
-        { key: 'onPrimary', label: 'On Primary', fallbackHex: pickAccessibleTextColor(primaryBase, primaryScale[100], primaryScale[800]), naturalRef: { family: 'primary', step: onPrimaryStep }, editable: true, compact: true, impliedFamily: 'primary' },
+        { key: 'primary', label: 'Primary', fallbackHex: primaryScale[400], naturalRef: null, editable: false },
+        { key: 'primaryContainer', label: 'Primary Container', fallbackHex: primaryBase, naturalRef: { family: 'primary', step: 400 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
+        { key: 'onPrimary', label: 'On Primary Container', fallbackHex: pickAccessibleTextColor(primaryBase, primaryScale[100], primaryScale[800]), naturalRef: { family: 'primary', step: onPrimaryStep }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
+        { key: 'primaryContainerVariant', label: 'Primary Container Variant', fallbackHex: primaryScale[isDark ? 700 : 100], naturalRef: { family: 'primary', step: isDark ? 700 : 100 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
+        { key: 'onPrimaryContainerVariant', label: 'On Primary Container Variant', fallbackHex: primaryScale[isDark ? 50 : 900], naturalRef: { family: 'primary', step: isDark ? 50 : 900 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
       ],
       secondary: [
-        { key: 'secondary', label: 'Secondary', fallbackHex: secondaryBase, naturalRef: null, editable: false },
-        { key: 'onSecondary', label: 'On Secondary', fallbackHex: pickAccessibleTextColor(secondaryBase, secondaryScale[100], secondaryScale[800]), naturalRef: { family: 'secondary', step: onSecondaryStep }, editable: true, compact: true, impliedFamily: 'secondary' },
+        { key: 'secondary', label: 'Secondary', fallbackHex: secondaryScale[400], naturalRef: null, editable: false },
+        { key: 'secondaryContainer', label: 'Secondary Container', fallbackHex: secondaryBase, naturalRef: { family: 'secondary', step: 400 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
+        { key: 'onSecondary', label: 'On Secondary Container', fallbackHex: pickAccessibleTextColor(secondaryBase, secondaryScale[100], secondaryScale[800]), naturalRef: { family: 'secondary', step: onSecondaryStep }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
+        { key: 'secondaryContainerVariant', label: 'Secondary Container Variant', fallbackHex: secondaryScale[isDark ? 700 : 100], naturalRef: { family: 'secondary', step: isDark ? 700 : 100 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
+        { key: 'onSecondaryContainerVariant', label: 'On Secondary Container Variant', fallbackHex: secondaryScale[isDark ? 50 : 900], naturalRef: { family: 'secondary', step: isDark ? 50 : 900 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
       ],
       neutral: [
         { key: 'background', label: 'Background', fallbackHex: isDark ? BLACK : WHITE, naturalRef: isDark ? { family: 'black' } : { family: 'white' }, editable: true, sitePersisted: true },
@@ -676,13 +694,14 @@ function retintNeutralDefs(neutralDefs, monoFamily, primaryScale, secondaryScale
 // designation typed under one tint theme lands in that tint's own slot on
 // the live site instead of colliding with the others'.
 const TINT_THEMES = [
-  { key: 'neutral', label: 'Subtle', monochromatic: false, retintFamily: null },
+  // Subtle and Bold are hidden for now — drop `hidden` to bring them back.
+  { key: 'neutral', label: 'Subtle (single color)', monochromatic: false, retintFamily: null, hidden: true },
   // Straight duplicate of Subtle (see normalizeNeutralTint) with its own override slots.
-  { key: 'neutral-two-tone', label: 'Subtle Two-Tone', monochromatic: false, retintFamily: null },
-  { key: 'primary', label: 'Bold', monochromatic: true, retintFamily: 'primary' },
+  { key: 'neutral-two-tone', label: 'Subtle', monochromatic: false, retintFamily: null },
+  { key: 'primary', label: 'Bold (single color)', monochromatic: true, retintFamily: 'primary', hidden: true },
   // Full Tint (EventWebsitePage.jsx's textScale): surfaces/backgrounds tint
   // with Secondary, text and Outline Variant with Primary.
-  { key: 'full', label: 'Bold Two-Tone', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
+  { key: 'full', label: 'Bold', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
 ]
 
 // GolfStatus's own fixed roles, transcribed straight from
@@ -704,6 +723,8 @@ const TINT_THEMES = [
 // --gs-color-on-secondary, an existing gap in that file — light's white is
 // reused here rather than leaving this one swatch blank.
 const SITE_ROLE_KEYS = new Set([
+  'primaryContainer', 'secondaryContainer', 'onPrimary', 'onSecondary',
+  'primaryContainerVariant', 'onPrimaryContainerVariant', 'secondaryContainerVariant', 'onSecondaryContainerVariant',
   'background', 'onBackground', 'surface', 'onSurface', 'onSurfaceVariant', 'surfaceBright',
   'surfaceContainerLow', 'surfaceContainerHigh', 'surfaceContainerHigest', 'surfaceVariant',
   'outline', 'outlineVariant', 'tertiaryContainer',
@@ -714,9 +735,15 @@ function golfStatusRoleDefs() {
     const isDark = mode === 'dark'
     const roles = [
       { key: 'primary', label: 'Primary', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: null, editable: false },
-      { key: 'onPrimary', label: 'On Primary', fallbackHex: isDark ? golfstatusColors.grey800 : WHITE, naturalRef: isDark ? { family: 'grey', step: 800 } : { family: 'white' }, editable: true },
+      { key: 'primaryContainer', label: 'Primary Container', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
+      { key: 'onPrimary', label: 'On Primary Container', fallbackHex: isDark ? golfstatusColors.grey800 : WHITE, naturalRef: isDark ? { family: 'grey', step: 800 } : { family: 'white' }, editable: true },
+      { key: 'primaryContainerVariant', label: 'Primary Container Variant', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey200, naturalRef: { family: 'grey', step: isDark ? 700 : 200 }, editable: true },
+      { key: 'onPrimaryContainerVariant', label: 'On Primary Container Variant', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
       { key: 'secondary', label: 'Secondary', fallbackHex: isDark ? golfstatusColors.cyan200 : golfstatusColors.cyan700, naturalRef: null, editable: false },
-      { key: 'onSecondary', label: 'On Secondary', fallbackHex: WHITE, naturalRef: { family: 'white' }, editable: true },
+      { key: 'secondaryContainer', label: 'Secondary Container', fallbackHex: isDark ? golfstatusColors.cyan200 : golfstatusColors.cyan700, naturalRef: null, editable: true },
+      { key: 'onSecondary', label: 'On Secondary Container', fallbackHex: WHITE, naturalRef: { family: 'white' }, editable: true },
+      { key: 'secondaryContainerVariant', label: 'Secondary Container Variant', fallbackHex: isDark ? golfstatusColors.cyan800 : golfstatusColors.cyan200, naturalRef: null, editable: true },
+      { key: 'onSecondaryContainerVariant', label: 'On Secondary Container Variant', fallbackHex: isDark ? golfstatusColors.cyan100 : golfstatusColors.cyan800, naturalRef: null, editable: true },
       { key: 'background', label: 'Background', fallbackHex: isDark ? BLACK : WHITE, naturalRef: isDark ? { family: 'black' } : { family: 'white' }, editable: true },
       { key: 'onBackground', label: 'On Background', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
       { key: 'surface', label: 'Surface', fallbackHex: isDark ? golfstatusColors.grey900 : WHITE, naturalRef: isDark ? { family: 'grey', step: 900 } : { family: 'white' }, editable: true },
@@ -748,8 +775,8 @@ function golfStatusRoleDefs() {
 // tab). So the Event Site tab (unlike Color Ramps/Theme, which show the
 // full role list for exploring the whole system) only shows these.
 const EVENT_SITE_USED_KEYS = new Set([
-  'primary', 'onPrimary',
-  'secondary',
+  'primary', 'primaryContainer', 'onPrimary',
+  'secondary', 'secondaryContainer',
   'background', 'onBackground', 'onSurface', 'onSurfaceVariant',
   'surfaceContainerHigh', 'surfaceBright', 'outlineVariant',
 ])
@@ -786,7 +813,7 @@ export const ELEMENT_DEFS = [
   { key: 'headerActionIcons', label: 'Action Icons (cart, theme toggle)', section: 'Header', baseRoleKey: 'onPrimary' },
   { key: 'mobileMenuIcon', label: 'Mobile Menu Icon', section: 'Header', baseRoleKey: 'primary' },
   { key: 'avatarBackground', label: 'Avatar Placeholder Fill', section: 'Header', baseRoleKey: 'outlineVariant' },
-  { key: 'headerBackground', label: 'Header Background', section: 'Header', baseRoleKey: 'primary' },
+  { key: 'headerBackground', label: 'Header Background', section: 'Header', baseRoleKey: 'primaryContainer' },
   { key: 'avatarBorder', label: 'Avatar Border', section: 'Header', baseRoleKey: 'outlineVariant' },
   { key: 'subnavBackground', label: 'Sub-nav Background', section: 'Header', baseRoleKey: 'background' },
   { key: 'subnavBorder', label: 'Sub-nav Border', section: 'Header', baseRoleKey: 'outlineVariant' },
@@ -855,7 +882,7 @@ export const ELEMENT_DEFS = [
   { key: 'donationProgressText', label: 'Progress Bar Percentage', section: 'Donation', baseRoleKey: 'onSurface' },
   { key: 'donationTileBackground', label: 'Amount Tile Background', section: 'Donation', baseRoleKey: 'surfaceBright' },
   { key: 'donationTileText', label: 'Amount Tile Text', section: 'Donation', baseRoleKey: 'onSurface' },
-  { key: 'donationProgressEnd', label: 'Progress Bar (End)', section: 'Donation', baseRoleKey: 'primary' },
+  { key: 'donationProgressFill', label: 'Progress Bar Fill', section: 'Donation', baseRoleKey: 'secondaryContainer' },
 
   { key: 'liveScoringBodyText', label: 'Body Text', section: 'Live Scoring', baseRoleKey: 'onSurface' },
 ]
@@ -945,24 +972,21 @@ const COLOR_TABS = [
 // under one theme only shows up when the site is on that theme.
 const BUTTON_THEMES = [
   { key: 'golfstatus', label: 'Grayscale' },
-  { key: 'neutral', label: 'Subtle' },
-  { key: 'neutral-two-tone', label: 'Subtle Two-Tone' },
-  { key: 'primary', label: 'Bold' },
-  { key: 'full', label: 'Bold Two-Tone' },
+  { key: 'neutral-two-tone', label: 'Subtle' },
+  { key: 'full', label: 'Bold' },
 ]
 
 // What a button part renders as when nothing's been overridden: the tint
 // themes read buttonThemeVars (colorScale.js — the same helper the live
 // site's theme tokens mirror), GolfStatus reads its own fixed brand roles
 // (golfStatusRoleDefs, transcribed from theme.scss).
-function defaultButtonHex(themeKey, mode, color, appearance, part, scales) {
-  if (themeKey === 'golfstatus') {
-    const roles = Object.fromEntries(golfStatusRoleDefs()[mode].map(r => [r.key, r.fallbackHex]))
-    const cap = color === 'primary' ? 'Primary' : 'Secondary'
-    if (part === 'text' && (appearance === 'outline' || appearance === 'transparent')) return roles[color]
-    if (appearance === 'fill') return part === 'bg' ? roles[color] : roles[`on${cap}Fill`]
-    if (appearance === 'subtle') return part === 'bg' ? roles[`${color}Subtle`] : roles[`on${cap}Subtle`]
-    return roles[color]
+function defaultButtonHex(mode, color, appearance, part, scales) {
+  if (color === 'neutral') {
+    const dark = mode === 'dark'
+    const ink = dark ? WHITE : golfstatusColors.grey800
+    if (appearance === 'fill') return part === 'bg' ? ink : dark ? golfstatusColors.grey800 : WHITE
+    if (appearance === 'subtle') return part === 'bg' ? (dark ? golfstatusColors.grey800 : golfstatusColors.grey100) : ink
+    return ink
   }
   const vars = buttonThemeVars(scales.primaryScale, scales.secondaryScale, mode)
   const base = vars[`--gs-color-${color}`]
@@ -976,12 +1000,20 @@ function defaultButtonHex(themeKey, mode, color, appearance, part, scales) {
 // colorScale.js's buttonThemeVars step numbers (base 600/200, Fill text
 // 50/900, Subtle 100/700 with text 900/50), so the dropdown can show the
 // current designation instead of a blank "default".
-function defaultButtonRef(mode, color, appearance, part) {
+function defaultButtonRef(mode, color, appearance, part, scales) {
   const dark = mode === 'dark'
+  if (color === 'neutral') {
+    if (appearance === 'fill') return part === 'bg' ? (dark ? { family: 'white' } : { family: 'grey', step: 800 }) : (dark ? { family: 'grey', step: 800 } : { family: 'white' })
+    if (appearance === 'subtle' && part === 'bg') return { family: 'grey', step: dark ? 800 : 100 }
+    return dark ? { family: 'white' } : { family: 'grey', step: 800 }
+  }
   let step
   if (appearance === 'subtle') step = part === 'bg' ? (dark ? 700 : 100) : (dark ? 50 : 900)
-  else if (appearance === 'fill' && part === 'text') step = dark ? 900 : 50
-  else step = dark ? 200 : 600
+  else if (appearance === 'fill' && part === 'text') {
+    // Same AA pick as buttonThemeVars (colorScale.js).
+    const scale = scales[`${color}Scale`]
+    step = contrastRatio(scale[400], scale[50]) >= contrastRatio(scale[400], scale[900]) ? 50 : 900
+  } else step = 400
   return { family: color, step }
 }
 
@@ -1000,9 +1032,10 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
           <span className="wds-btn-field-swatch wds-btn-field-swatch--static" style={{ backgroundColor: hex }} />
           <select
             className="wds-btn-field-text"
-            value={refToText(override ?? defaultRef)}
+            value={override?.role ? ELEMENT_ROLES.find(r => r.key === override.role)?.label ?? '' : refToText(override ?? defaultRef)}
             onChange={e => {
-              const next = e.target.value ? parseDesignation(e.target.value) : null
+              const roleKey = e.target.value ? parseRoleReference(e.target.value) : null
+              const next = roleKey ? { role: roleKey } : e.target.value ? parseDesignation(e.target.value) : null
               // Picking the built-in designation just clears the override.
               onCommit(!next || (defaultRef && next.family === defaultRef.family && next.step === defaultRef.step) ? null : next)
             }}
@@ -1014,7 +1047,12 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
               <option value="White">White</option>
               <option value="Black">Black</option>
             </optgroup>
-            {['Neutral', 'Primary', 'Secondary'].map(family => (
+            <optgroup label="Theme">
+              {ELEMENT_ROLES.map(role => (
+                <option key={role.key} value={role.label}>{role.label}</option>
+              ))}
+            </optgroup>
+            {['Grey', 'Primary', 'Secondary'].map(family => (
               <optgroup key={family} label={family}>
                 {SCALE_STEPS.map(step => (
                   <option key={step} value={`${family} ${step}`}>{`${family} ${step}`}</option>
@@ -1066,12 +1104,12 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
 
 // One theme + mode + color + appearance: a live button on that mode's
 // backdrop, and its two editable colors.
-function ButtonVariantCell({ themeKey, mode, color, appearance, parts, overrides, onChange, scales }) {
+function ButtonVariantCell({ mode, color, appearance, parts, overrides, onChange, scales }) {
   const effective = {}
   const fields = parts.map(([part, label]) => {
-    const key = buttonOverrideKey(mode, themeKey, color, appearance, part)
+    const key = buttonOverrideKey(mode, color, appearance, part)
     const override = overrides?.[key] ?? null
-    const hex = resolveButtonOverride(override, scales) ?? defaultButtonHex(themeKey, mode, color, appearance, part, scales)
+    const hex = resolveButtonOverride(override, scales, mode) ?? defaultButtonHex(mode, color, appearance, part, scales)
     effective[buttonVarName(color, appearance, part)] = hex
     return (
       <ButtonColorField
@@ -1079,7 +1117,7 @@ function ButtonVariantCell({ themeKey, mode, color, appearance, parts, overrides
         label={label}
         hex={hex}
         override={override}
-        defaultRef={themeKey === 'golfstatus' ? null : defaultButtonRef(mode, color, appearance, part)}
+        defaultRef={defaultButtonRef(mode, color, appearance, part, scales)}
         designationOnly
         onCommit={next =>
           onChange(prev => {
@@ -1145,13 +1183,14 @@ function ButtonStylesSection({ themes, buttonStyles, onChange }) {
       {Object.entries(BUTTON_IDS).map(([id, label]) => {
         const saved = buttonStyles?.[buttonStyleKey(themeKey, id)]
         const [defColor, defAppearance] = BUTTON_DEFAULTS[id]
-        const color = saved?.color ?? `${defColor}-color`
+        // Grayscale only ever uses Grey buttons.
+        const color = themeKey === 'golfstatus' ? 'neutral-color' : saved?.color ?? `${defColor}-color`
         const appearance = saved?.appearance ?? defAppearance
         return (
           <div className="wds-btn-style-row" key={id}>
             <div className="wds-btn-style-name">{label}</div>
             <div className="wds-btn-style-options">
-              {BUTTON_COLORS.map(option => (
+              {BUTTON_COLORS.filter(option => themeKey !== 'golfstatus' || option.key === 'neutral').map(option => (
                 <button
                   key={option.key}
                   type="button"
@@ -1187,37 +1226,34 @@ function ButtonStylesSection({ themes, buttonStyles, onChange }) {
 function ButtonsTab({ themes, overrides, onChange, scales, buttonStyles, onChangeButtonStyles }) {
   return (
     <div className="wds-btn-tab">
-      <ButtonStylesSection themes={themes} buttonStyles={buttonStyles} onChange={onChangeButtonStyles} />
-      {themes.map(theme => (
-        <section className="wds-btn-theme" key={theme.key}>
-          <GSActionBar type="form-header H3" header={theme.label} />
+      {BUTTON_COLORS.map(({ key: color, label: colorLabel }) => (
+        <section className="wds-btn-theme" key={color}>
+          <GSActionBar type="form-header H3" header={colorLabel} />
           <div className="wds-btn-grid">
             <div className="wds-btn-grid-head" />
             <div className="wds-btn-grid-head">Light</div>
             <div className="wds-btn-grid-head">Dark</div>
-            {BUTTON_COLORS.flatMap(({ key: color, label: colorLabel }) =>
-              BUTTON_APPEARANCES.map(({ key: appearance, label: appearanceLabel, parts }) => (
-                <div className="wds-btn-row" key={`${color}-${appearance}`}>
-                  <div className="wds-btn-row-label">{colorLabel} {appearanceLabel}</div>
-                  {['light', 'dark'].map(mode => (
-                    <ButtonVariantCell
-                      key={mode}
-                      themeKey={theme.key}
-                      mode={mode}
-                      color={color}
-                      appearance={appearance}
-                      parts={parts}
-                      overrides={overrides}
-                      onChange={onChange}
-                      scales={scales}
-                    />
-                  ))}
-                </div>
-              ))
-            )}
+            {BUTTON_APPEARANCES.map(({ key: appearance, label: appearanceLabel, parts }) => (
+              <div className="wds-btn-row" key={`${color}-${appearance}`}>
+                <div className="wds-btn-row-label">{colorLabel} {appearanceLabel}</div>
+                {['light', 'dark'].map(mode => (
+                  <ButtonVariantCell
+                    key={mode}
+                    mode={mode}
+                    color={color}
+                    appearance={appearance}
+                    parts={parts}
+                    overrides={overrides}
+                    onChange={onChange}
+                    scales={scales}
+                  />
+                ))}
+              </div>
+            ))}
           </div>
         </section>
       ))}
+      <ButtonStylesSection themes={themes} buttonStyles={buttonStyles} onChange={onChangeButtonStyles} />
     </div>
   )
 }
@@ -1249,6 +1285,13 @@ export default function ColorExplorationFields({
 }) {
   const primaryScale = generateScale(primaryColor)
   const secondaryScale = generateScale(secondaryColor)
+  // Each theme role's hex per mode — what a button part pointing at a role shows.
+  const buttonRoleHexes = Object.fromEntries(
+    Object.entries(liveThemeRoleDefs(primaryScale, secondaryScale)).map(([mode, groups]) => [
+      mode,
+      Object.fromEntries(Object.values(groups).flat().map(r => [r.key, r.fallbackHex])),
+    ])
+  )
   const [activeTab, setActiveTab] = useState(() => {
     const saved = readStored(TAB_STORAGE_KEY)
     return COLOR_TABS.some(tab => tab.key === saved) ? saved : COLOR_TABS[0].key
@@ -1336,7 +1379,7 @@ export default function ColorExplorationFields({
   // Primary under Neutral/Primary Tint, Secondary under Secondary Tint), so
   // a typed-in designation shouldn't leak from one theme's preview into
   // another's the way sharing one scope would.
-  const tintThemes = TINT_THEMES.map(tintTheme => {
+  const tintThemes = TINT_THEMES.filter(tintTheme => !tintTheme.hidden).map(tintTheme => {
     const neutralLightDefs = tintTheme.retintFamily
       ? retintNeutralDefs(baseThemeDefs.light.neutral, tintTheme.retintFamily, primaryScale, secondaryScale, tintTheme.textFamily)
       : baseThemeDefs.light.neutral
@@ -1414,25 +1457,17 @@ export default function ColorExplorationFields({
   const resolveElementDesignable = (def, mode, roleList, tintKey) => {
     // Assignments are shared by every theme (see setElementAssignment), so
     // GolfStatus's slot is the one source of truth all tiles read from —
-    // except Subtle Two-Tone, which keeps its own so it can diverge.
+    // except Subtle, which keeps its own so it can diverge.
     const storageKey = `${mode}-${tintKey}-${def.key}`
     const fallbackRole = roleList.find(item => item.key === def.baseRoleKey)
-    // Light-mode header (EventWebsitePage.jsx's --es-header-ink/-on-ink,
-    // .es-header-bar) isn't Primary/On Primary on a tinted theme: it's the
-    // ink step (Primary 800; grey-800 for Neutral Tint) with white text.
-    // GolfStatus and dark mode read Primary/On Primary roles; dark mode
-    // inverts the pairing (.dark .es-header-bar).
+    // The header reads Primary Container / On Primary Container (its
+    // baseRoleKeys) in every theme; only the fixed GolfStatus theme's dark
+    // mode inverts the pairing (see EventWebsitePage.jsx's headerStyle).
     const roleItem = key => roleList.find(item => item.key === key)
     const HEADER_TEXT_KEYS = ['headerIcon', 'headerEventName', 'headerActionIcons']
     let headerDefault
-    if (mode === 'light' && tintKey !== 'golfstatus') {
-      if (tintKey === 'neutral' || tintKey === 'neutral-two-tone') {
-        // Neutral Tint keeps the plain Primary/On Primary header.
-      } else if (def.key === 'headerBackground') {
-        headerDefault = { hex: primaryScale[800], caption: 'Primary 800' }
-      } else if (HEADER_TEXT_KEYS.includes(def.key)) headerDefault = { hex: WHITE, caption: 'White' }
-    } else if (mode === 'dark') {
-      const source = def.key === 'headerBackground' ? roleItem('onPrimary') : HEADER_TEXT_KEYS.includes(def.key) ? roleItem('primary') : null
+    if (mode === 'dark' && tintKey === 'golfstatus') {
+      const source = def.key === 'headerBackground' ? roleItem('onPrimary') : HEADER_TEXT_KEYS.includes(def.key) ? roleItem('primaryContainer') : null
       if (source) headerDefault = { hex: source.hex, caption: source.designation || source.label }
     }
     const storedRef = elementOverrides?.[storageKey] ?? null
@@ -1501,8 +1536,8 @@ export default function ColorExplorationFields({
     const tokenSpecs = [
       ['primary', { color: 'primary' }],
       ['secondary', { color: 'secondary' }],
-      ['primaryContainer', { backgroundColor: 'primary', color: 'onPrimary' }],
-      ['secondaryContainer', { backgroundColor: 'secondary', color: 'onSecondary' }],
+      ['primaryContainer', { backgroundColor: 'primaryContainer', color: 'onPrimary' }],
+      ['secondaryContainer', { backgroundColor: 'secondaryContainer', color: 'onSecondary' }],
       ['secondaryContainerHigh', null],
       ['background', { backgroundColor: 'background', color: 'onBackground' }],
       ['surface', { backgroundColor: 'surface', color: 'onSurface' }],
@@ -1547,7 +1582,7 @@ export default function ColorExplorationFields({
       const [family, step] = text.split(' ')
       if (family === 'White') return 'white'
       if (family === 'Black') return 'black'
-      return `${family === 'Neutral' ? 'grey' : family.toLowerCase()}${step}`
+      return `${family === 'Grey' ? 'grey' : family.toLowerCase()}${step}`
     }
     // Name a role's color: its designation if it has one, else whichever
     // known palette color / brand scale step matches its hex.
@@ -1585,7 +1620,7 @@ export default function ColorExplorationFields({
       '// reaching 90% of the way to white/black at the end.',
       '//   Tint:  L = L_base + (100 - L_base) x t   (t: 300 = 0.225, 200 = 0.45, 100 = 0.675, 50 = 0.9)',
       '//   Shade: L = L_base x (1 - t)              (t: 500 = 0.18, 600 = 0.36, 700 = 0.54, 800 = 0.72, 900 = 0.9)',
-      '//   Neutral is a fixed palette, not generated.',
+      '//   Grey is a fixed palette, not generated.',
       '//',
       ...rampTable('Primary', primaryColor, primaryScale),
       '//',
@@ -1669,7 +1704,7 @@ export default function ColorExplorationFields({
           <div className="wds-ramps-compare">
             <RampRowLabels />
             <RampGroup
-              label="Neutral"
+              label="Grey"
               picker={<div className="wds-ramp-fixed-note">Fixed palette — not editable</div>}
               light={neutralItems}
               dark={neutralItems}
@@ -1744,7 +1779,7 @@ export default function ColorExplorationFields({
                             value={value}
                             placeholder={placeholder}
                             onCommit={text => setElementAssignment(def, text, separate)}
-                            hint={separate ? 'Subtle Two-Tone only' : ELEMENT_DESIGNATION_HINT}
+                            hint={separate ? 'Subtle only' : ELEMENT_DESIGNATION_HINT}
                             options={ROLE_DESIGNATIONS}
                           />
                         )
@@ -1768,7 +1803,7 @@ export default function ColorExplorationFields({
           themes={BUTTON_THEMES}
           overrides={buttonOverrides}
           onChange={onChangeButtonOverrides}
-          scales={{ primaryScale, secondaryScale }}
+          scales={{ primaryScale, secondaryScale, roleHexes: buttonRoleHexes }}
           buttonStyles={buttonStyles}
           onChangeButtonStyles={onChangeButtonStyles}
         />

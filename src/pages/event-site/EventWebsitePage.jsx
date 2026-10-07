@@ -111,8 +111,11 @@ import './EventWebsitePage.scss'
 // customThemeStyle's inline overrides, so it shows the base GolfStatus
 // brand colors (theme.scss's grey-800/cyan-700) instead of this event's own
 // saved Primary/Secondary.
-const TINT_OPTIONS = ['golfstatus', 'neutral', 'neutral-two-tone', 'primary', 'full']
-const TINT_LABELS = { golfstatus: 'Grayscale', neutral: 'Subtle', 'neutral-two-tone': 'Subtle Two-Tone', primary: 'Bold', secondary: 'Secondary Theme', full: 'Bold Two-Tone' }
+// Subtle ('neutral') and Bold ('primary') are hidden for now — a saved one
+// shows as its Two-Tone sibling. Add them back here to restore them.
+const TINT_OPTIONS = ['golfstatus', 'neutral-two-tone', 'full']
+const VISIBLE_TINT = { neutral: 'neutral-two-tone', primary: 'full' }
+const TINT_LABELS = { golfstatus: 'Grayscale', neutral: 'Subtle (single color)', 'neutral-two-tone': 'Subtle', primary: 'Bold (single color)', secondary: 'Secondary Theme', full: 'Bold' }
 const THEME_NAMES = ['default', 'golfstatus']
 
 // What `.gs-theme-${x}` class each THEME_NAMES entry actually renders —
@@ -206,6 +209,12 @@ const DEFAULT_NEUTRAL_TOKENS = {
 const ROLE_TO_CSS_VAR = {
   primaryContainer: '--gs-color-primary',
   secondaryContainer: '--gs-color-secondary',
+  onPrimary: '--gs-color-on-primary',
+  onSecondary: '--gs-color-on-secondary',
+  primaryContainerVariant: '--gs-color-primary-subtle',
+  onPrimaryContainerVariant: '--gs-color-on-primary-subtle',
+  secondaryContainerVariant: '--gs-color-secondary-subtle',
+  onSecondaryContainerVariant: '--gs-color-on-secondary-subtle',
   background: '--gs-color-background',
   onBackground: '--gs-color-on-background',
   surface: '--gs-color-surface',
@@ -299,7 +308,7 @@ const ELEMENT_TO_CSS_VAR = {
   donationTileBackground: '--es-el-donation-tile-background',
   donationTileText: '--es-el-donation-tile-text',
   donationGoalLabel: '--es-el-donation-goal-label',
-  donationProgressEnd: '--es-el-donation-progress-end',
+  donationProgressFill: '--es-el-donation-progress-fill',
   liveScoringBodyText: '--es-el-live-scoring-body-text',
 }
 
@@ -317,6 +326,13 @@ const ROLE_KEY_TO_LIVE_CSS_VAR = {
   onPrimary: '--gs-color-on-primary',
   secondary: '--gs-color-secondary',
   onSecondary: '--gs-color-on-secondary',
+  // Container roles are the base Primary/Secondary colors.
+  primaryContainer: '--gs-color-primary',
+  secondaryContainer: '--gs-color-secondary',
+  primaryContainerVariant: '--gs-color-primary-subtle',
+  onPrimaryContainerVariant: '--gs-color-on-primary-subtle',
+  secondaryContainerVariant: '--gs-color-secondary-subtle',
+  onSecondaryContainerVariant: '--gs-color-on-secondary-subtle',
   background: '--gs-color-background',
   onBackground: '--gs-color-on-background',
   surface: '--gs-color-surface',
@@ -584,7 +600,7 @@ export default function EventWebsitePage() {
   // deliberately excludes it from what gets persisted), so a refresh always
   // lands back on the saved design again. monoScale below is what answers
   // "which color"; this is only "is it on".
-  const [tint, setTint] = useState(siteStyle.neutralTint)
+  const [tint, setTint] = useState(VISIBLE_TINT[siteStyle.neutralTint] ?? siteStyle.neutralTint)
   const monochromatic = normalizeNeutralTint(tint) !== 'neutral' && tint !== 'golfstatus'
   // The GolfStatus Default option is the fixed .gs-theme-golfstatus preset
   // rather than a tint of the saved site style.
@@ -615,10 +631,6 @@ export default function EventWebsitePage() {
   // hardcoded Secondary progress bar below.
   // Full Tint: surfaces/backgrounds tint with Secondary (monoScale), text and
   // outline roles with Primary (textScale) — a combination of both.
-  // GolfStatus Default theme's progress bar is fixed cyan 300-600.
-  const progressScale = themeName === 'golfstatus'
-    ? { 300: golfstatusColors.cyan300, 600: golfstatusColors.cyan600 }
-    : primaryScale
   const textScale = tint === 'full' ? primaryScale : monoScale
   const ctaColor = tint === 'secondary' ? 'secondary-color' : 'primary-color'
   // Props for one named button: its id (what the right-click menu edits) plus
@@ -627,6 +639,8 @@ export default function EventWebsitePage() {
   // customization, ignored until a style's been saved on a premium tournament.
   const btn = (buttonId, color, appearance) => {
     const saved = isPremium && hasSavedStyle ? siteStyle.buttonStyles?.[buttonStyleKey(tint, buttonId)] : null
+    // Grayscale only ever uses Grey buttons.
+    if (tint === 'golfstatus') return { buttonId, color: 'neutral-color', appearance: saved?.appearance ?? appearance }
     return { buttonId, color: saved?.color ?? color, appearance: saved?.appearance ?? appearance }
   }
 
@@ -644,8 +658,10 @@ export default function EventWebsitePage() {
   // --gs-color-primary/-secondary itself (see customThemeStyle below), so
   // the header/active-tab accent moves with this same step too — the real
   // theme system has no separate "just the buttons" token.
-  const primaryBase = primaryScale[themeMode === 'dark' ? 200 : 600]
-  const secondaryBase = secondaryScale[themeMode === 'dark' ? 200 : 600]
+  // Primary/Secondary are the chosen colors themselves (step 400), the same
+  // in light and dark mode.
+  const primaryBase = primaryScale[400]
+  const secondaryBase = secondaryScale[400]
 
   const customThemeStyle = themeName !== 'default' || !isPremium || !hasSavedStyle ? undefined : {
     '--gs-color-primary': primaryBase,
@@ -659,8 +675,8 @@ export default function EventWebsitePage() {
     // Dark mode's Fill background is a light tint (see primaryBase/
     // secondaryBase above, step 200) so its text needs to be dark (900),
     // not light (50) the way light mode's step-400 background needs.
-    '--gs-color-on-primary-fill': primaryScale[themeMode === 'dark' ? 900 : 50],
-    '--gs-color-on-secondary-fill': secondaryScale[themeMode === 'dark' ? 900 : 50],
+    '--gs-color-on-primary-fill': pickAccessibleTextColor(primaryBase, primaryScale[50], primaryScale[900]),
+    '--gs-color-on-secondary-fill': pickAccessibleTextColor(secondaryBase, secondaryScale[50], secondaryScale[900]),
     '--gs-color-primary-subtle': primarySubtleBg,
     '--gs-color-on-primary-subtle': primaryScale[themeMode === 'dark' ? 50 : 900],
     '--gs-color-secondary-subtle': secondarySubtleBg,
@@ -684,15 +700,6 @@ export default function EventWebsitePage() {
     '--gs-color-on-background': textScale[themeMode === 'dark' ? 50 : 800],
     '--gs-color-on-surface': textScale[themeMode === 'dark' ? 50 : 800],
     '--gs-color-on-surface-variant': textScale[themeMode === 'dark' ? 100 : 800],
-    // Light-mode header bar: the dark ink step (800) instead of the raw
-    // primary, same as the preview mockup's header (EventSiteDeviceMockup.jsx
-    // --edm-ink). Dark mode keeps its own inverted header (.dark
-    // .es-header-bar).
-    // Neutral Tint skips this and keeps the plain Primary/On Primary header.
-    ...(themeMode === 'light' && monochromatic && {
-      '--es-header-ink': textScale[800],
-      '--es-header-on-ink': golfstatusColors.white,
-    }),
     ...(monochromatic &&
       Object.fromEntries(
         Object.entries(DEFAULT_NEUTRAL_TOKENS[themeMode]).map(([token, hex]) => [
@@ -770,9 +777,15 @@ export default function EventWebsitePage() {
   // that theme has no customThemeStyle of its own (it stays the fixed brand
   // preset), so these `--gs-btn-*` variables are layered on separately.
   const buttonStyle = isPremium && hasSavedStyle
-    ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, tint, { primaryScale, secondaryScale })
+    ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, { primaryScale, secondaryScale })
     : {}
-  const extraStyle = { ...roleStyle, ...elementStyle, ...buttonStyle }
+  // The header always reads Primary Container / On Primary Container, so it
+  // matches its designations. The fixed GolfStatus theme's dark Primary is
+  // white, so it keeps the inverted (dark bar, light text) header.
+  const headerStyle = themeName === 'golfstatus' && themeMode === 'dark'
+    ? { '--es-header-ink': 'var(--gs-color-on-primary)', '--es-header-on-ink': 'var(--gs-color-primary)' }
+    : {}
+  const extraStyle = { ...roleStyle, ...elementStyle, ...buttonStyle, ...headerStyle }
   const pageThemeStyle = Object.keys(extraStyle).length ? { ...customThemeStyle, ...extraStyle } : customThemeStyle
 
   const sponsorsByTier = SPONSOR_TIERS.map(tier => ({
@@ -1027,7 +1040,7 @@ export default function EventWebsitePage() {
               value={eventSite.donationRaised}
               max={eventSite.donationGoal}
               trackStyle={{
-                background: `linear-gradient(90deg, ${progressScale[300]}, var(--es-el-donation-progress-end, ${progressScale[600]}))`,
+                background: 'var(--es-el-donation-progress-fill, var(--gs-color-secondary))',
               }}
             />
             <GSItemList

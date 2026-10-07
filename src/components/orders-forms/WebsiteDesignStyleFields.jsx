@@ -187,7 +187,7 @@ function ColorRampSquares({ color, mode }) {
 // each with its own default swatches / color bar / ramps stacked under its
 // input (HexColorField). `added` tracks which slots the admin has opened,
 // independent of whether they've picked a color yet.
-function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrimaryColor, secondaryColor, onChangeSecondaryColor, onRemovePrimary, onRemoveSecondary }) {
+function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrimaryColor, primaryIsSet, secondaryColor, onChangeSecondaryColor, secondaryIsSet, onRemovePrimary, onRemoveSecondary }) {
   return (
     <div className="wds-scale-row">
       <div className="wds-hex-inputs">
@@ -195,7 +195,7 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
           label="Primary Color"
           color={primaryColor}
           onChangeColor={onChangePrimaryColor}
-          showEmpty={primaryColor === DEFAULT_EVENT_SITE_STYLE.primaryColor}
+          showEmpty={!primaryIsSet}
           onRemove={onRemovePrimary}
           onPickPair={secondaryAdded ? undefined : onPickPair}
         />
@@ -204,7 +204,7 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
             label="Secondary Color"
             color={secondaryColor}
             onChangeColor={onChangeSecondaryColor}
-            showEmpty={secondaryColor === DEFAULT_EVENT_SITE_STYLE.secondaryColor}
+            showEmpty={!secondaryIsSet}
             onRemove={onRemoveSecondary}
           />
         )}
@@ -215,10 +215,10 @@ function ColorsSection({ secondaryAdded, onPickPair, primaryColor, onChangePrima
 
 const NEUTRAL_MODE_OPTIONS = [
   { label: 'Grayscale', value: 'golfstatus' },
-  { label: 'Subtle', value: 'neutral' },
-  { label: 'Subtle Two-Tone', value: 'neutral-two-tone' },
-  { label: 'Bold', value: 'primary' },
-  { label: 'Bold Two-Tone', value: 'full' },
+  { label: 'Subtle (single color)', value: 'neutral' },
+  { label: 'Subtle', value: 'neutral-two-tone' },
+  { label: 'Bold (single color)', value: 'primary' },
+  { label: 'Bold', value: 'full' },
 ]
 
 // Which themes each color setup unlocks: nothing picked -> Grayscale only;
@@ -226,11 +226,12 @@ const NEUTRAL_MODE_OPTIONS = [
 // Two-Tone variants in place of the single-color ones.
 function availableThemeValues(hasPrimary, hasSecondary) {
   if (!hasPrimary) return ['golfstatus']
-  return hasSecondary ? ['golfstatus', 'neutral-two-tone', 'full'] : ['golfstatus', 'neutral', 'primary']
+  // Subtle and Bold are hidden for now (NEUTRAL_MODE_OPTIONS still defines them).
+  return ['golfstatus', 'neutral-two-tone', 'full']
 }
 
 // A saved tint that the current colors no longer offer shows as its nearest
-// available sibling (Subtle <-> Subtle Two-Tone, Bold <-> Bold Two-Tone).
+// available sibling (Subtle <-> Subtle, Bold <-> Bold).
 function coerceTint(tint, allowed) {
   if (allowed.includes(tint)) return tint
   if (allowed.length === 1) return allowed[0]
@@ -266,12 +267,15 @@ function NeutralSection({ primaryColor, secondaryColor, neutralTint, onChangeNeu
   const tintColor = neutralTint === 'primary' ? primaryColor : neutralTint === 'secondary' ? secondaryColor : null // (Full Theme has no single ramp)
   return (
     <div className="wds-scale-row">
-      <GSRadioGroup
-        isLtr
-        options={options}
-        selectedOption={options.find(o => o.value === neutralTint)}
-        selectionChanged={option => onChangeNeutralTint(option.value)}
-      />
+      {/* Nothing to choose until a color unlocks a second theme. */}
+      {options.length > 1 && (
+        <GSRadioGroup
+          isLtr
+          options={options}
+          selectedOption={options.find(o => o.value === neutralTint)}
+          selectionChanged={option => onChangeNeutralTint(option.value)}
+        />
+      )}
       {SHOW_NEUTRAL_RAMPS && (
         <div className="wds-colors-tile">
           {tintColor ? (
@@ -325,12 +329,24 @@ export default function WebsiteDesignStyleFields({
   onChangeThemeOverrides,
   saveCount,
 }) {
-  const primaryIsSet = primaryColor !== DEFAULT_EVENT_SITE_STYLE.primaryColor
-  const secondaryIsSet = secondaryColor !== DEFAULT_EVENT_SITE_STYLE.secondaryColor
+  // A color equal to the GolfStatus default reads as "unset", but a starter
+  // pair can equal that default exactly (#C0392B + #2A9BA3) — so a pick made
+  // here also counts as set, tracked separately from the value itself.
+  const [primaryPicked, setPrimaryPicked] = useState(false)
+  const [secondaryPicked, setSecondaryPicked] = useState(false)
+  const primaryIsSet = primaryPicked || primaryColor !== DEFAULT_EVENT_SITE_STYLE.primaryColor
+  // Until a separate Secondary is picked it mirrors Primary (see
+  // changePrimary), so a Secondary equal to Primary reads as unset too.
+  const secondaryIsSet = secondaryPicked || (secondaryColor !== DEFAULT_EVENT_SITE_STYLE.secondaryColor && secondaryColor !== primaryColor)
   const [secondaryAdded, setSecondaryAdded] = useState(secondaryIsSet)
   // A color set from outside (e.g. loaded from a saved style) always shows.
   const showSecondary = secondaryAdded || secondaryIsSet
-  const addColor = () => setSecondaryAdded(true)
+  // Add Color starts the Secondary off as the existing Primary.
+  const addColor = () => {
+    setSecondaryPicked(true)
+    onChangeSecondaryColor(primaryColor)
+    setSecondaryAdded(true)
+  }
   // An empty Secondary input that was opened but never given a color goes
   // away once the style is saved.
   const firstSave = useRef(saveCount)
@@ -342,17 +358,31 @@ export default function WebsiteDesignStyleFields({
   const canSwap = showSecondary
   const canReset = primaryIsSet || showSecondary || neutralTint !== DEFAULT_EVENT_SITE_STYLE.neutralTint
 
+  const changePrimary = hex => {
+    setPrimaryPicked(true)
+    onChangePrimaryColor(hex)
+    // Secondary follows Primary until it's set separately.
+    if (!secondaryPicked) onChangeSecondaryColor(hex)
+  }
+  const changeSecondary = hex => {
+    setSecondaryPicked(true)
+    onChangeSecondaryColor(hex)
+  }
+
   const pickPair = (primary, secondary) => {
-    onChangePrimaryColor(primary)
-    onChangeSecondaryColor(secondary)
+    changePrimary(primary)
+    changeSecondary(secondary)
     setSecondaryAdded(true)
   }
 
   const removePrimary = () => {
+    setPrimaryPicked(false)
     onChangePrimaryColor(DEFAULT_EVENT_SITE_STYLE.primaryColor)
+    if (!secondaryPicked) onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
   }
   const removeSecondary = () => {
-    onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
+    setSecondaryPicked(false)
+    onChangeSecondaryColor(primaryIsSet ? primaryColor : DEFAULT_EVENT_SITE_STYLE.secondaryColor)
     setSecondaryAdded(false)
     // Two-Tone themes need both colors — drop back to the single-color sibling.
     if (neutralTint === 'full') onChangeNeutralTint('primary')
@@ -360,6 +390,8 @@ export default function WebsiteDesignStyleFields({
   }
 
   const resetColors = () => {
+    setPrimaryPicked(false)
+    setSecondaryPicked(false)
     onChangePrimaryColor(DEFAULT_EVENT_SITE_STYLE.primaryColor)
     onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
     onChangeNeutralTint(DEFAULT_EVENT_SITE_STYLE.neutralTint)
@@ -413,9 +445,11 @@ export default function WebsiteDesignStyleFields({
                 secondaryAdded={showSecondary}
                 onPickPair={pickPair}
                 primaryColor={primaryColor}
-                onChangePrimaryColor={onChangePrimaryColor}
+                onChangePrimaryColor={changePrimary}
+                primaryIsSet={primaryIsSet}
                 secondaryColor={secondaryColor}
-                onChangeSecondaryColor={onChangeSecondaryColor}
+                onChangeSecondaryColor={changeSecondary}
+                secondaryIsSet={secondaryIsSet}
                 onRemovePrimary={removePrimary}
                 onRemoveSecondary={removeSecondary}
               />

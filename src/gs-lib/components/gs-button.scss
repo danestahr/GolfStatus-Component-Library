@@ -228,6 +228,26 @@ gs-button {
     // (EventWebsitePage.scss), which stays AA-picked independently.
     // Each reads a dedicated `--gs-btn-*` override first (Color Exploration's
     // Buttons tab, data/eventSiteButtons.js), falling back to the roles above.
+    // Neutral — greys from the surface/on-surface roles, same override hooks.
+    &.color-neutral-color {
+      &.style-fill {
+        background: var(--gs-btn-neutral-fill-bg, var(--gs-color-on-surface));
+        color: var(--gs-btn-neutral-fill-text, var(--gs-color-surface));
+      }
+      &.style-outline {
+        background: transparent;
+        border: 2px solid var(--gs-btn-neutral-outline-border, var(--gs-color-on-surface));
+        color: var(--gs-btn-neutral-outline-text, var(--gs-color-on-surface));
+      }
+      &.style-subtle {
+        background: var(--gs-btn-neutral-subtle-bg, var(--gs-color-surface-variant));
+        color: var(--gs-btn-neutral-subtle-text, var(--gs-color-on-surface-variant));
+      }
+      &.style-transparent {
+        background: transparent;
+        color: var(--gs-btn-neutral-transparent-text, var(--gs-color-on-surface));
+      }
+    }
     &.color-primary-color {
       &.style-fill {
         background: var(--gs-btn-primary-fill-bg, var(--gs-color-primary));

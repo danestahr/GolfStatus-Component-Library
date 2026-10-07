@@ -1,3 +1,4 @@
+import { pickAccessibleTextColor } from './contrast'
 // Generates a 50-900 tint/shade scale from a single base ("400") color.
 // Hue and saturation are held constant; only lightness moves — tints blend
 // toward white, shades blend toward black.
@@ -87,25 +88,23 @@ export function buttonThemeVars(primaryScale, secondaryScale, mode) {
   // 200) so it doesn't read as a flat, oversaturated block against a dark
   // background — same convention EventWebsitePage.jsx's own --gs-color-
   // primary/-secondary follow, so the two can't drift apart.
-  const primaryBase = primaryScale[mode === 'dark' ? 200 : 600]
-  const secondaryBase = secondaryScale[mode === 'dark' ? 200 : 600]
+  // Primary/Secondary are the chosen colors themselves (step 400), the same
+  // in light and dark mode.
+  const primaryBase = primaryScale[400]
+  const secondaryBase = secondaryScale[400]
   const primarySubtleBg = primaryScale[mode === 'dark' ? 700 : 100]
   const secondarySubtleBg = secondaryScale[mode === 'dark' ? 700 : 100]
   // Subtle text is pinned opposite its background's mode — 900 in light
   // mode, 50 in dark mode — not AA-picked, same convention EventWebsitePage
   // uses for its own Subtle buttons.
   const subtleTextStep = mode === 'dark' ? 50 : 900
-  // Dark mode's Fill background is a light tint (primaryBase/secondaryBase
-  // above, step 200), so its text needs to be dark (900), not light (50)
-  // the way light mode's step-400 background needs.
-  const fillTextStep = mode === 'dark' ? 900 : 50
   return {
     '--gs-color-primary': primaryBase,
-    '--gs-color-on-primary-fill': primaryScale[fillTextStep],
+    '--gs-color-on-primary-fill': pickAccessibleTextColor(primaryBase, primaryScale[50], primaryScale[900]),
     '--gs-color-primary-subtle': primarySubtleBg,
     '--gs-color-on-primary-subtle': primaryScale[subtleTextStep],
     '--gs-color-secondary': secondaryBase,
-    '--gs-color-on-secondary-fill': secondaryScale[fillTextStep],
+    '--gs-color-on-secondary-fill': pickAccessibleTextColor(secondaryBase, secondaryScale[50], secondaryScale[900]),
     '--gs-color-secondary-subtle': secondarySubtleBg,
     '--gs-color-on-secondary-subtle': secondaryScale[subtleTextStep],
   }

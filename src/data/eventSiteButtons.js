@@ -1,16 +1,20 @@
 import { resolveOverrideHex } from '../gs-lib/helpers/monochromatic'
+import { ELEMENT_ROLES } from './eventSiteElements'
+
+const ROLE_CSS_VARS = Object.fromEntries(ELEMENT_ROLES.map(r => [r.key, r.cssVar]))
 
 // Per-button color riffs typed into Color Exploration's Buttons tab
 // (ColorExplorationFields.jsx) — one Fill/Subtle background + text, one
-// Outline border + text, or just a text color for Transparent, per Primary/Secondary color, per theme, per mode.
+// Outline border + text, or just a text color for Transparent, per Neutral/Primary/Secondary color, per mode (shared by every theme).
 // Stored in the saved event site style as `buttonOverrides`, keyed
-// "mode-theme-color-appearance-part" (e.g. "dark-full-secondary-fill-bg"),
+// "mode-color-appearance-part" (e.g. "dark-secondary-fill-bg"),
 // each a { hex } or a { family, step } scale reference (same shape as
 // themeOverrides — resolved by resolveOverrideHex). EventWebsitePage.jsx
 // turns each into a `--gs-btn-*` custom property that gs-button.scss reads
 // ahead of the shared `--gs-color-*` role tokens, so a button edit never
 // bleeds into the header or anything else reading those roles.
 export const BUTTON_COLORS = [
+  { key: 'neutral', label: 'Grey' },
   { key: 'primary', label: 'Primary' },
   { key: 'secondary', label: 'Secondary' },
 ]
@@ -25,8 +29,7 @@ export const BUTTON_APPEARANCES = [
   { key: 'transparent', label: 'Transparent', parts: [['text', 'Text']] },
 ]
 
-export const buttonOverrideKey = (mode, theme, color, appearance, part) =>
-  `${mode}-${theme}-${color}-${appearance}-${part}`
+export const buttonOverrideKey = (mode, color, appearance, part) => `${mode}-${color}-${appearance}-${part}`
 
 // Named-button style picks are stored per theme so one theme's right-click
 // edit never leaks into another's.
@@ -34,19 +37,24 @@ export const buttonStyleKey = (theme, id) => `${theme}-${id}`
 
 export const buttonVarName = (color, appearance, part) => `--gs-btn-${color}-${appearance}-${part}`
 
-export function resolveButtonOverride(override, scales) {
+// A button part can point at a theme role ({ role: 'surface' }) instead of a
+// color; `scales.roleHexes[mode]` (Color Exploration's preview) resolves it
+// to a hex, while the live site references the role's CSS variable directly.
+export function resolveButtonOverride(override, scales, mode) {
   if (!override) return null
+  if (override.role) return scales?.roleHexes?.[mode]?.[override.role] ?? null
   return override.hex ?? resolveOverrideHex(override, scales)
 }
 
-// Every saved override for one mode + theme as { '--gs-btn-*': hex }, ready
+// Every saved override for one mode as { '--gs-btn-*': hex }, ready
 // to spread into an inline style.
-export function buttonOverrideVars(overrides, mode, theme, scales) {
+export function buttonOverrideVars(overrides, mode, scales) {
   const vars = {}
   BUTTON_COLORS.forEach(({ key: color }) => {
     BUTTON_APPEARANCES.forEach(({ key: appearance, parts }) => {
       parts.forEach(([part]) => {
-        const hex = resolveButtonOverride(overrides?.[buttonOverrideKey(mode, theme, color, appearance, part)], scales)
+        const override = overrides?.[buttonOverrideKey(mode, color, appearance, part)]
+        const hex = override?.role ? (ROLE_CSS_VARS[override.role] ? `var(${ROLE_CSS_VARS[override.role]})` : null) : resolveButtonOverride(override, scales, mode)
         if (hex) vars[buttonVarName(color, appearance, part)] = hex
       })
     })
