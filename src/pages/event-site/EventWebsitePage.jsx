@@ -41,6 +41,7 @@ import {
   loadHomepageSectionButtons,
 } from '../../data/eventSiteHomepageSections.js'
 import { sponsors, SPONSOR_TIERS } from '../../data/mockSponsors.js'
+import { eventSiteThemeVars } from '../../data/eventSiteThemeVars.js'
 import { loadEventSiteStyle, normalizeNeutralTint, hasEventSiteStyle, saveEventSiteStyle, subscribeEventSiteStyle } from '../../data/eventSiteStyle.js'
 import { loadIsPremium } from '../../data/eventSitePremium.js'
 import { loadEventSitePreview, saveEventSitePreview } from '../../data/eventSitePreview.js'
@@ -165,189 +166,6 @@ function arrowTile(label, sub) {
   )
 }
 
-// .gs-theme-default's own Neutral values (theme.scss), by mode — the
-// starting point Monochromatic (below) substitutes away from. Must be kept
-// in sync with that file by hand, same as WebsiteDesignStyleFields.jsx's
-// own copy of this shape (ThemeDefinitionRow's `merged` background/surface/
-// etc.) — there's no single source both a compiled .scss file and this
-// runtime JS can share.
-const DEFAULT_NEUTRAL_TOKENS = {
-  light: {
-    '--gs-color-background': golfstatusColors.white,
-    '--gs-color-surface': golfstatusColors.white,
-    '--gs-color-surface-variant': golfstatusColors.grey50,
-    '--gs-color-surface-container-low': golfstatusColors.white,
-    '--gs-color-surface-container-high': golfstatusColors.grey50,
-    '--gs-color-surface-container-highest': golfstatusColors.grey100,
-    '--gs-color-surface-bright': golfstatusColors.white,
-    '--gs-color-outline': golfstatusColors.grey700,
-    '--gs-color-outline-variant': golfstatusColors.grey100,
-    '--gs-color-placeholder': golfstatusColors.grey300,
-  },
-  dark: {
-    '--gs-color-background': golfstatusColors.black,
-    '--gs-color-surface': golfstatusColors.grey900,
-    '--gs-color-surface-variant': golfstatusColors.grey800,
-    '--gs-color-surface-container-low': golfstatusColors.grey900,
-    '--gs-color-surface-container-high': golfstatusColors.grey800,
-    '--gs-color-surface-container-highest': golfstatusColors.grey700,
-    '--gs-color-surface-bright': golfstatusColors.grey700,
-    '--gs-color-outline': golfstatusColors.white,
-    '--gs-color-outline-variant': golfstatusColors.grey700,
-    // .dark doesn't redefine placeholder in theme.scss, so it stays
-    // .gs-theme-default's own light value even in dark mode.
-    '--gs-color-placeholder': golfstatusColors.grey300,
-  },
-}
-
-// Which of this page's own CSS custom properties each Theme Definitions
-// role (WebsiteDesignStyleFields.jsx's THEME_ROLES) corresponds to — only
-// the roles this page actually themes anything with get an entry; a
-// wds-swatch-hex-input edit to a role missing here (Secondary High,
-// Surface Dim, the Surface Container extremes, Error, Scrim) has nothing
-// live to reflect onto, so it stays a Website Design and Style preview only.
-const ROLE_TO_CSS_VAR = {
-  primaryContainer: '--gs-color-primary',
-  secondaryContainer: '--gs-color-secondary',
-  onPrimary: '--gs-color-on-primary',
-  onSecondary: '--gs-color-on-secondary',
-  primaryContainerVariant: '--gs-color-primary-subtle',
-  onPrimaryContainerVariant: '--gs-color-on-primary-subtle',
-  secondaryContainerVariant: '--gs-color-secondary-subtle',
-  onSecondaryContainerVariant: '--gs-color-on-secondary-subtle',
-  background: '--gs-color-background',
-  onBackground: '--gs-color-on-background',
-  surface: '--gs-color-surface',
-  onSurface: '--gs-color-on-surface',
-  onSurfaceVariant: '--gs-color-on-surface-variant',
-  surfaceBright: '--gs-color-surface-bright',
-  surfaceContainerLow: '--gs-color-surface-container-low',
-  surfaceContainerHigh: '--gs-color-surface-container-high',
-  surfaceContainerHigest: '--gs-color-surface-container-highest',
-  surfaceVariant: '--gs-color-surface-variant',
-  outline: '--gs-color-outline',
-  outlineVariant: '--gs-color-outline-variant',
-  tertiaryContainer: '--gs-color-tertiary-container',
-}
-
-// Color Exploration's own Site Colors tab (ColorExplorationFields.jsx's
-// ELEMENT_DEFS) lets a single named element — the header logo, a section
-// title, one sponsor tile's name, ... — point at a different role than the
-// one it reads by default, independent of every other element sharing that
-// role. Each key here matches an ELEMENT_DEFS entry exactly; the CSS
-// variable it maps to is read (with a fallback to that element's normal
-// `--gs-color-*`/local-alias value) by the selector(s) in
-// EventWebsitePage.scss actually styling that element — see this file's own
-// `var(--es-el-*, ...)` usages there.
-const ELEMENT_TO_CSS_VAR = {
-  pageBackground: '--es-el-page-background',
-  pageTextDefault: '--es-el-page-text-default',
-  sectionBoxBackground: '--es-el-section-box-background',
-  sectionBottomBorder: '--es-el-section-bottom-border',
-  headerIcon: '--es-el-header-icon',
-  headerEventName: '--es-el-header-event-name',
-  headerBackground: '--es-el-header-background',
-  avatarBorder: '--es-el-avatar-border',
-  subnavBackground: '--es-el-subnav-background',
-  subnavBorder: '--es-el-subnav-border',
-  tournamentEventName: '--es-el-tournament-event-name',
-  tournamentDate: '--es-el-tournament-date',
-  tournamentLocation: '--es-el-tournament-location',
-  sidebarBorder: '--es-el-sidebar-border',
-  sectionTitle: '--es-el-section-title',
-  sectionDescription: '--es-el-section-description',
-  arrowTileBackground: '--es-el-arrow-tile-background',
-  arrowTileLabel: '--es-el-arrow-tile-label',
-  arrowTileArrow: '--es-el-arrow-tile-arrow',
-  packageTileIcon: '--es-el-package-tile-icon',
-  additionalPagesSub: '--es-el-additional-pages-sub',
-  sponsorTierHeader: '--es-el-sponsor-tier-header',
-  sponsorTileName: '--es-el-sponsor-tile-name',
-  registrantTileBackground: '--es-el-registrant-tile-background',
-  sponsorFeatureName: '--es-el-sponsor-feature-name',
-  sponsorFeatureDescription: '--es-el-sponsor-feature-description',
-  videoFrameBorder: '--es-el-video-frame-border',
-  imageFrameBorder: '--es-el-image-frame-border',
-  packagesCardText: '--es-el-packages-card-text',
-  soldOutBadgeBackground: '--es-el-sold-out-badge-background',
-  soldOutBadgeText: '--es-el-sold-out-badge-text',
-  cartItemBackground: '--es-el-cart-item-background',
-  cartFormIncompleteBorder: '--es-el-cart-form-incomplete-border',
-  cartFooterBackground: '--es-el-cart-footer-background',
-  cartFooterText: '--es-el-cart-footer-text',
-  cartFooterBorder: '--es-el-cart-footer-border',
-  slideOutBackground: '--es-el-slide-out-background',
-  slideOutText: '--es-el-slide-out-text',
-  slideOutNavBackground: '--es-el-slide-out-nav-background',
-  slideOutBorder: '--es-el-slide-out-border',
-  slideOutFieldBorder: '--es-el-slide-out-field-border',
-  formSectionBackground: '--es-el-form-section-background',
-  formSectionBorder: '--es-el-form-section-border',
-  textFieldBackground: '--es-el-text-field-background',
-  textFieldText: '--es-el-text-field-text',
-  textAreaBackground: '--es-el-text-area-background',
-  textAreaText: '--es-el-text-area-text',
-  textAreaBorder: '--es-el-text-area-border',
-  dropdownBackground: '--es-el-dropdown-background',
-  dropdownText: '--es-el-dropdown-text',
-  dropdownBorder: '--es-el-dropdown-border',
-  toggleOnTrack: '--es-el-toggle-on-track',
-  toggleOffTrack: '--es-el-toggle-off-track',
-  toggleKnob: '--es-el-toggle-knob',
-  fileUploadBackground: '--es-el-file-upload-background',
-  fileUploadBorder: '--es-el-file-upload-border',
-  fileUploadText: '--es-el-file-upload-text',
-  sectionBoxText: '--es-el-section-box-text',
-  avatarBackground: '--es-el-avatar-background',
-  mobileMenuIcon: '--es-el-mobile-menu-icon',
-  headerActionIcons: '--es-el-header-action-icons',
-  packageTileBorder: '--es-el-package-tile-border',
-  donationProgressTrack: '--es-el-donation-progress-track',
-  donationProgressBorder: '--es-el-donation-progress-border',
-  donationProgressText: '--es-el-donation-progress-text',
-  donationTileBackground: '--es-el-donation-tile-background',
-  donationTileText: '--es-el-donation-tile-text',
-  donationGoalLabel: '--es-el-donation-goal-label',
-  donationProgressFill: '--es-el-donation-progress-fill',
-  liveScoringBodyText: '--es-el-live-scoring-body-text',
-}
-
-// EVENT_SITE_USED_KEYS' 11 roles' real `--gs-color-*` variable — every one
-// of them a real custom property this file's own customThemeStyle always
-// sets (directly, or via ROLE_TO_CSS_VAR's own themeOverrides riff above).
-// An element override can alias one of these roles by name (Site Colors'
-// own ELEMENT_DEFS, `{ role: roleKey }`) instead of a literal hex — see the
-// element-override block below, which then just points that element's own
-// --es-el-* variable at `var(${thisRoleVar})` rather than computing a hex,
-// so the element keeps tracking whatever that role itself resolves to
-// (tint, its own override, ...) instead of freezing a snapshot of it.
-const ROLE_KEY_TO_LIVE_CSS_VAR = {
-  primary: '--gs-color-primary',
-  onPrimary: '--gs-color-on-primary',
-  secondary: '--gs-color-secondary',
-  onSecondary: '--gs-color-on-secondary',
-  // Container roles are the base Primary/Secondary colors.
-  primaryContainer: '--gs-color-primary',
-  secondaryContainer: '--gs-color-secondary',
-  primaryContainerVariant: '--gs-color-primary-subtle',
-  onPrimaryContainerVariant: '--gs-color-on-primary-subtle',
-  secondaryContainerVariant: '--gs-color-secondary-subtle',
-  onSecondaryContainerVariant: '--gs-color-on-secondary-subtle',
-  background: '--gs-color-background',
-  onBackground: '--gs-color-on-background',
-  surface: '--gs-color-surface',
-  onSurface: '--gs-color-on-surface',
-  surfaceVariant: '--gs-color-surface-variant',
-  onSurfaceVariant: '--gs-color-on-surface-variant',
-  surfaceContainerLow: '--gs-color-surface-container-low',
-  surfaceContainerHigh: '--gs-color-surface-container-high',
-  surfaceContainerHigest: '--gs-color-surface-container-highest',
-  surfaceBright: '--gs-color-surface-bright',
-  outline: '--gs-color-outline',
-  outlineVariant: '--gs-color-outline-variant',
-  tertiaryContainer: '--gs-color-tertiary-container',
-}
-
 // The page's content scrolls inside App.jsx's <main>, not the window, so
 // scroll resets/restores have to target that container.
 function getScroller(el) {
@@ -469,6 +287,8 @@ export default function EventWebsitePage() {
   // designations in place — written straight back to the saved style, same
   // storage the Website Design and Style screen's Save uses.
   const [ctxMenu, setCtxMenu] = useState(null)
+  // The phone-width hamburger's dropdown (.es-menu-panel).
+  const [menuOpen, setMenuOpen] = useState(false)
   const [pageEl, setPageEl] = useState(null)
   // Applied to whatever's saved right now, not this tab's copy — Color
   // Exploration may have saved since this page loaded.
@@ -644,148 +464,11 @@ export default function EventWebsitePage() {
     return { buttonId, color: saved?.color ?? color, appearance: saved?.appearance ?? appearance }
   }
 
-  // Subtle buttons sit a step lighter than the base color in light mode, a
-  // step darker in dark mode (100/700); their text is pinned opposite —
-  // 900 in light mode, 50 in dark mode — same "fixed step, not AA-picked"
-  // convention as Fill's on-*-fill (step 50) below.
-  const primarySubtleBg = primaryScale[themeMode === 'dark' ? 700 : 100]
-  const secondarySubtleBg = secondaryScale[themeMode === 'dark' ? 700 : 100]
-
-  // Fill/Outline's base color sits noticeably lighter in dark mode (600 ->
-  // 200) so it doesn't read as a flat, oversaturated block against a dark
-  // background — same convention WebsiteDesignStyleFields.jsx's Button
-  // Styles preview follows, so the two can't drift apart. This is also
-  // --gs-color-primary/-secondary itself (see customThemeStyle below), so
-  // the header/active-tab accent moves with this same step too — the real
-  // theme system has no separate "just the buttons" token.
-  // Primary/Secondary are the chosen colors themselves (step 400), the same
-  // in light and dark mode.
-  const primaryBase = primaryScale[400]
-  const secondaryBase = secondaryScale[400]
-
-  const customThemeStyle = themeName !== 'default' || !isPremium || !hasSavedStyle ? undefined : {
-    '--gs-color-primary': primaryBase,
-    // --gs-color-on-primary/-secondary stay AA-picked — the header bar
-    // (EventWebsitePage.scss's .es-header-bar) reads these same tokens for
-    // its own bg/fg pairing, so they can't be pinned to a fixed step.
-    // Fill buttons read the dedicated -fill tokens below instead.
-    '--gs-color-on-primary': pickAccessibleTextColor(primaryBase, primaryScale[100], primaryScale[800]),
-    '--gs-color-secondary': secondaryBase,
-    '--gs-color-on-secondary': pickAccessibleTextColor(secondaryBase, secondaryScale[100], secondaryScale[800]),
-    // Dark mode's Fill background is a light tint (see primaryBase/
-    // secondaryBase above, step 200) so its text needs to be dark (900),
-    // not light (50) the way light mode's step-400 background needs.
-    '--gs-color-on-primary-fill': pickAccessibleTextColor(primaryBase, primaryScale[50], primaryScale[900]),
-    '--gs-color-on-secondary-fill': pickAccessibleTextColor(secondaryBase, secondaryScale[50], secondaryScale[900]),
-    '--gs-color-primary-subtle': primarySubtleBg,
-    '--gs-color-on-primary-subtle': primaryScale[themeMode === 'dark' ? 50 : 900],
-    '--gs-color-secondary-subtle': secondarySubtleBg,
-    '--gs-color-on-secondary-subtle': secondaryScale[themeMode === 'dark' ? 50 : 900],
-    // All page text/icons (section headers, descriptions, tile labels, tile
-    // icons) read one of these three "on-*" text-role tokens — pinning all
-    // three to the same step of monoScale (Primary for Neutral/Primary Tint,
-    // Secondary for Secondary Tint — same scale the Neutral roles below tint
-    // with) gives the whole page one text color that actually follows the
-    // saved Site Style radio instead of always reading Primary, and every
-    // "lighter" text treatment already layers its own opacity on top of
-    // whichever color these tokens resolve to (see EventWebsitePage.scss's
-    // .es-arrow-tile-sub/-arrow, .es-sponsor-feature-description, and
-    // GSPageSection's own description div), so that opacity now lightens
-    // this step instead of on-surface. Flips light (near-900) to dark
-    // (near-50/100) with themeMode, same as theme.scss's own .gs-theme-
-    // default/.dark split for these same three roles (grey-800 vs white/
-    // grey-100) — without this the backgrounds below (monoScale[900] in
-    // dark mode) and this text sat one step apart on the same dark end of
-    // the scale, unreadable.
-    '--gs-color-on-background': textScale[themeMode === 'dark' ? 50 : 800],
-    '--gs-color-on-surface': textScale[themeMode === 'dark' ? 50 : 800],
-    '--gs-color-on-surface-variant': textScale[themeMode === 'dark' ? 100 : 800],
-    ...(monochromatic &&
-      Object.fromEntries(
-        Object.entries(DEFAULT_NEUTRAL_TOKENS[themeMode]).map(([token, hex]) => [
-          token,
-          // Pinned to a fixed step instead of monochromatize()'s usual
-          // hex-based lookup — see OUTLINE_VARIANT_MONO_STEP's own comment
-          // (monochromatic.js) for why Outline Variant needs a fixed step.
-          // Surface Container High gets the same treatment so every
-          // section body (EventWebsitePage.scss's .section-body reads this
-          // token) tints to the same 100 step under Primary/Secondary Tint,
-          // in both light and dark mode, instead of following
-          // monochromatize()'s light/dark-dependent grey-50/grey-800 lookup.
-          token === '--gs-color-outline-variant'
-            ? textScale[OUTLINE_VARIANT_MONO_STEP]
-            : token === '--gs-color-surface-container-high'
-              ? monoScale[OUTLINE_VARIANT_MONO_STEP] // surface scale, matching the preview's card bodies
-              : monochromatize(hex, monoScale),
-        ])
-      )),
-  }
-
-  // Role riffs saved from Color Exploration/Website Design and Style. Applied
-  // under every theme (GolfStatus included) — each is keyed by tint, so the
-  // 'golfstatus' slot holds its own edits.
-  const roleStyle = !isPremium || !hasSavedStyle ? {} : {
-  // Per-swatch riffs saved from the Website Design and Style screen's
-  // Theme Definitions row (see ROLE_TO_CSS_VAR above) — applied last so a
-  // saved override always wins over both the plain and Monochromatic
-  // values above, exactly like it does in that screen's own preview.
-  ...Object.fromEntries(
-    Object.entries(ROLE_TO_CSS_VAR)
-      .map(([roleKey, cssVar]) => {
-        const override = siteStyle.themeOverrides?.[`${themeMode}-${tint}-${roleKey}`]
-        const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
-        return hex ? [cssVar, hex] : null
-      })
-      .filter(Boolean)
-  ),
-  }
-
-  // Applies under every theme (GolfStatus included), unlike customThemeStyle
-  // — overrides are already keyed by tint, so 'golfstatus' has its own set.
-  const elementStyle = !isPremium || !hasSavedStyle ? {} : {
-  // Per-element riffs saved from Color Exploration's own Site Colors tab
-  // (see ELEMENT_TO_CSS_VAR above) — applied last of all so a saved
-  // element override always wins over its role's own value, including a
-  // themeOverrides riff to that same role above (an element override is
-  // more specific — it names one element, not the whole role).
-  ...Object.fromEntries(
-    Object.entries(ELEMENT_TO_CSS_VAR)
-      .map(([elementKey, cssVar]) => {
-        const override = siteStyle.elementOverrides?.[`${themeMode}-${tint}-${elementKey}`]
-        if (!override) return null
-        // A role reference (Site Colors' own vocabulary going forward,
-        // see ROLE_KEY_TO_LIVE_CSS_VAR above) points this element's own
-        // variable straight at that role's live variable — var(...) can
-        // nest — instead of computing a hex, so the element keeps
-        // tracking whatever that role itself resolves to. A legacy
-        // { family, step }/White/Black ref (saved before this screen
-        // switched to role references) still resolves via
-        // resolveOverrideHex.
-        if (override.role) {
-          const roleCssVar = ROLE_KEY_TO_LIVE_CSS_VAR[override.role]
-          return roleCssVar ? [cssVar, `var(${roleCssVar})`] : null
-        }
-        const hex = resolveOverrideHex(override, { primaryScale, secondaryScale })
-        return hex ? [cssVar, hex] : null
-      })
-      .filter(Boolean)
-  ),
-  }
-
-  // Button color riffs saved from Color Exploration's Buttons tab
-  // (data/eventSiteButtons.js) apply under every theme, GolfStatus included —
-  // that theme has no customThemeStyle of its own (it stays the fixed brand
-  // preset), so these `--gs-btn-*` variables are layered on separately.
-  const buttonStyle = isPremium && hasSavedStyle
-    ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, { primaryScale, secondaryScale })
-    : {}
-  // The header always reads Primary Container / On Primary Container, so it
-  // matches its designations. The fixed GolfStatus theme's dark Primary is
-  // white, so it keeps the inverted (dark bar, light text) header.
-  const headerStyle = themeName === 'golfstatus' && themeMode === 'dark'
-    ? { '--es-header-ink': 'var(--gs-color-on-primary)', '--es-header-on-ink': 'var(--gs-color-primary)' }
-    : {}
-  const extraStyle = { ...roleStyle, ...elementStyle, ...buttonStyle, ...headerStyle }
+  // Every theme variable for this tint + mode — shared with the previews
+  // (data/eventSiteThemeVars.js).
+  const { customThemeStyle, extraStyle } = eventSiteThemeVars({
+    siteStyle, tint, themeMode, normalizeNeutralTint, enabled: isPremium && hasSavedStyle,
+  })
   const pageThemeStyle = Object.keys(extraStyle).length ? { ...customThemeStyle, ...extraStyle } : customThemeStyle
 
   const sponsorsByTier = SPONSOR_TIERS.map(tier => ({
@@ -1168,7 +851,26 @@ export default function EventWebsitePage() {
               />
             </div>
             <div className="es-menu-button">
-              <GSButton buttonIcon={faBars} isFocusable aria-label="Menu" />
+              <GSButton buttonIcon={faBars} isFocusable aria-label="Menu" onClick={() => setMenuOpen(open => !open)} />
+              {menuOpen && (
+                <div className="es-menu-panel" role="menu">
+                  {subNavItems.map(item => (
+                    <button
+                      key={item}
+                      type="button"
+                      role="menuitem"
+                      className={`es-menu-item${item === activeTab && !showCart ? ' is-active' : ''}`}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        if (item === 'Auction') window.open(AUCTION_URL, '_blank', 'noopener,noreferrer')
+                        else goToView({ tab: item, cart: false })
+                      }}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

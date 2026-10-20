@@ -17,5 +17,16 @@
   // just reordering.
   &--reordering {
     user-select: none;
+
+    // Every tile's grip collapses away for the duration of a drag
+    // (including the one being dragged) so each card widens into its
+    // space — the transition lives on `.ehs-drag-handle`. The hook's
+    // listeners are on `window`, so the handle isn't needed mid-drag.
+    .ehs-drag-handle {
+      grid-template-columns: 0fr;
+      margin-left: -$x-large-pad;
+      opacity: 0;
+      pointer-events: none;
+    }
   }
 }

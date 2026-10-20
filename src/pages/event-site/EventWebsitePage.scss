@@ -90,23 +90,20 @@
   z-index: 10;
 }
 
-// bg/text read Primary/On Primary, matching .es-cart-button/.es-theme-toggle/
-// .es-theme-picker below (already on-primary) — this bar no longer forces
-// gs-lib's `.dark` class on itself the way it used to, so it now actually
-// varies with the active theme (see gs-lib/styles/theme.scss) instead of
-// being hardcoded black/white regardless of theme. The sub-nav below stays
-// on the page's own
-// light/dark background/on-surface.
+// bg/text read the Primary Container designation's pair (Theme.js
+// primaryContainer: backgroundColor + color), matching .es-cart-button/
+// .es-theme-toggle/.es-theme-picker below — this bar no longer forces
+// gs-lib's `.dark` class on itself, so it varies with the active theme (see
+// gs-lib/styles/theme.scss) instead of being hardcoded black/white. The
+// sub-nav below stays on the page's own light/dark background.
 //
 // --es-header-bg/--es-header-fg are local aliases (not gs-lib tokens) so
-// dark mode can invert the pairing — background becomes on-primary, text
-// becomes primary — in one place, and have every descendant that colors
-// itself off the header (.es-brand-logo, .es-cart-button, .es-theme-toggle,
-// .es-theme-picker below) inherit the flip automatically instead of each
-// needing its own `.dark` override.
+// every descendant that colors itself off the header (.es-brand-logo,
+// .es-cart-button, .es-theme-toggle, .es-theme-picker below) follows the
+// pair without each needing its own override.
 .es-header-bar {
-  --es-header-bg: var(--es-header-ink, var(--gs-color-primary));
-  --es-header-fg: var(--es-header-on-ink, var(--gs-color-on-primary));
+  --es-header-bg: var(--gs-color-primary-container);
+  --es-header-fg: var(--gs-color-on-primary-container);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -169,7 +166,7 @@
 // GSButton with no `type` prop renders a literal "undefined" class (its
 // class string is built straight from the raw `type` prop) — the button's
 // own base styles are already an unstyled/transparent background, so this
-// just adds the icon's color. --es-header-fg (not --gs-color-on-primary
+// just adds the icon's color. --es-header-fg (not --gs-color-on-primary-container
 // directly) so this inverts along with the rest of the header in dark mode
 // — see .es-header-bar above.
 .es-cart-button {
@@ -218,6 +215,7 @@
 // at desktop/tablet widths instead of this menu).
 .es-menu-button {
   display: none;
+  position: relative;
 
   @include large-phone {
     display: inline-flex;
@@ -233,6 +231,39 @@
   }
 }
 
+// The dropdown the hamburger opens — one Menu container designation: its
+// background and the text on it come from the same pair (Site Colors'
+// "Menu Container").
+.es-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 200px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  background: var(--es-el-menu-background, var(--gs-color-menu-container));
+  color: var(--es-el-menu-text, var(--gs-color-on-menu-container));
+
+  .es-menu-item {
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover, &.is-active { background: color-mix(in srgb, currentColor 12%, transparent); }
+    &.is-active { font-weight: 700; }
+  }
+}
+
 // GSAppNavigationItem is a vertical sidebar link (left-border active accent,
 // forced white text) — this bar is a horizontal tab row instead, so it's
 // built from GSActionBar (no `header`, just `pageActions`) with each tab a
@@ -241,7 +272,7 @@
 // EventWebsitePage.jsx for why.
 .es-subnav {
   background: var(--es-el-subnav-background, var(--gs-color-background));
-  border-bottom: 1px solid var(--es-el-subnav-border, var(--gs-color-outline-variant));
+  border-bottom: 0;
   overflow-x: auto;
   box-shadow: $second-layer-shadow;
 

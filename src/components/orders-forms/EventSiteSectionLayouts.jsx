@@ -1,5 +1,5 @@
 import { SECTION_ICONS } from '../../data/eventSiteSectionIcons.js'
-import { ctaThemeVars, useMeasuredWidth } from './EventSiteDeviceMockup.jsx'
+import { ctaThemeVars, useMeasuredWidth, THEME_CLASS } from './EventSiteDeviceMockup.jsx'
 import './EventSiteSectionLayouts.scss'
 
 // Homepage section thumbnails, rebuilt as flex/padding layouts that mirror the
@@ -281,7 +281,7 @@ export default function EventSiteSectionLayouts({ sectionId, primaryColor, secon
   if (!layout) return null
 
   return (
-    <div className="esl" ref={ref} style={ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles)}>
+    <div className={`esl ${THEME_CLASS}`} ref={ref} style={ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles)}>
       {width > 0 && (
         <div className="esl-canvas" style={{ width: layout.width, zoom: width / layout.width }}>
           {layout.render()}

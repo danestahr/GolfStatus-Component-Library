@@ -3,55 +3,84 @@
 // Semantic theme tokens — the seam for building out color themes.
 //
 // colors.scss holds the raw palette ($grey-800, $cyan-700, etc). This file
-// maps that palette onto *roles* (surface, on-surface, primary-container...),
-// mirroring the shape of `defaultTheme` in gs-lib/helpers/Theme.js and the
-// "Default Theme (Web)" variables in the Figma file. A component should
-// reach for these CSS custom properties instead of a raw palette color, so a
-// future theme is a new class of role -> color assignments below (or a
-// swapped set of values on this same class), not a find/replace across every
-// component that used a color.
+// maps that palette onto the designations in `defaultTheme` (Theme.js), which
+// is the source of truth: every designation in it is defined here, and no
+// designation that ISN'T in it is. Each designation can carry up to three
+// colors, named the way Theme.js names them:
+//
+//   backgroundColor -> --gs-color-<role>        (e.g. --gs-color-surface)
+//   color           -> --gs-color-on-<role>     (the text/icon color that sits
+//                      on that background; e.g. --gs-color-on-surface)
+//   borderColor     -> --gs-color-<role>        (outline / outline-variant)
+//
+// A role that is ONLY a color (primary, secondary, error, tertiary) is just
+// --gs-color-<role>. A component with a background and text applies ONE
+// designation and reads both vars of it — never a background from one
+// designation and text from another — so switching its designation (see
+// data/eventSiteThemeRoles.js) re-colors both together.
 //
 // Only .gs-theme-default exists today — nothing consumes these tokens yet
 // except the Event Website page, which is the first page built against this
 // system rather than raw palette colors.
 .gs-theme-default {
   --gs-color-primary: #{$grey-800};
-  --gs-color-on-primary: #{$white};
   --gs-color-secondary: #{$cyan-700};
-  --gs-color-on-secondary: #{$white};
 
-  // Fill buttons' text — scale step 50, distinct from --gs-color-on-primary/
-  // secondary above (which the header bar's bg/fg pairing also reads and
-  // needs to stay AA-picked independently; see EventWebsitePage.jsx).
-  --gs-color-on-primary-fill: #{$white};
-  --gs-color-on-secondary-fill: #{$white};
-
-  // "Subtle" fill for Primary/Secondary Subtle buttons — a step lighter
-  // than the base primary/secondary, not the neutral surface-variant.
-  --gs-color-primary-subtle: #{$grey-200};
-  --gs-color-on-primary-subtle: #{$grey-800};
-  --gs-color-secondary-subtle: #{$cyan-200};
-  --gs-color-on-secondary-subtle: #{$cyan-800};
+  --gs-color-primary-container: #{$grey-800};
+  --gs-color-on-primary-container: #{$white};
+  --gs-color-primary-container-high: #{$grey-800};
+  --gs-color-on-primary-container-high: #{$white};
+  --gs-color-secondary-container: #{$cyan-700};
+  --gs-color-on-secondary-container: #{$white};
+  --gs-color-secondary-container-high: #{$cyan-700};
+  --gs-color-on-secondary-container-high: #{$white};
 
   --gs-color-background: #{$white};
   --gs-color-on-background: #{$grey-800};
 
   --gs-color-surface: #{$white};
   --gs-color-on-surface: #{$grey-800};
+  --gs-color-surface-dim: #{$grey-200};
+  --gs-color-on-surface-dim: #{$grey-800};
+  --gs-color-surface-bright: #{$white};
+  --gs-color-on-surface-bright: #{$grey-800};
+  --gs-color-surface-container-lowest: #{$white};
+  --gs-color-on-surface-container-lowest: #{$grey-800};
+  --gs-color-surface-container-low: #{$white};
+  --gs-color-on-surface-container-low: #{$grey-800};
+  --gs-color-surface-container-high: #{$grey-50};
+  --gs-color-on-surface-container-high: #{$grey-800};
+  --gs-color-surface-container-highest: #{$grey-100};
+  --gs-color-on-surface-container-highest: #{$grey-800};
+  --gs-color-menu-container: #{$grey-50};
+  --gs-color-on-menu-container: #{$grey-800};
   --gs-color-surface-variant: #{$grey-50};
   --gs-color-on-surface-variant: #{$grey-800};
-  --gs-color-surface-container-low: #{$white};
-  --gs-color-surface-container-high: #{$grey-50};
-  --gs-color-surface-container-highest: #{$grey-100};
-  --gs-color-surface-bright: #{$white};
 
   --gs-color-outline: #{$grey-700};
   --gs-color-outline-variant: #{$grey-100};
 
+  --gs-color-scrim: #{$black};
+  --gs-color-on-scrim: #{$white};
+
+  --gs-color-error: #{$orange-400};
+  --gs-color-error-container: #{$orange-200};
+  --gs-color-on-error-container: #{$grey-800};
+
+  --gs-color-tertiary: #{$green-400};
   --gs-color-tertiary-container: #{$green-200};
   --gs-color-on-tertiary-container: #{$grey-800};
 
-  --gs-color-placeholder: #{$grey-300};
+  // Button variants (gs-button.scss) — not designations. Fill text and the
+  // Subtle fill/text are derived per button (EventWebsitePage.jsx /
+  // colorScale.js's buttonThemeVars, or the Buttons tab), so they stay out
+  // of the designation list above.
+  --gs-color-on-primary-fill: #{$white};
+  --gs-color-on-secondary-fill: #{$white};
+  --gs-color-primary-subtle: #{$grey-200};
+  --gs-color-on-primary-subtle: #{$grey-800};
+  --gs-color-secondary-subtle: #{$cyan-200};
+  --gs-color-on-secondary-subtle: #{$cyan-800};
 }
 
 // Dark variant of the same role names — applying `.dark` to a subtree (e.g.
@@ -59,36 +88,60 @@
 // every token to its dark value, same "swap the values, not the call sites"
 // seam described above. Matches gs-lib's own real `.light`/`.dark`
 // ancestor-class convention (see gs-page-section.scss, gs-image.scss, etc)
-// and mirrors `defaultTheme`'s own light/dark pairs in Theme.js (already
-// authored, just not previously wired into these CSS custom properties).
+// and mirrors `defaultTheme`'s own light/dark pairs in Theme.js.
 .dark {
   --gs-color-primary: #{$white};
-  --gs-color-on-primary: #{$grey-800};
   --gs-color-secondary: #{$cyan-200};
 
-  --gs-color-on-primary-fill: #{$grey-800};
-  --gs-color-on-secondary-fill: #{$white};
-
-  --gs-color-primary-subtle: #{$grey-700};
-  --gs-color-on-primary-subtle: #{$white};
-  --gs-color-secondary-subtle: #{$cyan-800};
-  --gs-color-on-secondary-subtle: #{$cyan-100};
+  --gs-color-primary-container: #{$white};
+  --gs-color-on-primary-container: #{$grey-800};
+  --gs-color-primary-container-high: #{$grey-200};
+  --gs-color-on-primary-container-high: #{$grey-900};
+  --gs-color-secondary-container: #{$cyan-700};
+  --gs-color-on-secondary-container: #{$white};
+  --gs-color-secondary-container-high: #{$cyan-200};
+  --gs-color-on-secondary-container-high: #{$cyan-900};
 
   --gs-color-background: #{$black};
   --gs-color-on-background: #{$white};
 
   --gs-color-surface: #{$grey-900};
   --gs-color-on-surface: #{$white};
+  --gs-color-surface-dim: #{$grey-900};
+  --gs-color-on-surface-dim: #{$grey-100};
+  --gs-color-surface-bright: #{$grey-700};
+  --gs-color-on-surface-bright: #{$white};
+  --gs-color-surface-container-lowest: #{$black};
+  --gs-color-on-surface-container-lowest: #{$grey-100};
+  --gs-color-surface-container-low: #{$grey-900};
+  --gs-color-on-surface-container-low: #{$white};
+  --gs-color-surface-container-high: #{$grey-800};
+  --gs-color-on-surface-container-high: #{$white};
+  --gs-color-surface-container-highest: #{$grey-700};
+  --gs-color-on-surface-container-highest: #{$white};
+  --gs-color-menu-container: #{$grey-800};
+  --gs-color-on-menu-container: #{$white};
   --gs-color-surface-variant: #{$grey-800};
   --gs-color-on-surface-variant: #{$grey-100};
-  --gs-color-surface-container-low: #{$grey-900};
-  --gs-color-surface-container-high: #{$grey-800};
-  --gs-color-surface-container-highest: #{$grey-700};
-  --gs-color-surface-bright: #{$grey-700};
 
   --gs-color-outline: #{$white};
-  --gs-color-outline-variant: #{$grey-700};
+  --gs-color-outline-variant: #{$grey-800};
 
+  --gs-color-scrim: #{$black};
+  --gs-color-on-scrim: #{$white};
+
+  --gs-color-error: #{$orange-200};
+  --gs-color-error-container: #{$orange-400};
+  --gs-color-on-error-container: #{$grey-800};
+
+  --gs-color-tertiary: #{$green-200};
   --gs-color-tertiary-container: #{$green-400};
   --gs-color-on-tertiary-container: #{$grey-800};
+
+  --gs-color-on-primary-fill: #{$grey-800};
+  --gs-color-on-secondary-fill: #{$white};
+  --gs-color-primary-subtle: #{$grey-700};
+  --gs-color-on-primary-subtle: #{$white};
+  --gs-color-secondary-subtle: #{$cyan-800};
+  --gs-color-on-secondary-subtle: #{$cyan-100};
 }

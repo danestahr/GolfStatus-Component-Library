@@ -236,7 +236,7 @@ gs-button {
       }
       &.style-outline {
         background: transparent;
-        border: 2px solid var(--gs-btn-neutral-outline-border, var(--gs-color-on-surface));
+        border: 2px solid currentColor; // inherits the text color
         color: var(--gs-btn-neutral-outline-text, var(--gs-color-on-surface));
       }
       &.style-subtle {
@@ -250,12 +250,14 @@ gs-button {
     }
     &.color-primary-color {
       &.style-fill {
-        background: var(--gs-btn-primary-fill-bg, var(--gs-color-primary));
-        color: var(--gs-btn-primary-fill-text, var(--gs-color-on-primary-fill));
+        // Fill = the Primary Container designation's pair (Theme tab), so a
+        // theme change moves the button.
+        background: var(--gs-btn-primary-fill-bg, var(--gs-color-primary-container));
+        color: var(--gs-btn-primary-fill-text, var(--gs-color-on-primary-container));
       }
       &.style-outline {
         background: transparent;
-        border: 2px solid var(--gs-btn-primary-outline-border, var(--gs-color-primary));
+        border: 2px solid currentColor; // inherits the text color
         color: var(--gs-btn-primary-outline-text, var(--gs-color-primary));
       }
       &.style-subtle {
@@ -269,12 +271,12 @@ gs-button {
     }
     &.color-secondary-color {
       &.style-fill {
-        background: var(--gs-btn-secondary-fill-bg, var(--gs-color-secondary));
-        color: var(--gs-btn-secondary-fill-text, var(--gs-color-on-secondary-fill));
+        background: var(--gs-btn-secondary-fill-bg, var(--gs-color-secondary-container));
+        color: var(--gs-btn-secondary-fill-text, var(--gs-color-on-secondary-container));
       }
       &.style-outline {
         background: transparent;
-        border: 2px solid var(--gs-btn-secondary-outline-border, var(--gs-color-secondary));
+        border: 2px solid currentColor; // inherits the text color
         color: var(--gs-btn-secondary-outline-text, var(--gs-color-secondary));
       }
       &.style-subtle {

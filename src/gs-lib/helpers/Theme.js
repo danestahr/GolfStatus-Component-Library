@@ -309,6 +309,19 @@ export const defaultTheme = {
       color: grey800
     }
   },
+  // Not in the original design-team file — added alongside
+  // secondaryContainerHigh: same as Primary Container in light, a lighter
+  // tint with dark text in dark. Confirm values with the devs.
+  primaryContainerHigh: {
+    light: {
+      backgroundColor: grey800,
+      color: white
+    },
+    dark: {
+      backgroundColor: grey200,
+      color: grey900
+    }
+  },
   secondaryContainer: {
     light: {
       backgroundColor: cyan700,
@@ -406,6 +419,18 @@ export const defaultTheme = {
     },
     dark: {
       backgroundColor: grey700,
+      color: white
+    }
+  },
+  // Not in the original design-team file — the dropdown menu container
+  // (e.g. the mobile hamburger menu). Starts as Surface Container High.
+  menuContainer: {
+    light: {
+      backgroundColor: grey50,
+      color: grey800
+    },
+    dark: {
+      backgroundColor: grey800,
       color: white
     }
   },

@@ -152,8 +152,8 @@
 .es-package-sold-out {
   padding: 8px 12px;
   border-radius: 100px;
-  background: var(--es-el-sold-out-badge-background, var(--gs-color-primary));
-  color: var(--es-el-sold-out-badge-text, var(--gs-color-on-primary, #fff));
+  background: var(--es-el-sold-out-badge-background, var(--gs-color-primary-container));
+  color: var(--es-el-sold-out-badge-text, var(--gs-color-on-primary-container, #fff));
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;

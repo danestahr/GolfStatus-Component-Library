@@ -6,7 +6,8 @@ import GSinput from '../../gs-lib/components/gs-input'
 import { generateScale, buttonThemeVars, SCALE_STEPS, hexToHsl, TINT_STOPS, SHADE_STOPS } from '../../gs-lib/helpers/colorScale'
 import { golfstatusColors } from '../../gs-lib/helpers/Theme'
 import { pickAccessibleTextColor, contrastRatio } from '../../gs-lib/helpers/contrast'
-import { resolveOverrideHex, OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
+import { keepOrReadableText } from '../../data/eventSiteThemeVars.js'
+import { resolveOverrideHex, OUTLINE_VARIANT_MONO_STEP, NEUTRAL_STEP_BY_HEX, normalizeHex } from '../../gs-lib/helpers/monochromatic'
 import {
   BUTTON_COLORS,
   BUTTON_APPEARANCES,
@@ -18,7 +19,17 @@ import {
   resolveButtonOverride,
 } from '../../data/eventSiteButtons.js'
 import { zipFiles } from '../../data/zip.js'
-import { ELEMENT_ROLES } from '../../data/eventSiteElements.js'
+import { ELEMENT_ROLES, ELEMENT_DEFS, ELEMENT_COMPONENTS, ELEMENT_OVERRIDE_THEMES, elementCssVar } from '../../data/eventSiteElements.js'
+import {
+  THEME_ROLES,
+  THEME_ROLE_LABELS,
+  THEME_ROLE_KEY_BY_LABEL,
+  MISSING_ROLE_COLOR,
+  canonicalRoleKey,
+  rolePart,
+  themePartValue,
+  hexToRef,
+} from '../../data/eventSiteThemeRoles.js'
 import './WebsiteDesignStyleFields.scss'
 import './ColorExplorationFields.scss'
 
@@ -119,7 +130,7 @@ function parseDesignation(text, impliedFamily) {
   const trimmed = text.trim()
   if (/^white$/i.test(trimmed)) return { family: 'white' }
   if (/^black$/i.test(trimmed)) return { family: 'black' }
-  const withFamily = trimmed.match(/^(primary|secondary|neutral|grey)\s*(\d{2,3})$/i)
+  const withFamily = trimmed.match(/^(primary|secondary|neutral|grey|cyan|green|orange|red)\s*(\d{2,3})$/i)
   if (withFamily) {
     const step = Number(withFamily[2])
     if (!SCALE_STEPS.includes(step)) return null
@@ -145,6 +156,8 @@ function refToText(ref) {
   if (ref.family === 'grey') return `Grey ${ref.step}`
   if (ref.family === 'primary') return `Primary ${ref.step}`
   if (ref.family === 'secondary') return `Secondary ${ref.step}`
+  // Theme.js's own palette families (cyan700, green200, orange400, ...).
+  if (['cyan', 'green', 'orange', 'red'].includes(ref.family)) return `${ref.family[0].toUpperCase()}${ref.family.slice(1)} ${ref.step}`
   return ''
 }
 
@@ -157,45 +170,15 @@ function compactRefText(ref) {
   return ref?.step != null ? String(ref.step) : refToText(ref)
 }
 
-// EVENT_SITE_USED_KEYS' 11 roles, keyed by their own lowercase label — how
-// Site Colors' per-element designation inputs (ELEMENT_DEFS,
-// resolveElementDesignable) resolve typed text like "On Primary" back to a
-// role key. An element points at a ROLE by name there, not a literal scale
-// step like "Primary 100" — that stays the Theme tab's own vocabulary
-// (RoleCompareTable/resolveDesignable above), since aliasing a role keeps
-// an element tracking whatever that role itself currently resolves to
-// (tint, its own themeOverrides riff, ...) instead of freezing one scale
-// step forever.
-const ROLE_LABEL_TO_KEY = {
-  'primary': 'primary',
-  'primary container': 'primaryContainer',
-  'on primary container': 'onPrimary',
-  'primary container variant': 'primaryContainerVariant',
-  'on primary container variant': 'onPrimaryContainerVariant',
-  'on primary': 'onPrimary',
-  'secondary': 'secondary',
-  'secondary container': 'secondaryContainer',
-  'on secondary container': 'onSecondary',
-  'secondary container variant': 'secondaryContainerVariant',
-  'on secondary container variant': 'onSecondaryContainerVariant',
-  'on secondary': 'onSecondary',
-  'background': 'background',
-  'on background': 'onBackground',
-  'surface': 'surface',
-  'on surface': 'onSurface',
-  'surface variant': 'surfaceVariant',
-  'on surface variant': 'onSurfaceVariant',
-  'surface container low': 'surfaceContainerLow',
-  'surface container high': 'surfaceContainerHigh',
-  'surface container highest': 'surfaceContainerHigest',
-  'surface bright': 'surfaceBright',
-  'outline': 'outline',
-  'outline variant': 'outlineVariant',
-  'tertiary': 'tertiaryContainer',
-}
-
+// An element points at a designation (Theme.js's `defaultTheme` keys — see
+// data/eventSiteThemeRoles.js) by name, not a literal scale step like
+// "Primary 100" — that stays the Theme tab's own vocabulary
+// (RoleCompareTable/resolveDesignable below), since aliasing a designation
+// keeps an element tracking whatever that designation itself currently
+// resolves to (tint, its own themeOverrides riff, ...) instead of freezing
+// one scale step forever.
 function parseRoleReference(text) {
-  return ROLE_LABEL_TO_KEY[text.trim().toLowerCase()] ?? null
+  return THEME_ROLE_KEY_BY_LABEL[text.trim().toLowerCase()] ?? null
 }
 
 // The small editable text spot for a role's designation (RampChip, below
@@ -208,10 +191,10 @@ function parseRoleReference(text) {
 const SCALE_DESIGNATIONS = [
   'White',
   'Black',
-  ...['Primary', 'Secondary', 'Grey'].flatMap(family => SCALE_STEPS.map(step => `${family} ${step}`)),
+  ...['Primary', 'Secondary', 'Grey', 'Cyan', 'Green', 'Orange'].flatMap(family => SCALE_STEPS.map(step => `${family} ${step}`)),
 ]
-// Theme roles only — an element points at a role, never a raw scale step.
-const ROLE_DESIGNATIONS = ['Primary', 'Primary Container', 'On Primary Container', 'Primary Container Variant', 'On Primary Container Variant', 'On Primary Fill', 'Primary Subtle', 'On Primary Subtle', 'Secondary', 'Secondary Container', 'On Secondary Container', 'Secondary Container Variant', 'On Secondary Container Variant', 'On Secondary Fill', 'Secondary Subtle', 'On Secondary Subtle', 'Background', 'On Background', 'Surface', 'On Surface', 'Surface Variant', 'On Surface Variant', 'Surface Container Low', 'Surface Container High', 'Surface Container Highest', 'Surface Bright', 'Outline', 'Outline Variant', 'Placeholder', 'Tertiary', 'On Tertiary']
+// Theme designations only — an element points at one, never a raw scale step.
+const ROLE_DESIGNATIONS = THEME_ROLE_LABELS
 
 function DesignationInput({ value, onCommit, hint, placeholder, options = SCALE_DESIGNATIONS }) {
   // A dropdown, not free text: `value` is the assigned designation, else the
@@ -259,7 +242,7 @@ const RAMP_STEPS = [...SCALE_STEPS].reverse()
 // Dark-on-light / white-on-dark (via the wds-ramp-pill--light/--dark
 // ancestor selectors below) so the border reads against either backdrop
 // instead of picking one that vanishes on the other.
-function RampChip({ caption, label, hex, isBase, designation, onChangeDesignation, designationHint, designationPlaceholder, designationOptions }) {
+function RampChip({ caption, label, hex, textHex, isBase, designation, onChangeDesignation, designationHint, designationPlaceholder, designationOptions }) {
   // Auto height whenever there's a label and/or a designation slot (more
   // than just a color + hex) — not just when there's a label, since the
   // Theme tab's own role-compare table below passes chips with a
@@ -268,7 +251,12 @@ function RampChip({ caption, label, hex, isBase, designation, onChangeDesignatio
   const expanded = Boolean(label) || Boolean(onChangeDesignation)
   return (
     <div className={`wds-ramp-chip${expanded ? ' wds-ramp-chip--labeled' : ''}`}>
-      <div className={`wds-ramp-chip-color${isBase ? ' wds-ramp-chip-color--base' : ''}`} style={{ backgroundColor: hex }} />
+      <div
+        className={`wds-ramp-chip-color${isBase ? ' wds-ramp-chip-color--base' : ''}${textHex ? ' wds-ramp-chip-color--pair' : ''}`}
+        style={{ backgroundColor: hex, ...(textHex && { color: textHex }) }}
+      >
+        {textHex ? 'Aa' : null}
+      </div>
       {label && <div className="wds-ramp-chip-label">{label}</div>}
       {onChangeDesignation && (
         <DesignationInput value={designation} onCommit={onChangeDesignation} hint={designationHint} placeholder={designationPlaceholder} options={designationOptions} />
@@ -430,6 +418,7 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions, sin
         <RampChip
           caption={light.caption}
           hex={light.hex}
+          textHex={light.textHex}
           designation={light.designation}
           onChangeDesignation={light.onChangeDesignation}
           designationHint={designationHint}
@@ -441,6 +430,7 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions, sin
         <RampChip
           caption={dark.caption}
           hex={dark.hex}
+          textHex={dark.textHex}
           designation={dark.designation}
           onChangeDesignation={dark.onChangeDesignation}
           designationHint={designationHint}
@@ -462,12 +452,10 @@ function RoleCompareCell({ light, dark, designationHint, designationOptions, sin
 // names the real `--es-el-*` custom property this element's designation
 // actually writes to on the live /event-site page — shown so an edit here
 // reads as a concrete site change, not just a local preview value.
-// GolfStatus is the master theme: its slot is what every tile reads.
+// Every theme gets the same element assignments, so any one slot shows the
+// current pick — GolfStatus's is the one read back.
 const CANONICAL_THEME = 'golfstatus'
-// Subtle starts as a copy of Subtle but its element assignments
-// are fully independent of every other theme's.
-const SEPARATE_THEME = 'neutral-two-tone'
-const ELEMENT_DESIGNATION_HINT = 'Which role this reads from — type e.g. "On Primary" or "Secondary"'
+const ELEMENT_DESIGNATION_HINT = 'Which designation this reads from — sets its background and text together'
 
 // Shared by the Theme and Site Colors tabs: the row's name (and, for
 // Site Colors, its --es-el-* var) sits above, then one RoleCompareCell per
@@ -523,6 +511,16 @@ function groupGolfStatusRoles(roles) {
   }
 }
 
+// Consecutive rows of one designation folded together, in order.
+function groupByRole(defs) {
+  return defs.reduce((list, def) => {
+    const last = list[list.length - 1]
+    if (last && last.roleKey === def.roleKey) last.defs.push(def)
+    else list.push({ roleKey: def.roleKey, roleLabel: def.roleLabel ?? def.label, defs: [def] })
+    return list
+  }, [])
+}
+
 function RoleCompareTable({ tintThemes }) {
   return (
     <div className="wds-role-table" style={{ '--wds-theme-cols': tintThemes.length }}>
@@ -531,18 +529,27 @@ function RoleCompareTable({ tintThemes }) {
         <div key={group.key} className="wds-role-group">
           <div className="wds-role-group-title">{group.label}</div>
           {/* Row labels come from a full-role theme — the fixed Neutral Theme column can lead but has fewer roles. */}
-          {(tintThemes.find(t => t.key !== 'golfstatus') ?? tintThemes[0]).light[group.key].map(roleDef => (
-            <CompareRow
-              key={roleDef.key}
-              label={roleDef.label}
-              columns={tintThemes.map(theme => ({
-                key: theme.key,
-                // Primary/Secondary are just the chosen colors — no dark mode.
-                single: roleDef.key === 'primary' || roleDef.key === 'secondary',
-                light: theme.light[group.key].find(r => r.key === roleDef.key) ?? BLANK_ROLE,
-                dark: theme.dark[group.key].find(r => r.key === roleDef.key) ?? BLANK_ROLE,
-              }))}
-            />
+          {/* One card per designation, its colors listed beneath by the CSS property they set. */}
+          {groupByRole((tintThemes.find(t => t.key !== 'golfstatus') ?? tintThemes[0]).light[group.key]).map(role => (
+            <div className="wds-role-card" key={role.roleKey}>
+              <div className="wds-role-card-title">
+                {role.roleLabel}
+                {role.defs.length > 1 && <span className="wds-role-card-note">{role.defs.length} colors applied together</span>}
+              </div>
+              {role.defs.map(roleDef => (
+                <CompareRow
+                  key={roleDef.key}
+                  label={roleDef.propLabel ?? roleDef.label}
+                  columns={tintThemes.map(theme => ({
+                    key: theme.key,
+                    // Primary/Secondary are just the chosen colors — no dark mode.
+                    single: roleDef.key === 'primary' || roleDef.key === 'secondary',
+                    light: theme.light[group.key].find(r => r.key === roleDef.key) ?? BLANK_ROLE,
+                    dark: theme.dark[group.key].find(r => r.key === roleDef.key) ?? BLANK_ROLE,
+                  }))}
+                />
+              ))}
+            </div>
           ))}
         </div>
       ))}
@@ -550,24 +557,47 @@ function RoleCompareTable({ tintThemes }) {
   )
 }
 
-// Every `--gs-color-*` role gs-lib/styles/theme.scss's .gs-theme-default/
-// .dark blocks actually define — i.e. the roles the live Event Website
-// (EventWebsitePage.jsx) reads — grouped Primary/Secondary/Neutral instead
-// of dumped in theme.scss's declaration order. `fallbackHex` is exactly
-// what EventWebsitePage.jsx's own customThemeStyle computes for that role
-// in its default state (Monochromatic off, Neutral tint), so this preview
+// Every designation in Theme.js's `defaultTheme` (data/eventSiteThemeRoles.js),
+// split into one row per color it carries — a fill and its text are two rows
+// of the same designation ("Surface — Background" / "Surface — Text"), a
+// color-only designation (Primary, Error, ...) or a border-only one
+// (Outline) is a single row. Grouped Primary/Secondary/Neutral instead of
+// dumped in Theme.js's declaration order. `key` is the part's storage key
+// (`${mode}-${tint}-${key}` in themeOverrides — what EventWebsitePage.jsx's
+// ROLE_TO_CSS_VAR applies to the live site), so every editable row here
+// persists. `fallbackHex` is exactly what EventWebsitePage.jsx's own
+// customThemeStyle computes for it in its default state, so this preview
 // can't drift from what saving here actually renders on the site.
-// `naturalRef` is that same value expressed as a { family, step } — what a
-// role's designation defaults to before any override — `null` for a role
-// with no single clean step to point to (an absolute White/Black end, or
-// Tertiary's fixed brand green). `editable: false` marks the one role per
-// color this screen won't let you reassign — the base Primary/Secondary
-// swatch itself, since "what step is Primary?" is circular (see RampChip).
-// `sitePersisted` marks the roles EventWebsitePage.jsx's own ROLE_TO_CSS_VAR
-// (that file) actually applies a saved override to — only those write into
-// the shared themeOverrides prop (and so show up on the live site); every
-// other editable role here is a local-only "what if" preview (see
-// ColorExplorationFields' own resolveDesignable/SITE_PERSISTED_KEYS).
+// `naturalRef` is that same value expressed as a { family, step } — what the
+// row's designation defaults to before any override — `null` for a color
+// with no single palette name (the brand Primary/Secondary). `editable:
+// false` marks the one row per brand color this screen won't let you
+// reassign — the base Primary/Secondary swatch itself, since "what step is
+// Primary?" is circular (see RampChip).
+const roleGroup = key => {
+  if (key === 'primary' || key === 'primaryContainer' || key === 'primaryContainerHigh') return 'primary'
+  if (key === 'secondary' || key === 'secondaryContainer' || key === 'secondaryContainerHigh') return 'secondary'
+  return 'neutral'
+}
+
+const partLabel = (role, part) => {
+  if (part.part === 'background') return `${role.label} — Background`
+  if (part.part === 'text') return `${role.label} — Text`
+  return role.label
+}
+
+// The row names the Theme tab shows under each designation's heading —
+// the CSS property each one sets, same words Theme.js uses.
+const PROP_LABELS = { background: 'Background color', text: 'Color', color: 'Color', border: 'Border color' }
+const partIdentity = (role, part) => ({ roleKey: role.key, roleLabel: role.label, propLabel: PROP_LABELS[part.part] })
+
+// Neutral fills whose text the live site tints with the Primary scale (see
+// EventWebsitePage.jsx's TEXT_TOKEN_PARTS) rather than Theme.js's fixed grey.
+const NEUTRAL_FILL_ROLES = new Set([
+  'background', 'surface', 'surfaceDim', 'surfaceBright', 'surfaceVariant',
+  'surfaceContainerLowest', 'surfaceContainerLow', 'surfaceContainerHigh', 'surfaceContainerHigest', 'menuContainer',
+])
+
 function liveThemeRoleDefs(primaryScale, secondaryScale) {
   const forMode = mode => {
     const isDark = mode === 'dark'
@@ -579,41 +609,54 @@ function liveThemeRoleDefs(primaryScale, secondaryScale) {
     // contrastRatio) just to know *which* step it picked, for naturalRef.
     const onPrimaryStep = contrastRatio(primaryBase, primaryScale[800]) >= contrastRatio(primaryBase, primaryScale[100]) ? 800 : 100
     const onSecondaryStep = contrastRatio(secondaryBase, secondaryScale[800]) >= contrastRatio(secondaryBase, secondaryScale[100]) ? 800 : 100
-    return {
-      primary: [
-        { key: 'primary', label: 'Primary', fallbackHex: primaryScale[400], naturalRef: null, editable: false },
-        { key: 'primaryContainer', label: 'Primary Container', fallbackHex: primaryBase, naturalRef: { family: 'primary', step: 400 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
-        { key: 'onPrimary', label: 'On Primary Container', fallbackHex: pickAccessibleTextColor(primaryBase, primaryScale[100], primaryScale[800]), naturalRef: { family: 'primary', step: onPrimaryStep }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
-        { key: 'primaryContainerVariant', label: 'Primary Container Variant', fallbackHex: primaryScale[isDark ? 700 : 100], naturalRef: { family: 'primary', step: isDark ? 700 : 100 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
-        { key: 'onPrimaryContainerVariant', label: 'On Primary Container Variant', fallbackHex: primaryScale[isDark ? 50 : 900], naturalRef: { family: 'primary', step: isDark ? 50 : 900 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'primary' },
-      ],
-      secondary: [
-        { key: 'secondary', label: 'Secondary', fallbackHex: secondaryScale[400], naturalRef: null, editable: false },
-        { key: 'secondaryContainer', label: 'Secondary Container', fallbackHex: secondaryBase, naturalRef: { family: 'secondary', step: 400 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
-        { key: 'onSecondary', label: 'On Secondary Container', fallbackHex: pickAccessibleTextColor(secondaryBase, secondaryScale[100], secondaryScale[800]), naturalRef: { family: 'secondary', step: onSecondaryStep }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
-        { key: 'secondaryContainerVariant', label: 'Secondary Container Variant', fallbackHex: secondaryScale[isDark ? 700 : 100], naturalRef: { family: 'secondary', step: isDark ? 700 : 100 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
-        { key: 'onSecondaryContainerVariant', label: 'On Secondary Container Variant', fallbackHex: secondaryScale[isDark ? 50 : 900], naturalRef: { family: 'secondary', step: isDark ? 50 : 900 }, editable: true, sitePersisted: true, compact: true, impliedFamily: 'secondary' },
-      ],
-      neutral: [
-        { key: 'background', label: 'Background', fallbackHex: isDark ? BLACK : WHITE, naturalRef: isDark ? { family: 'black' } : { family: 'white' }, editable: true, sitePersisted: true },
-        { key: 'onBackground', label: 'On Background', fallbackHex: primaryScale[isDark ? 50 : 800], naturalRef: { family: 'primary', step: isDark ? 50 : 800 }, editable: true, sitePersisted: true },
-        { key: 'surface', label: 'Surface', fallbackHex: isDark ? golfstatusColors.grey900 : WHITE, naturalRef: isDark ? { family: 'grey', step: 900 } : { family: 'white' }, editable: true, sitePersisted: true },
-        { key: 'onSurface', label: 'On Surface', fallbackHex: primaryScale[isDark ? 50 : 800], naturalRef: { family: 'primary', step: isDark ? 50 : 800 }, editable: true, sitePersisted: true },
-        { key: 'surfaceVariant', label: 'Surface Variant', fallbackHex: isDark ? golfstatusColors.grey800 : golfstatusColors.grey50, naturalRef: { family: 'grey', step: isDark ? 800 : 50 }, editable: true, sitePersisted: true },
-        { key: 'onSurfaceVariant', label: 'On Surface Variant', fallbackHex: primaryScale[isDark ? 100 : 800], naturalRef: { family: 'primary', step: isDark ? 100 : 800 }, editable: true, sitePersisted: true },
-        { key: 'surfaceContainerLow', label: 'Surface Container Low', fallbackHex: isDark ? golfstatusColors.grey900 : WHITE, naturalRef: isDark ? { family: 'grey', step: 900 } : { family: 'white' }, editable: true, sitePersisted: true },
-        { key: 'surfaceContainerHigh', label: 'Surface Container High', fallbackHex: isDark ? golfstatusColors.grey800 : golfstatusColors.grey50, naturalRef: { family: 'grey', step: isDark ? 800 : 50 }, editable: true, sitePersisted: true },
-        // Site key is "surfaceContainerHigest" (missing an 'h') — an
-        // existing typo in EventWebsitePage.jsx's ROLE_TO_CSS_VAR — matched
-        // here exactly so a saved override actually lands on that role
-        // instead of silently landing on a key the site never reads.
-        { key: 'surfaceContainerHigest', label: 'Surface Container Highest', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey100, naturalRef: { family: 'grey', step: isDark ? 700 : 100 }, editable: true, sitePersisted: true },
-        { key: 'surfaceBright', label: 'Surface Bright', fallbackHex: isDark ? golfstatusColors.grey700 : WHITE, naturalRef: isDark ? { family: 'grey', step: 700 } : { family: 'white' }, editable: true, sitePersisted: true },
-        { key: 'outline', label: 'Outline', fallbackHex: isDark ? WHITE : golfstatusColors.grey700, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 700 }, editable: true, sitePersisted: true },
-        { key: 'outlineVariant', label: 'Outline Variant', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey100, naturalRef: { family: 'grey', step: isDark ? 700 : 100 }, editable: true, sitePersisted: true },
-        { key: 'tertiaryContainer', label: 'Tertiary', fallbackHex: isDark ? golfstatusColors.green400 : golfstatusColors.green200, naturalRef: null, editable: true, sitePersisted: true },
-      ],
+    const onPrimary = { hex: pickAccessibleTextColor(primaryBase, primaryScale[100], primaryScale[800]), ref: { family: 'primary', step: onPrimaryStep } }
+    const onSecondary = { hex: pickAccessibleTextColor(secondaryBase, secondaryScale[100], secondaryScale[800]), ref: { family: 'secondary', step: onSecondaryStep } }
+    // The designations the brand colors drive; every other row is Theme.js's
+    // own value (Neutral fills/borders get re-tinted per theme by
+    // retintNeutralDefs below).
+    const brand = {
+      'primary:color': { hex: primaryBase, ref: null, editable: false },
+      'secondary:color': { hex: secondaryBase, ref: null, editable: false },
+      'primaryContainer:background': { hex: primaryBase, ref: { family: 'primary', step: 400 } },
+      'primaryContainer:text': onPrimary,
+      'primaryContainerHigh:background': isDark
+        ? { hex: primaryScale[200], ref: { family: 'primary', step: 200 } }
+        : { hex: primaryBase, ref: { family: 'primary', step: 400 } },
+      'primaryContainerHigh:text': isDark
+        ? { hex: primaryScale[900], ref: { family: 'primary', step: 900 } }
+        : onPrimary,
+      'secondaryContainer:background': { hex: secondaryBase, ref: { family: 'secondary', step: 400 } },
+      'secondaryContainer:text': onSecondary,
+      'secondaryContainerHigh:background': isDark
+        ? { hex: secondaryScale[200], ref: { family: 'secondary', step: 200 } }
+        : { hex: secondaryBase, ref: { family: 'secondary', step: 400 } },
+      'secondaryContainerHigh:text': isDark
+        ? { hex: secondaryScale[900], ref: { family: 'secondary', step: 900 } }
+        : onSecondary,
     }
+    const groups = { primary: [], secondary: [], neutral: [] }
+    THEME_ROLES.forEach(role => role.parts.forEach(part => {
+      const theme = themePartValue(role.key, part.part, mode)
+      let value = brand[`${role.key}:${part.part}`]
+      if (!value && part.part === 'text' && NEUTRAL_FILL_ROLES.has(role.key)) {
+        const step = NEUTRAL_STEP_BY_HEX[normalizeHex(theme.hex)]
+        if (step) value = { hex: primaryScale[step], ref: { family: 'primary', step } }
+      }
+      value = value ?? { hex: theme.hex, ref: theme.ref }
+      const group = roleGroup(role.key)
+      const editable = value.editable !== false
+      groups[group].push({
+        key: part.storageKey,
+        label: partLabel(role, part),
+        ...partIdentity(role, part),
+        fallbackHex: value.hex,
+        naturalRef: value.ref,
+        editable,
+        ...(editable && { sitePersisted: true }),
+        ...(editable && group !== 'neutral' && { compact: true, impliedFamily: group }),
+      })
+    }))
+    return groups
   }
   return { light: forMode('light'), dark: forMode('dark') }
 }
@@ -626,8 +669,8 @@ function liveThemeRoleDefs(primaryScale, secondaryScale) {
 // directly regardless of tint, and Tertiary/On Tertiary are fixed brand
 // colors the site never tints at all.
 const TINTABLE_NEUTRAL_KEYS = new Set([
-  'background', 'surface', 'surfaceVariant', 'surfaceContainerLow',
-  'surfaceContainerHigh', 'surfaceContainerHigest', 'surfaceBright',
+  'background', 'surface', 'surfaceDim', 'surfaceVariant', 'surfaceContainerLowest', 'surfaceContainerLow',
+  'surfaceContainerHigh', 'surfaceContainerHigest', 'surfaceBright', 'menuContainer',
   'outline', 'outlineVariant',
 ])
 
@@ -662,7 +705,9 @@ function retint(ref, family, key) {
 // switch) is even on. So these three don't go through retint()'s White/
 // Black/Neutral-N swap below; they just get re-pointed at whichever family
 // this theme's `monoFamily` is, same step as always.
-const ALWAYS_MONO_KEYS = new Set(['onBackground', 'onSurface', 'onSurfaceVariant'])
+const ALWAYS_MONO_KEYS = new Set(
+  THEME_ROLES.filter(role => NEUTRAL_FILL_ROLES.has(role.key)).map(role => role.parts.find(p => p.part === 'text').storageKey)
+)
 
 // Re-tints a Neutral Tint mode's role defs (see liveThemeRoleDefs above)
 // into a Primary/Secondary Tint theme's own — TINTABLE_NEUTRAL_KEYS get the
@@ -704,207 +749,50 @@ const TINT_THEMES = [
   { key: 'full', label: 'Bold', monochromatic: true, retintFamily: 'secondary', textFamily: 'primary' },
 ]
 
-// GolfStatus's own fixed roles, transcribed straight from
-// gs-lib/styles/theme.scss's .gs-theme-default/.dark (EventWebsitePage.jsx
-// reuses that class as-is for its "golfstatus" theme option, with none of
-// customThemeStyle's overrides — see THEME_NAMES/THEME_CLASS_NAMES there) —
-// never moves with the Primary/Secondary pickers above, unlike Default.
-// Every role here is local-preview-only (see ColorExplorationFields'
-// resolveDesignable) even where a naturalRef exists: EventWebsitePage.jsx
-// never applies a themeOverrides entry to this theme, by design (it's
-// meant to stay the fixed, un-customized fallback), so an edit here can
-// only ever preview, not persist. Same base-swatch exception as
-// liveThemeRoleDefs above (Primary/Secondary aren't reassignable) — its
-// Secondary/Tertiary families are cyan/green, outside this screen's own
-// White/Black/Neutral/Primary/Secondary vocabulary, so naturalRef is null
-// for any role that's plainly one of those (still editable — "spots for
-// all possible designations" — just starting blank instead of prefilled).
-// theme.scss's own `.dark` block never actually redefines
-// --gs-color-on-secondary, an existing gap in that file — light's white is
-// reused here rather than leaving this one swatch blank.
-const SITE_ROLE_KEYS = new Set([
-  'primaryContainer', 'secondaryContainer', 'onPrimary', 'onSecondary',
-  'primaryContainerVariant', 'onPrimaryContainerVariant', 'secondaryContainerVariant', 'onSecondaryContainerVariant',
-  'background', 'onBackground', 'surface', 'onSurface', 'onSurfaceVariant', 'surfaceBright',
-  'surfaceContainerLow', 'surfaceContainerHigh', 'surfaceContainerHigest', 'surfaceVariant',
-  'outline', 'outlineVariant', 'tertiaryContainer',
-])
-
+// GolfStatus's own fixed designations — Theme.js's `defaultTheme` itself,
+// read straight from it (via data/eventSiteThemeRoles.js) rather than
+// transcribed. EventWebsitePage.jsx reuses theme.scss's `.gs-theme-default`
+// (generated from the same values) as-is for its "golfstatus" theme, with
+// none of customThemeStyle's brand overrides — so this never moves with the
+// Primary/Secondary pickers above, unlike the tint themes. Same base-swatch
+// exception as liveThemeRoleDefs above (Primary/Secondary aren't
+// reassignable). An edit to any other row is saved under the 'golfstatus'
+// tint slot and applied on top (EventWebsitePage.jsx's roleStyle).
 function golfStatusRoleDefs() {
-  const forMode = mode => {
-    const isDark = mode === 'dark'
-    const roles = [
-      { key: 'primary', label: 'Primary', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: null, editable: false },
-      { key: 'primaryContainer', label: 'Primary Container', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
-      { key: 'onPrimary', label: 'On Primary Container', fallbackHex: isDark ? golfstatusColors.grey800 : WHITE, naturalRef: isDark ? { family: 'grey', step: 800 } : { family: 'white' }, editable: true },
-      { key: 'primaryContainerVariant', label: 'Primary Container Variant', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey200, naturalRef: { family: 'grey', step: isDark ? 700 : 200 }, editable: true },
-      { key: 'onPrimaryContainerVariant', label: 'On Primary Container Variant', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
-      { key: 'secondary', label: 'Secondary', fallbackHex: isDark ? golfstatusColors.cyan200 : golfstatusColors.cyan700, naturalRef: null, editable: false },
-      { key: 'secondaryContainer', label: 'Secondary Container', fallbackHex: isDark ? golfstatusColors.cyan200 : golfstatusColors.cyan700, naturalRef: null, editable: true },
-      { key: 'onSecondary', label: 'On Secondary Container', fallbackHex: WHITE, naturalRef: { family: 'white' }, editable: true },
-      { key: 'secondaryContainerVariant', label: 'Secondary Container Variant', fallbackHex: isDark ? golfstatusColors.cyan800 : golfstatusColors.cyan200, naturalRef: null, editable: true },
-      { key: 'onSecondaryContainerVariant', label: 'On Secondary Container Variant', fallbackHex: isDark ? golfstatusColors.cyan100 : golfstatusColors.cyan800, naturalRef: null, editable: true },
-      { key: 'background', label: 'Background', fallbackHex: isDark ? BLACK : WHITE, naturalRef: isDark ? { family: 'black' } : { family: 'white' }, editable: true },
-      { key: 'onBackground', label: 'On Background', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
-      { key: 'surface', label: 'Surface', fallbackHex: isDark ? golfstatusColors.grey900 : WHITE, naturalRef: isDark ? { family: 'grey', step: 900 } : { family: 'white' }, editable: true },
-      { key: 'onSurface', label: 'On Surface', fallbackHex: isDark ? WHITE : golfstatusColors.grey800, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 800 }, editable: true },
-      { key: 'surfaceVariant', label: 'Surface Variant', fallbackHex: isDark ? golfstatusColors.grey800 : golfstatusColors.grey50, naturalRef: { family: 'grey', step: isDark ? 800 : 50 }, editable: true },
-      { key: 'onSurfaceVariant', label: 'On Surface Variant', fallbackHex: isDark ? golfstatusColors.grey100 : golfstatusColors.grey800, naturalRef: { family: 'grey', step: isDark ? 100 : 800 }, editable: true },
-      { key: 'surfaceContainerLow', label: 'Surface Container Low', fallbackHex: isDark ? golfstatusColors.grey900 : WHITE, naturalRef: isDark ? { family: 'grey', step: 900 } : { family: 'white' }, editable: true },
-      { key: 'surfaceContainerHigh', label: 'Surface Container High', fallbackHex: isDark ? golfstatusColors.grey800 : golfstatusColors.grey50, naturalRef: { family: 'grey', step: isDark ? 800 : 50 }, editable: true },
-      { key: 'surfaceContainerHigest', label: 'Surface Container Highest', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey100, naturalRef: { family: 'grey', step: isDark ? 700 : 100 }, editable: true },
-      { key: 'surfaceBright', label: 'Surface Bright', fallbackHex: isDark ? golfstatusColors.grey700 : WHITE, naturalRef: isDark ? { family: 'grey', step: 700 } : { family: 'white' }, editable: true },
-      { key: 'outline', label: 'Outline', fallbackHex: isDark ? WHITE : golfstatusColors.grey700, naturalRef: isDark ? { family: 'white' } : { family: 'grey', step: 700 }, editable: true },
-      { key: 'outlineVariant', label: 'Outline Variant', fallbackHex: isDark ? golfstatusColors.grey700 : golfstatusColors.grey100, naturalRef: { family: 'grey', step: isDark ? 700 : 100 }, editable: true },
-      { key: 'tertiaryContainer', label: 'Tertiary', fallbackHex: isDark ? golfstatusColors.green400 : golfstatusColors.green200, naturalRef: null, editable: true },
-    ]
-    // Roles the live site reads (EventWebsitePage.jsx's ROLE_TO_CSS_VAR) save
-    // to themeOverrides under the 'golfstatus' tint slot and apply there.
-    return roles.map(r => (r.editable && SITE_ROLE_KEYS.has(r.key) ? { ...r, sitePersisted: true } : r))
-  }
+  const forMode = mode => THEME_ROLES.flatMap(role => role.parts.map(part => {
+    const theme = themePartValue(role.key, part.part, mode)
+    const editable = role.key !== 'primary' && role.key !== 'secondary'
+    return {
+      key: part.storageKey,
+      label: partLabel(role, part),
+      ...partIdentity(role, part),
+      fallbackHex: theme.hex,
+      naturalRef: editable ? theme.ref : null,
+      editable,
+      ...(editable && { sitePersisted: true }),
+    }
+  }))
   return { light: forMode('light'), dark: forMode('dark') }
 }
 
-// Which of liveThemeRoleDefs/golfStatusRoleDefs' roles a non-button, visible
-// element on the live Event Website actually reads, via a
-// `var(--gs-color-*)` in EventWebsitePage.scss/.jsx — every other role here
-// is a real CSS variable theme.scss still sets, but either nothing on the
-// page consumes it at all. Fill/Subtle button text and backgrounds and the
-// Donation progress bar's start color are no longer roles — they're derived
-// from the Primary/Secondary scales (or edited per-button on the Buttons
-// tab). So the Event Site tab (unlike Color Ramps/Theme, which show the
-// full role list for exploring the whole system) only shows these.
-const EVENT_SITE_USED_KEYS = new Set([
-  'primary', 'primaryContainer', 'onPrimary',
-  'secondary', 'secondaryContainer',
-  'background', 'onBackground', 'onSurface', 'onSurfaceVariant',
-  'surfaceContainerHigh', 'surfaceBright', 'outlineVariant',
-])
-
-const onlyUsedOnEventSite = items => items.filter(item => EVENT_SITE_USED_KEYS.has(item.key))
-
-// Site Colors' own per-element list — every named, non-button element the
-// live Event Website actually renders (see EventWebsitePage.jsx's own
-// per-section comment breakdown this mirrors), each pointed at one of
-// defaultSiteTheme's used roles (`baseRoleKey`) by default. `key` matches
-// EventWebsitePage.jsx's ELEMENT_TO_CSS_VAR exactly — that's the join
-// between an edit made here and the `--es-el-*` custom property the site's
-// own stylesheet actually reads for that element, with the role's own
-// value as its fallback when nothing's been assigned. Two elements sharing
-// a `baseRoleKey` (e.g. every section's own title) start out looking
-// identical but are still independently assignable, since each gets its
-// own storage key (`${mode}-${key}`, see resolveElementDesignable).
-export const ELEMENT_DEFS = [
-  // The page-wide defaults every other element either reads directly
-  // (nothing below overrides it) or falls back to once its own element
-  // override is cleared — same 4 roles the old Navigation/Accent/Structure
-  // swatch grid's own "Structure" bucket showed, just reframed as the
-  // actual sitewide surfaces they apply to (.es-page's own background/
-  // color, every section's .section-body, every gs-page-section's own
-  // border-bottom — see EventWebsitePage.scss).
-  { key: 'pageBackground', label: 'Page Background', section: 'Sitewide', baseRoleKey: 'background' },
-  { key: 'sectionBoxText', label: 'Section Content Box Text (default)', section: 'Sitewide', baseRoleKey: 'onSurface' },
-  { key: 'pageTextDefault', label: 'Page Text Default', section: 'Sitewide', baseRoleKey: 'onBackground' },
-  { key: 'sectionBoxBackground', label: 'Section Content Box Background', section: 'Sitewide', baseRoleKey: 'surfaceContainerHigh' },
-  { key: 'sectionBottomBorder', label: 'Section Bottom Border', section: 'Sitewide', baseRoleKey: 'outlineVariant' },
-
-  { key: 'headerIcon', label: 'Icon (Logo)', section: 'Header', baseRoleKey: 'onPrimary' },
-  { key: 'headerEventName', label: 'Event Name', section: 'Header', baseRoleKey: 'onPrimary' },
-  { key: 'headerActionIcons', label: 'Action Icons (cart, theme toggle)', section: 'Header', baseRoleKey: 'onPrimary' },
-  { key: 'mobileMenuIcon', label: 'Mobile Menu Icon', section: 'Header', baseRoleKey: 'primary' },
-  { key: 'avatarBackground', label: 'Avatar Placeholder Fill', section: 'Header', baseRoleKey: 'outlineVariant' },
-  { key: 'headerBackground', label: 'Header Background', section: 'Header', baseRoleKey: 'primaryContainer' },
-  { key: 'avatarBorder', label: 'Avatar Border', section: 'Header', baseRoleKey: 'outlineVariant' },
-  { key: 'subnavBackground', label: 'Sub-nav Background', section: 'Header', baseRoleKey: 'background' },
-  { key: 'subnavBorder', label: 'Sub-nav Border', section: 'Header', baseRoleKey: 'outlineVariant' },
-
-  { key: 'tournamentEventName', label: 'Event Name', section: 'Tournament Details', baseRoleKey: 'onSurface' },
-  { key: 'tournamentDate', label: 'Date Range', section: 'Tournament Details', baseRoleKey: 'onSurface' },
-  { key: 'tournamentLocation', label: 'Facility / Location', section: 'Tournament Details', baseRoleKey: 'onSurface' },
-  { key: 'sidebarBorder', label: 'Sidebar Card Border', section: 'Tournament Details', baseRoleKey: 'outlineVariant' },
-
-  { key: 'sectionTitle', label: 'Section Title', section: 'Sections (all)', baseRoleKey: 'onBackground' },
-  { key: 'sectionDescription', label: 'Section Description / Body Copy', section: 'Sections (all)', baseRoleKey: 'onBackground' },
-
-  { key: 'arrowTileBackground', label: 'Tile Background', section: 'Packages & Additional Pages', baseRoleKey: 'surfaceBright' },
-  { key: 'packageTileIcon', label: 'Package Tile Icon', section: 'Packages & Additional Pages', baseRoleKey: 'onSurface' },
-  { key: 'arrowTileLabel', label: 'Tile Label', section: 'Packages & Additional Pages', baseRoleKey: 'onSurface' },
-  { key: 'additionalPagesSub', label: 'Additional Pages Sub-label', section: 'Packages & Additional Pages', baseRoleKey: 'onSurfaceVariant' },
-  { key: 'arrowTileArrow', label: 'Tile Arrow Icon', section: 'Packages & Additional Pages', baseRoleKey: 'onSurfaceVariant' },
-
-  { key: 'packageTileBorder', label: 'Tile Border (Packages page)', section: 'Packages & Additional Pages', baseRoleKey: 'outlineVariant' },
-  { key: 'packagesCardText', label: 'Package Card Text (Packages page)', section: 'Packages & Additional Pages', baseRoleKey: 'onSurface' },
-
-  { key: 'soldOutBadgeBackground', label: 'Sold Out Badge Background', section: 'Packages & Additional Pages', baseRoleKey: 'primary' },
-  { key: 'soldOutBadgeText', label: 'Sold Out Badge Text', section: 'Packages & Additional Pages', baseRoleKey: 'onPrimary' },
-
-  { key: 'cartItemBackground', label: 'Cart Item Background (suggestions, quantity, forms)', section: 'Cart', baseRoleKey: 'surfaceBright' },
-  { key: 'cartFormIncompleteBorder', label: 'Incomplete Form Border', section: 'Cart', baseRoleKey: 'outline' },
-  { key: 'cartFooterBackground', label: 'Next Step Footer Background', section: 'Cart', baseRoleKey: 'background' },
-  { key: 'cartFooterText', label: 'Next Step Footer Text', section: 'Cart', baseRoleKey: 'onBackground' },
-  { key: 'cartFooterBorder', label: 'Next Step Footer Border', section: 'Cart', baseRoleKey: 'outlineVariant' },
-
-  { key: 'slideOutBackground', label: 'Slide Out Background', section: 'Slide Outs', baseRoleKey: 'background' },
-  { key: 'slideOutText', label: 'Slide Out Text', section: 'Slide Outs', baseRoleKey: 'onBackground' },
-  { key: 'slideOutNavBackground', label: 'Slide Out Nav Background', section: 'Slide Outs', baseRoleKey: 'background' },
-  { key: 'slideOutBorder', label: 'Slide Out Dividers', section: 'Slide Outs', baseRoleKey: 'outlineVariant' },
-  { key: 'slideOutFieldBorder', label: 'Text Field Border', section: 'Slide Outs', baseRoleKey: 'outline' },
-
-  { key: 'formSectionBackground', label: 'Form Section Background', section: 'Forms', baseRoleKey: 'background' },
-  { key: 'formSectionBorder', label: 'Form Section Border', section: 'Forms', baseRoleKey: 'outlineVariant' },
-  { key: 'textFieldBackground', label: 'Text Field Background', section: 'Forms', baseRoleKey: 'background' },
-  { key: 'textFieldText', label: 'Text Field Text', section: 'Forms', baseRoleKey: 'onBackground' },
-  { key: 'textAreaBackground', label: 'Text Area Background', section: 'Forms', baseRoleKey: 'background' },
-  { key: 'textAreaText', label: 'Text Area Text', section: 'Forms', baseRoleKey: 'onBackground' },
-  { key: 'textAreaBorder', label: 'Text Area Border', section: 'Forms', baseRoleKey: 'outline' },
-  { key: 'dropdownBackground', label: 'Dropdown Background', section: 'Forms', baseRoleKey: 'surfaceBright' },
-  { key: 'dropdownText', label: 'Dropdown Text', section: 'Forms', baseRoleKey: 'onSurface' },
-  { key: 'dropdownBorder', label: 'Dropdown Border', section: 'Forms', baseRoleKey: 'outline' },
-  { key: 'toggleOnTrack', label: 'Toggle On Track', section: 'Forms', baseRoleKey: 'primary' },
-  { key: 'toggleOffTrack', label: 'Toggle Off Track', section: 'Forms', baseRoleKey: 'outline' },
-  { key: 'toggleKnob', label: 'Toggle Knob', section: 'Forms', baseRoleKey: 'onPrimary' },
-  { key: 'fileUploadBackground', label: 'File Upload Background', section: 'Forms', baseRoleKey: 'background' },
-  { key: 'fileUploadBorder', label: 'File Upload Border', section: 'Forms', baseRoleKey: 'outlineVariant' },
-  { key: 'fileUploadText', label: 'File Upload Text', section: 'Forms', baseRoleKey: 'onBackground' },
-
-  { key: 'sponsorTierHeader', label: 'Tier Header', section: 'Sponsors', baseRoleKey: 'onSurface' },
-  { key: 'sponsorTileName', label: 'Sponsor Tile Name', section: 'Sponsors', baseRoleKey: 'onSurface' },
-  { key: 'registrantTileBackground', label: 'Registrant Tile Background', section: 'Sponsors', baseRoleKey: 'surfaceBright' },
-  { key: 'sponsorFeatureName', label: 'Feature Sponsor Name', section: 'Sponsors', baseRoleKey: 'onSurface' },
-  { key: 'sponsorFeatureDescription', label: 'Feature Sponsor Description', section: 'Sponsors', baseRoleKey: 'onSurface' },
-
-  { key: 'videoFrameBorder', label: 'Video Frame Border', section: 'Media', baseRoleKey: 'outlineVariant' },
-  { key: 'imageFrameBorder', label: 'Image Frame Border (photos, sponsor logos)', section: 'Media', baseRoleKey: 'outlineVariant' },
-
-  { key: 'donationGoalLabel', label: 'Goal Label', section: 'Donation', baseRoleKey: 'onSurface' },
-  { key: 'donationProgressBorder', label: 'Progress Bar Border', section: 'Donation', baseRoleKey: 'outlineVariant' },
-  { key: 'donationProgressTrack', label: 'Progress Bar Track', section: 'Donation', baseRoleKey: 'surfaceContainerHighest' },
-  { key: 'donationProgressText', label: 'Progress Bar Percentage', section: 'Donation', baseRoleKey: 'onSurface' },
-  { key: 'donationTileBackground', label: 'Amount Tile Background', section: 'Donation', baseRoleKey: 'surfaceBright' },
-  { key: 'donationTileText', label: 'Amount Tile Text', section: 'Donation', baseRoleKey: 'onSurface' },
-  { key: 'donationProgressFill', label: 'Progress Bar Fill', section: 'Donation', baseRoleKey: 'secondaryContainer' },
-
-  { key: 'liveScoringBodyText', label: 'Body Text', section: 'Live Scoring', baseRoleKey: 'onSurface' },
-]
-
-// ELEMENT_DEFS grouped by its own `section`, in first-seen order — this
-// tab's own display order (Header, Tournament Details, ...), not
-// alphabetical.
-const ELEMENT_GROUPS = ELEMENT_DEFS.reduce((groups, def) => {
-  const group = groups.find(g => g.section === def.section)
-  if (group) group.defs.push(def)
-  else groups.push({ section: def.section, defs: [def] })
+// Site Colors' per-element list lives in data/eventSiteElements.js
+// (ELEMENT_DEFS / ELEMENT_COMPONENTS) — every named, non-button element the
+// live Event Website renders, each pointed at one designation
+// (`baseRoleKey`) by default, with parts that form one component (a
+// background and the text on it) assigned together. Grouped here by the
+// `section` each lives in, in first-seen order — this tab's own display
+// order (Header, Tournament Details, ...), not alphabetical.
+const ELEMENT_GROUPS = ELEMENT_COMPONENTS.reduce((groups, component) => {
+  const group = groups.find(g => g.section === component.section)
+  if (group) group.components.push(component)
+  else groups.push({ section: component.section, components: [component] })
   return groups
 }, [])
 
-// Derives each ELEMENT_DEFS entry's real `--es-el-*` custom property from
-// its own `key` — mechanical camelCase-to-kebab-case, since `key` is
-// already written to match EventWebsitePage.jsx's own ELEMENT_TO_CSS_VAR
-// exactly (see ELEMENT_DEFS' own comment above); deriving it here instead
-// of a second hand-kept list is what keeps that guarantee from silently
-// drifting if a key ever gets renamed on one side and not the other.
-const camelToKebab = str => str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-const SITE_ELEMENT_CSS_VAR = Object.fromEntries(ELEMENT_DEFS.map(def => [def.key, `--es-el-${camelToKebab(def.key)}`]))
+// Each element's real `--es-el-*` custom property (data/eventSiteElements.js's
+// elementCssVar — the same derivation EventWebsitePage.jsx uses, so the two
+// can't drift).
+const SITE_ELEMENT_CSS_VAR = Object.fromEntries(ELEMENT_DEFS.map(def => [def.key, elementCssVar(def.key)]))
 
 // The five tabs — Color Ramps (Neutral/Primary/Secondary scales), Theme
 // (the live `--gs-color-*` roles those scales feed, editable), Event Site
@@ -917,28 +805,9 @@ const SITE_ELEMENT_CSS_VAR = Object.fromEntries(ELEMENT_DEFS.map(def => [def.key
 // designations typed on roles with no site override slot (`sitePersisted`
 // false) and the open tab survive a refresh. Site-persisted roles already
 // survive via themeOverrides + Save.
-// Designations for roles the live site can't persist (see `sitePersisted`),
-// seeded from the designed defaults; anything stored locally wins over these.
-const DEFAULT_LOCAL_DESIGNATIONS = {
-  'golfstatus-dark-outline': { family: 'grey', step: 800 },
-  'golfstatus-dark-outlineVariant': { family: 'grey', step: 800 },
-  'golfstatus-dark-surfaceContainerLow': { family: 'black' },
-  'golfstatus-light-outline': { family: 'grey', step: 100 },
-  'golfstatus-light-surface': { family: 'grey', step: 50 },
-  'neutral-full-dark-onSurface': { family: 'secondary', step: 100 },
-  'neutral-full-dark-onSurfaceVariant': { family: 'secondary', step: 100 },
-  'neutral-full-light-onSurface': { family: 'secondary', step: 800 },
-  'neutral-full-light-onSurfaceVariant': { family: 'secondary', step: 800 },
-  'primary-full-dark-onPrimary': { family: 'primary', step: 900 },
-  'primary-full-light-onPrimary': { family: 'white' },
-  'primary-neutral-dark-onPrimary': { family: 'primary', step: 900 },
-  'primary-neutral-light-onPrimary': { family: 'white' },
-  'primary-primary-dark-onPrimary': { family: 'primary', step: 900 },
-  'primary-primary-light-onPrimary': { family: 'white' },
-  'secondary-full-dark-onSecondary': { family: 'secondary', step: 100 },
-  'secondary-neutral-dark-onSecondary': { family: 'secondary', step: 100 },
-  'secondary-primary-dark-onSecondary': { family: 'secondary', step: 100 },
-}
+// Designations for rows the live site can't persist (see `sitePersisted`).
+// Every editable Theme row persists now, so this is only a fallback store.
+const DEFAULT_LOCAL_DESIGNATIONS = {}
 
 const DESIGNATIONS_STORAGE_KEY = 'color-exploration-local-designations'
 const TAB_STORAGE_KEY = 'color-exploration-active-tab'
@@ -988,6 +857,10 @@ function defaultButtonHex(mode, color, appearance, part, scales) {
     if (appearance === 'subtle') return part === 'bg' ? (dark ? golfstatusColors.grey800 : golfstatusColors.grey100) : ink
     return ink
   }
+  // Fill is the Container designation's own pair, so it follows the Theme tab.
+  if (appearance === 'fill') {
+    return scales.roleHexes?.[mode]?.[`${color}Container:${part === 'bg' ? 'background' : 'text'}`]
+  }
   const vars = buttonThemeVars(scales.primaryScale, scales.secondaryScale, mode)
   const base = vars[`--gs-color-${color}`]
   if (appearance === 'outline' || appearance === 'transparent') return base
@@ -1007,6 +880,8 @@ function defaultButtonRef(mode, color, appearance, part, scales) {
     if (appearance === 'subtle' && part === 'bg') return { family: 'grey', step: dark ? 800 : 100 }
     return dark ? { family: 'white' } : { family: 'grey', step: 800 }
   }
+  // Fill reads a Container designation (see defaultButtonHex) — no scale step.
+  if (appearance === 'fill') return null
   let step
   if (appearance === 'subtle') step = part === 'bg' ? (dark ? 700 : 100) : (dark ? 50 : 900)
   else if (appearance === 'fill' && part === 'text') {
@@ -1020,7 +895,7 @@ function defaultButtonRef(mode, color, appearance, part, scales) {
 // One editable color on the Buttons tab — a native swatch picker plus a text
 // field taking a hex ("#1A73E8") or a scale designation ("Primary 700").
 // Same draft/commit convention as DesignationInput; blank resets to default.
-function ButtonColorField({ label, hex, override, defaultRef, onCommit, designationOnly }) {
+function ButtonColorField({ label, hex, override, defaultRef, onCommit, designationOnly, greyOnly }) {
   if (designationOnly) {
     // Tint themes pick from the scale (Primary 700, Secondary 100, ...)
     // rather than typing a hex — stored as a { family, step } reference so
@@ -1032,8 +907,9 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
           <span className="wds-btn-field-swatch wds-btn-field-swatch--static" style={{ backgroundColor: hex }} />
           <select
             className="wds-btn-field-text"
-            value={override?.role ? ELEMENT_ROLES.find(r => r.key === override.role)?.label ?? '' : refToText(override ?? defaultRef)}
+            value={override?.role ? ELEMENT_ROLES.find(r => r.key === canonicalRoleKey(override.role))?.label ?? 'Missing designation' : refToText(override ?? defaultRef)}
             onChange={e => {
+              if (e.target.value === 'Missing designation') return
               const roleKey = e.target.value ? parseRoleReference(e.target.value) : null
               const next = roleKey ? { role: roleKey } : e.target.value ? parseDesignation(e.target.value) : null
               // Picking the built-in designation just clears the override.
@@ -1043,6 +919,8 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
           >
             {/* GolfStatus's brand defaults (grey/cyan) aren't a scale step. */}
             {!defaultRef && <option value="">Default</option>}
+            {/* A saved designation that's no longer in Theme.js — pink on the site. */}
+            {override?.role && !canonicalRoleKey(override.role) && <option value="Missing designation">Missing designation (pink)</option>}
             <optgroup label="Base">
               <option value="White">White</option>
               <option value="Black">Black</option>
@@ -1052,7 +930,7 @@ function ButtonColorField({ label, hex, override, defaultRef, onCommit, designat
                 <option key={role.key} value={role.label}>{role.label}</option>
               ))}
             </optgroup>
-            {['Grey', 'Primary', 'Secondary'].map(family => (
+            {(greyOnly ? ['Grey'] : ['Grey', 'Primary', 'Secondary']).map(family => (
               <optgroup key={family} label={family}>
                 {SCALE_STEPS.map(step => (
                   <option key={step} value={`${family} ${step}`}>{`${family} ${step}`}</option>
@@ -1109,7 +987,7 @@ function ButtonVariantCell({ mode, color, appearance, parts, overrides, onChange
   const fields = parts.map(([part, label]) => {
     const key = buttonOverrideKey(mode, color, appearance, part)
     const override = overrides?.[key] ?? null
-    const hex = resolveButtonOverride(override, scales, mode) ?? defaultButtonHex(mode, color, appearance, part, scales)
+    const hex = resolveButtonOverride(override, scales, mode, part) ?? defaultButtonHex(mode, color, appearance, part, scales)
     effective[buttonVarName(color, appearance, part)] = hex
     return (
       <ButtonColorField
@@ -1119,6 +997,7 @@ function ButtonVariantCell({ mode, color, appearance, parts, overrides, onChange
         override={override}
         defaultRef={defaultButtonRef(mode, color, appearance, part, scales)}
         designationOnly
+        greyOnly={color === 'neutral'}
         onCommit={next =>
           onChange(prev => {
             const store = { ...(prev ?? {}) }
@@ -1147,50 +1026,39 @@ function ButtonVariantCell({ mode, color, appearance, parts, overrides, onChange
 // Which variant each named Event Website button uses — the same
 // `buttonStyles` the /event-site right-click menu edits (EventSiteContext
 // Menu.jsx), so a pick made there shows up here and vice versa.
-function ButtonStylesSection({ themes, buttonStyles, onChange }) {
-  // Picks are stored per theme, so one theme is edited at a time.
-  const [themeKey, setThemeKey] = useState(themes[0].key)
+function ButtonStylesSection({ buttonStyles, onChange }) {
+  // One style per button for EVERY theme — a pick is written to all of them
+  // (Grayscale, Subtle and Bold never diverge), same rule as the element
+  // designations. The first theme's slot is the one read back.
+  const readTheme = ELEMENT_OVERRIDE_THEMES[0]
   const setStyle = (id, patch) =>
     onChange(prev => {
       const [defColor, defAppearance] = BUTTON_DEFAULTS[id]
-      const k = buttonStyleKey(themeKey, id)
-      return {
-        ...(prev ?? {}),
-        [k]: { color: `${defColor}-color`, appearance: defAppearance, ...(prev?.[k] ?? {}), ...patch },
-      }
+      const next = { ...(prev ?? {}) }
+      const current = { color: `${defColor}-color`, appearance: defAppearance, ...(prev?.[buttonStyleKey(readTheme, id)] ?? {}) }
+      ELEMENT_OVERRIDE_THEMES.forEach(theme => { next[buttonStyleKey(theme, id)] = { ...current, ...patch } })
+      return next
     })
   const reset = id =>
     onChange(prev => {
       const next = { ...(prev ?? {}) }
-      delete next[buttonStyleKey(themeKey, id)]
+      ELEMENT_OVERRIDE_THEMES.forEach(theme => delete next[buttonStyleKey(theme, id)])
       return next
     })
   return (
     <section className="wds-btn-theme wds-btn-styles">
       <GSActionBar type="form-header H3" header="Button Styles" />
-      <div className="wds-btn-style-options">
-        {themes.map(t => (
-          <button
-            key={t.key}
-            type="button"
-            className={`wds-btn-style-option${themeKey === t.key ? ' is-active' : ''}`}
-            onClick={() => setThemeKey(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="wds-btn-style-name">Applies to Grayscale, Subtle and Bold alike. (Grayscale always draws Grey buttons.)</div>
       {Object.entries(BUTTON_IDS).map(([id, label]) => {
-        const saved = buttonStyles?.[buttonStyleKey(themeKey, id)]
+        const saved = buttonStyles?.[buttonStyleKey(readTheme, id)]
         const [defColor, defAppearance] = BUTTON_DEFAULTS[id]
-        // Grayscale only ever uses Grey buttons.
-        const color = themeKey === 'golfstatus' ? 'neutral-color' : saved?.color ?? `${defColor}-color`
+        const color = saved?.color ?? `${defColor}-color`
         const appearance = saved?.appearance ?? defAppearance
         return (
           <div className="wds-btn-style-row" key={id}>
             <div className="wds-btn-style-name">{label}</div>
             <div className="wds-btn-style-options">
-              {BUTTON_COLORS.filter(option => themeKey !== 'golfstatus' || option.key === 'neutral').map(option => (
+              {BUTTON_COLORS.map(option => (
                 <button
                   key={option.key}
                   type="button"
@@ -1223,7 +1091,74 @@ function ButtonStylesSection({ themes, buttonStyles, onChange }) {
   )
 }
 
-function ButtonsTab({ themes, overrides, onChange, scales, buttonStyles, onChangeButtonStyles }) {
+// One designation for a whole button variant: picking "Primary Container" on
+// Primary Fill points its background at that designation's background color
+// and its text at its text color (an outline's border at its border color) —
+// in light and dark both, so the pair always switches together. Blank clears
+// every part back to the button's own default. Shows the shared designation
+// when every part points at the same one, else "Mixed".
+function ButtonDesignationSelect({ color, appearance, parts, overrides, onChange }) {
+  const modes = ['light', 'dark']
+  const keys = modes.flatMap(mode => parts.map(([part]) => buttonOverrideKey(mode, color, appearance, part)))
+  const roles = keys.map(key => overrides?.[key]?.from ?? overrides?.[key]?.role ?? null)
+  const first = roles[0]
+  const shared = first && roles.every(role => role === first) ? canonicalRoleKey(first) ?? 'missing' : null
+  const mixed = !shared && roles.some(Boolean)
+  const value = shared === 'missing' ? 'Missing designation' : shared ? ELEMENT_ROLES.find(r => r.key === shared)?.label ?? '' : mixed ? 'Mixed' : ''
+  return (
+    <select
+      className="wds-ramp-chip-designation"
+      value={value}
+      aria-label={`${color} ${appearance} designation — sets every color of this button`}
+      onChange={e => {
+        const text = e.target.value
+        if (text === 'Mixed' || text === 'Missing designation') return
+        const roleKey = text ? parseRoleReference(text) : null
+        const hasFill = roleKey && THEME_ROLES.find(r => r.key === roleKey).parts.some(p => p.part === 'background')
+        // Readability: a button's text has to contrast with what's behind it.
+        //  - Fill/Subtle text sits on the designation's own fill, so it takes
+        //    the designation's paired text color. A color-only designation
+        //    (Primary, Error, ...) has no pair, so its text falls back to the
+        //    page Background color instead of matching its own fill.
+        //  - Outline/Transparent text sits on the PAGE, so a designation with
+        //    a fill (whose text color is made for that fill — white on a dark
+        //    container) uses its fill color as the text instead.
+        const onFill = appearance === 'fill' || appearance === 'subtle'
+        const partOverride = part => {
+          if (part !== 'text') return { role: roleKey }
+          if (onFill && !hasFill) return { role: 'background', kind: 'background', from: roleKey }
+          if (!onFill && hasFill) return { role: roleKey, kind: 'background' }
+          return { role: roleKey }
+        }
+        onChange(prev => {
+          const store = { ...(prev ?? {}) }
+          modes.forEach(mode => parts.forEach(([part]) => {
+            const key = buttonOverrideKey(mode, color, appearance, part)
+            if (roleKey) store[key] = partOverride(part)
+            else delete store[key]
+          }))
+          return store
+        })
+      }}
+    >
+      <option value="">Default</option>
+      {mixed && <option value="Mixed">Mixed</option>}
+      {shared === 'missing' && <option value="Missing designation">Missing designation (pink)</option>}
+      {ELEMENT_ROLES.map(role => (
+        <option key={role.key} value={role.label}>{role.label}</option>
+      ))}
+    </select>
+  )
+}
+
+function ButtonsTab({ themes, overrides, onChange, scales: baseScales, roleHexesByTheme, defaultPreviewTheme, buttonStyles, onChangeButtonStyles }) {
+  // Buttons are shared by every theme. Grey buttons always resolve
+  // designations against the default (Grayscale) theme; Primary/Secondary
+  // against the most-edited theme.
+  const scalesFor = color => ({
+    ...baseScales,
+    roleHexes: (color === 'neutral' && roleHexesByTheme.golfstatus) || roleHexesByTheme[defaultPreviewTheme],
+  })
   return (
     <div className="wds-btn-tab">
       {BUTTON_COLORS.map(({ key: color, label: colorLabel }) => (
@@ -1235,7 +1170,10 @@ function ButtonsTab({ themes, overrides, onChange, scales, buttonStyles, onChang
             <div className="wds-btn-grid-head">Dark</div>
             {BUTTON_APPEARANCES.map(({ key: appearance, label: appearanceLabel, parts }) => (
               <div className="wds-btn-row" key={`${color}-${appearance}`}>
-                <div className="wds-btn-row-label">{colorLabel} {appearanceLabel}</div>
+                <div className="wds-btn-row-label">
+                  {colorLabel} {appearanceLabel}
+                  <ButtonDesignationSelect color={color} appearance={appearance} parts={parts} overrides={overrides} onChange={onChange} />
+                </div>
                 {['light', 'dark'].map(mode => (
                   <ButtonVariantCell
                     key={mode}
@@ -1245,7 +1183,7 @@ function ButtonsTab({ themes, overrides, onChange, scales, buttonStyles, onChang
                     parts={parts}
                     overrides={overrides}
                     onChange={onChange}
-                    scales={scales}
+                    scales={scalesFor(color)}
                   />
                 ))}
               </div>
@@ -1253,7 +1191,7 @@ function ButtonsTab({ themes, overrides, onChange, scales, buttonStyles, onChang
           </div>
         </section>
       ))}
-      <ButtonStylesSection themes={themes} buttonStyles={buttonStyles} onChange={onChangeButtonStyles} />
+      <ButtonStylesSection buttonStyles={buttonStyles} onChange={onChangeButtonStyles} />
     </div>
   )
 }
@@ -1285,13 +1223,6 @@ export default function ColorExplorationFields({
 }) {
   const primaryScale = generateScale(primaryColor)
   const secondaryScale = generateScale(secondaryColor)
-  // Each theme role's hex per mode — what a button part pointing at a role shows.
-  const buttonRoleHexes = Object.fromEntries(
-    Object.entries(liveThemeRoleDefs(primaryScale, secondaryScale)).map(([mode, groups]) => [
-      mode,
-      Object.fromEntries(Object.values(groups).flat().map(r => [r.key, r.fallbackHex])),
-    ])
-  )
   const [activeTab, setActiveTab] = useState(() => {
     const saved = readStored(TAB_STORAGE_KEY)
     return COLOR_TABS.some(tab => tab.key === saved) ? saved : COLOR_TABS[0].key
@@ -1322,7 +1253,8 @@ export default function ColorExplorationFields({
   // reads, so a Neutral Tint edit and a Primary Tint edit of the same role
   // land in that tint's own slot rather than colliding.
   const resolveDesignable = (def, mode, scope, tintKey = '') => {
-    if (!def.editable) return { key: def.key, label: def.label, hex: def.fallbackHex }
+    const identity = { roleKey: def.roleKey, roleLabel: def.roleLabel, propLabel: def.propLabel }
+    if (!def.editable) return { key: def.key, label: def.label, ...identity, hex: def.fallbackHex }
     const storageKey = def.sitePersisted ? `${mode}-${tintKey}-${def.key}` : `${scope}-${mode}-${def.key}`
     const store = def.sitePersisted ? themeOverrides : localDesignations
     const storedRef = store?.[storageKey] ?? null
@@ -1333,7 +1265,9 @@ export default function ColorExplorationFields({
     return {
       key: def.key,
       label: def.label,
+      ...identity,
       hex,
+      overridden: Boolean(storedRef),
       designation,
       onChangeDesignation: text => {
         const trimmed = text.trim()
@@ -1362,7 +1296,25 @@ export default function ColorExplorationFields({
     }
   }
 
-  const resolveGroup = (defs, mode, scope, tintKey) => defs.map(def => resolveDesignable(def, mode, scope, tintKey))
+  // A fill's paired text is made for the ORIGINAL fill — when only the fill
+  // is overridden, the text is re-picked for contrast against the new one
+  // (same rule as data/eventSiteThemeVars.js), unless it's overridden too.
+  const pairReadableText = (items, defs) => {
+    const overriddenKeys = new Set(items.filter(item => item.overridden).map(item => item.key))
+    return items.map(item => {
+      const def = defs.find(d => d.key === item.key)
+      if (!def || def.propLabel !== 'Color' || !def.sitePersisted || overriddenKeys.has(item.key)) return item
+      const fill = items.find(other => other.roleKey === item.roleKey && other.propLabel === 'Background color')
+      if (!fill?.overridden) return item
+      // Keep the text it has while it still reads on the new fill.
+      const hex = keepOrReadableText(item.hex, fill.hex)
+      if (hex === item.hex) return item
+      // Label it as what it now is (White / Grey 800), not the designation it replaced.
+      return { ...item, hex, designation: refToText(hexToRef(hex)) }
+    })
+  }
+  const resolveGroup = (defs, mode, scope, tintKey) =>
+    pairReadableText(defs.map(def => resolveDesignable(def, mode, scope, tintKey)), defs)
 
   const baseThemeDefs = liveThemeRoleDefs(primaryScale, secondaryScale)
 
@@ -1432,96 +1384,110 @@ export default function ColorExplorationFields({
     ...flattenedTintThemes,
   ]
 
-  // Resolves one ELEMENT_DEFS entry for one mode into a chip-ready
-  // { hex, designation, onChangeDesignation } — keyed by "mode-elementKey"
-  // only, same override regardless of which tint it's being displayed
-  // under (`roleList`, one of flattenedTintThemes' own light/dark arrays) —
-  // an element's assignment ("point at Background") doesn't change per
-  // tint, only what that assignment currently RESOLVES to does, since a
-  // Neutral-group role's own hex genuinely differs per tint (Primary/
-  // Secondary's own roles don't). Always falls back to `roleList`'s own
-  // already-resolved hex for `baseRoleKey` when nothing's assigned, so an
-  // element tracks whatever that role currently resolves to (including its
-  // own themeOverrides riff, if any) rather than freezing a snapshot of it.
-  //
-  // Unlike resolveDesignable above (a role pointed at a literal scale step,
-  // e.g. { family: 'primary', step: 600 } — the Theme tab's own
-  // vocabulary), an element here is pointed at another ROLE by name (e.g.
-  // "On Primary"), stored as { role: 'onPrimary' } and resolved by reading
-  // THAT role's own already-resolved hex/label out of `roleList` — so it
-  // keeps tracking whatever On Primary itself currently is (tint, its own
-  // override, ...) rather than a frozen scale step. A legacy
-  // { family, step }/White/Black ref (saved before this screen switched to
-  // role references) still resolves fine via resolveOverrideHex, it just
-  // isn't something typing into this input can produce anymore.
-  const resolveElementDesignable = (def, mode, roleList, tintKey) => {
+  // Each designation's hex per theme, mode and kind ("surface:background",
+  // "surface:text", "outline:border") — what a button part pointing at a
+  // designation shows (data/eventSiteButtons.js's resolveButtonOverride).
+  // Built from the same RESOLVED Theme rows as everything else, so an edit
+  // made on the Theme tab (e.g. Primary Container High's background) shows up
+  // on the buttons that use it.
+  const roleHexesByTheme = Object.fromEntries(siteColorThemes.map(theme => [
+    theme.key,
+    Object.fromEntries(['light', 'dark'].map(mode => {
+      const hexByKey = Object.fromEntries(theme[mode].map(item => [item.key, item.hex]))
+      return [mode, Object.fromEntries(THEME_ROLES.flatMap(role =>
+        ['background', 'text', 'border'].map(kind => [`${role.key}:${kind}`, hexByKey[rolePart(role.key, kind).storageKey]])
+      ))]
+    })),
+  ]))
+  // Which theme the Buttons tab previews by default: the one whose Theme
+  // rows you've actually edited most.
+  const editedCounts = {}
+  Object.keys(themeOverrides ?? {}).forEach(key => {
+    const tint = key.split('-').slice(1, -1).join('-')
+    editedCounts[tint] = (editedCounts[tint] ?? 0) + 1
+  })
+  const defaultButtonPreviewTheme = siteColorThemes.map(t => t.key).sort((x, y) => (editedCounts[y] ?? 0) - (editedCounts[x] ?? 0))[0]
+
+  // Resolves one Site Colors component (data/eventSiteElements.js's
+  // ELEMENT_COMPONENTS — a lone element, or a background plus the text on it)
+  // for one mode into a chip-ready { key, hex, caption, designation } —
+  // keyed by "mode-tint-elementKey" (`tintKey` is the theme column being
+  // displayed, `roleList` that theme's own already-resolved Theme rows).
+  // An element is pointed at a DESIGNATION by name (e.g. "Surface"), stored
+  // as { role: 'surface' }; each of the component's parts then reads the
+  // color of that designation matching its own kind (a fill reads the
+  // background, text reads the text color, a border the border) from
+  // `roleList`, so it keeps tracking whatever that designation itself
+  // currently is (tint, its own override, ...) instead of a frozen scale
+  // step. A designation that isn't in Theme.js (a role saved before the On X/
+  // *Variant ones were dropped) resolves to pink, same as on the live site.
+  // The chip shows the first part's color; the caption lists every part's
+  // scale designation ("White / Grey 800" for a fill and its text).
+  const resolveElementDesignable = (component, mode, roleList, tintKey) => {
+    const first = component.defs[0]
     // Assignments are shared by every theme (see setElementAssignment), so
     // GolfStatus's slot is the one source of truth all tiles read from —
     // except Subtle, which keeps its own so it can diverge.
-    const storageKey = `${mode}-${tintKey}-${def.key}`
-    const fallbackRole = roleList.find(item => item.key === def.baseRoleKey)
-    // The header reads Primary Container / On Primary Container (its
-    // baseRoleKeys) in every theme; only the fixed GolfStatus theme's dark
-    // mode inverts the pairing (see EventWebsitePage.jsx's headerStyle).
-    const roleItem = key => roleList.find(item => item.key === key)
-    const HEADER_TEXT_KEYS = ['headerIcon', 'headerEventName', 'headerActionIcons']
-    let headerDefault
-    if (mode === 'dark' && tintKey === 'golfstatus') {
-      const source = def.key === 'headerBackground' ? roleItem('onPrimary') : HEADER_TEXT_KEYS.includes(def.key) ? roleItem('primaryContainer') : null
-      if (source) headerDefault = { hex: source.hex, caption: source.designation || source.label }
-    }
-    const storedRef = elementOverrides?.[storageKey] ?? null
-    const referencedRole = storedRef?.role
-      ? roleList.find(item => item.key === storedRef.role)
-      : null
-    const hex = referencedRole
-      ? referencedRole.hex
-      : resolveOverrideHex(storedRef, { primaryScale, secondaryScale }) ?? headerDefault?.hex ?? fallbackRole?.hex
-    const designation = referencedRole ? referencedRole.label : refToText(storedRef)
-    // What the tile shows instead of a hex: the scale step / role this
-    // element resolves to under this theme (e.g. "Primary 50", "White").
-    const resolvedRole = referencedRole ?? fallbackRole
-    const caption = referencedRole
-      ? resolvedRole?.designation || resolvedRole?.label
-      : storedRef
-        ? refToText(storedRef)
-        : headerDefault?.caption ?? (resolvedRole?.designation || resolvedRole?.label)
+    const storedRef = elementOverrides?.[`${mode}-${tintKey}-${first.key}`] ?? null
+    const missing = Boolean(storedRef?.role) && !canonicalRoleKey(storedRef.role)
+    const roleKey = storedRef?.role ? canonicalRoleKey(storedRef.role) : component.baseRoleKey
+    const items = component.defs.map(def => {
+      if (missing) return { hex: MISSING_ROLE_COLOR, caption: 'Missing' }
+      if (!storedRef?.role && storedRef) {
+        // A legacy { family, step }/White/Black ref (saved before this screen
+        // switched to designation references).
+        const hex = resolveOverrideHex(storedRef, { primaryScale, secondaryScale })
+        return { hex, caption: refToText(storedRef) }
+      }
+      const item = roleList.find(r => r.key === rolePart(roleKey, def.kind)?.storageKey)
+      return { hex: item?.hex ?? MISSING_ROLE_COLOR, caption: item?.designation || item?.label }
+    })
+    const captions = [...new Set(items.map(item => item.caption).filter(Boolean))]
+    // Components with text on a fill show that text color on the swatch too.
+    const textIndex = component.defs.findIndex(def => def.kind === 'text')
+    const hasFill = component.defs.some(def => def.kind === 'background')
     return {
-      key: def.key,
-      hex,
-      caption,
-      designation,
+      key: component.key,
+      hex: items[0].hex,
+      textHex: hasFill && textIndex >= 0 ? items[textIndex].hex : undefined,
+      caption: captions.join(' / '),
+      designation: missing ? 'Missing designation' : storedRef?.role ? THEME_ROLES.find(r => r.key === roleKey).label : refToText(storedRef),
     }
   }
 
-  // One dropdown per element (Site Colors' Page Element row) writes the
-  // same role/scale reference into every theme + mode slot the live site
-  // reads (EventWebsitePage.jsx's `${mode}-${tint}-${key}`), so structure
-  // stays identical across themes while each theme still resolves that role
-  // to its own colors. Picking the element's own default role clears it.
-  const setElementAssignment = (def, text, separate = false) => {
+  // One dropdown per component (Site Colors' Page Element row) writes the
+  // same designation reference into every part of it, in every theme + mode
+  // slot the live site reads (EventWebsitePage.jsx's `${mode}-${tint}-${key}`),
+  // so structure stays identical across themes while each theme still
+  // resolves that designation to its own colors — and a background and its
+  // text always switch together. Picking the component's own default
+  // designation clears it.
+  const setElementAssignment = (component, text) => {
     const trimmed = text.trim()
     const roleKey = trimmed ? parseRoleReference(trimmed) : null
     if (trimmed && !roleKey) return
-    const value = roleKey && roleKey !== def.baseRoleKey ? { role: roleKey } : null
+    const value = roleKey && roleKey !== component.baseRoleKey ? { role: roleKey } : null
     onChangeElementOverrides(prev => {
       const next = { ...(prev ?? {}) }
-      ;['light', 'dark'].forEach(mode => siteColorThemes.forEach(theme => {
-        if ((theme.key === SEPARATE_THEME) !== separate) return
-        const key = `${mode}-${theme.key}-${def.key}`
-        if (value) next[key] = value
-        else delete next[key]
+      // Every theme gets the same designation — Grayscale, Subtle and Bold
+      // never diverge, so one pick here is one pick everywhere.
+      ;['light', 'dark'].forEach(mode => ELEMENT_OVERRIDE_THEMES.forEach(themeKey => {
+        component.defs.forEach(def => {
+          const key = `${mode}-${themeKey}-${def.key}`
+          if (value) next[key] = value
+          else delete next[key]
+        })
       }))
       return next
     })
   }
 
-  const elementAssignment = (def, separate = false) => {
-    const stored = elementOverrides?.[`light-${separate ? SEPARATE_THEME : CANONICAL_THEME}-${def.key}`]
-    const baseLabel = golfStatusRoles.light.find(r => r.key === def.baseRoleKey)?.label
-    const current = stored?.role
-      ? golfStatusRoles.light.find(r => r.key === stored.role)?.label
-      : refToText(stored)
+  const elementAssignment = component => {
+    const stored = elementOverrides?.[`light-${CANONICAL_THEME}-${component.defs[0].key}`]
+    const baseLabel = THEME_ROLES.find(r => r.key === component.baseRoleKey)?.label
+    let current
+    if (stored?.role) current = THEME_ROLES.find(r => r.key === canonicalRoleKey(stored.role))?.label ?? 'Missing designation'
+    else current = refToText(stored)
     return { value: current, placeholder: baseLabel }
   }
 
@@ -1533,31 +1499,13 @@ export default function ColorExplorationFields({
   // this page doesn't define are listed in the devs' order, marked unused,
   // with no value. A `null` spec = unused.
   const downloadThemes = () => {
-    const tokenSpecs = [
-      ['primary', { color: 'primary' }],
-      ['secondary', { color: 'secondary' }],
-      ['primaryContainer', { backgroundColor: 'primaryContainer', color: 'onPrimary' }],
-      ['secondaryContainer', { backgroundColor: 'secondaryContainer', color: 'onSecondary' }],
-      ['secondaryContainerHigh', null],
-      ['background', { backgroundColor: 'background', color: 'onBackground' }],
-      ['surface', { backgroundColor: 'surface', color: 'onSurface' }],
-      ['surfaceDim', null],
-      ['surfaceBright', { backgroundColor: 'surfaceBright', color: 'onSurface' }],
-      ['surfaceVariant', { backgroundColor: 'surfaceVariant', color: 'onSurfaceVariant' }],
-      ['surfaceContainer', null],
-      ['surfaceContainerLowest', null],
-      ['surfaceContainerLow', { backgroundColor: 'surfaceContainerLow', color: 'onSurface' }],
-      ['surfaceContainerHigh', { backgroundColor: 'surfaceContainerHigh', color: 'onSurface' }],
-      // The library spells this token "Higest" (single h) — kept so it overrides.
-      ['surfaceContainerHigest', { backgroundColor: 'surfaceContainerHigest', color: 'onSurface' }],
-      ['outline', { borderColor: 'outline' }],
-      ['outlineVariant', { borderColor: 'outlineVariant' }],
-      ['scrim', null],
-      ['error', null],
-      ['errorContainer', null],
-      ['tertiary', null],
-      ['tertiaryContainer', { backgroundColor: 'tertiaryContainer', color: 'onSurface' }],
-    ]
+    // One token per `defaultTheme` designation, in Theme.js's own order —
+    // each part valued by its row's color designation (white, grey800,
+    // cyan700, primary600, ...).
+    const tokenSpecs = THEME_ROLES.map(role => [
+      role.key,
+      Object.fromEntries(role.parts.map(part => [part.prop, part.storageKey])),
+    ])
     // File/export names the devs expect, by Theme-tab theme.
     const THEME_FILE_NAMES = {
       golfstatus: 'grayscaleTheme',
@@ -1764,32 +1712,27 @@ export default function ColorExplorationFields({
           {ELEMENT_GROUPS.map(group => (
             <div className="wds-element-group" key={group.section}>
               <div className="wds-element-group-title">{group.section}</div>
-              {group.defs.map(def => (
+              {group.components.map(component => (
                 <CompareRow
-                  key={def.key}
-                  label={def.label}
-                  cssVar={SITE_ELEMENT_CSS_VAR[def.key]}
-                  control={(
-                    <>
-                      {[false, true].map(separate => {
-                        const { value, placeholder } = elementAssignment(def, separate)
-                        return (
-                          <DesignationInput
-                            key={separate ? 'separate' : 'shared'}
-                            value={value}
-                            placeholder={placeholder}
-                            onCommit={text => setElementAssignment(def, text, separate)}
-                            hint={separate ? 'Subtle only' : ELEMENT_DESIGNATION_HINT}
-                            options={ROLE_DESIGNATIONS}
-                          />
-                        )
-                      })}
-                    </>
-                  )}
+                  key={component.key}
+                  label={component.label}
+                  cssVar={component.defs.map(def => SITE_ELEMENT_CSS_VAR[def.key]).join(' · ')}
+                  control={(() => {
+                    const { value, placeholder } = elementAssignment(component)
+                    return (
+                      <DesignationInput
+                        value={value}
+                        placeholder={placeholder}
+                        onCommit={text => setElementAssignment(component, text)}
+                        hint={ELEMENT_DESIGNATION_HINT}
+                        options={ROLE_DESIGNATIONS}
+                      />
+                    )
+                  })()}
                   columns={siteColorThemes.map(tintTheme => ({
                     key: tintTheme.key,
-                    light: resolveElementDesignable(def, 'light', tintTheme.light, tintTheme.key),
-                    dark: resolveElementDesignable(def, 'dark', tintTheme.dark, tintTheme.key),
+                    light: resolveElementDesignable(component, 'light', tintTheme.light, tintTheme.key),
+                    dark: resolveElementDesignable(component, 'dark', tintTheme.dark, tintTheme.key),
                   }))}
                 />
               ))}
@@ -1803,7 +1746,9 @@ export default function ColorExplorationFields({
           themes={BUTTON_THEMES}
           overrides={buttonOverrides}
           onChange={onChangeButtonOverrides}
-          scales={{ primaryScale, secondaryScale, roleHexes: buttonRoleHexes }}
+          scales={{ primaryScale, secondaryScale }}
+          roleHexesByTheme={roleHexesByTheme}
+          defaultPreviewTheme={defaultButtonPreviewTheme}
           buttonStyles={buttonStyles}
           onChangeButtonStyles={onChangeButtonStyles}
         />

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import golfstatusLogo from '../../assets/GS_Logo.svg'
-import { generateScale } from '../../gs-lib/helpers/colorScale'
-import { OUTLINE_VARIANT_MONO_STEP } from '../../gs-lib/helpers/monochromatic'
-import { normalizeNeutralTint } from '../../data/eventSiteStyle.js'
+import { normalizeNeutralTint, loadEventSiteStyle, hasEventSiteStyle } from '../../data/eventSiteStyle.js'
+import { loadIsPremium } from '../../data/eventSitePremium.js'
+import { eventSiteThemeVars } from '../../data/eventSiteThemeVars.js'
 import { buttonStyleKey } from '../../data/eventSiteButtons.js'
 import './EventSiteDeviceMockup.scss'
 
@@ -140,73 +140,87 @@ const SUBNAV_TEXT_Y = 15.4259
 const SUBNAV_TEXT_W = 9.14724
 const SUBNAV_TEXT_H = 0.773006
 
-// The export's Fill/Outline CTA chips read --gs-color-primary/-on-primary-
-// fill and --gs-color-secondary (see EventSiteDeviceMockup.scss's
-// edm-rect--cta-*) — same step convention (600/50 in light mode) as
-// colorScale.js's own buttonThemeVars, mirroring EventWebsitePage.jsx's
-// real Register Now (Fill/Primary) and Make A Donation (Outline/Secondary)
-// buttons. Each half is left out of the returned object (falling through to
-// its own fallback hex in the stylesheet) when that color isn't given.
-// Register Now / Make A Donation chips follow the color + style saved for
-// those buttons (the same `buttonStyles` the live site's btn() reads), same
-// 600/50 step convention as the Fill/Outline defaults above.
-function chipVars(n, buttonId, defColor, defAppearance, scales, buttonStyles, theme) {
+// The mockup's colors come from the SAME variables the live site sets
+// (data/eventSiteThemeVars.js) — so a designation picked in Color
+// Exploration, a Theme override or a button style shows up here exactly as
+// it does on /event-site. The wrapping element also carries
+// `.gs-theme-default` (see THEME_CLASS) so the fixed GolfStatus theme's
+// own values fill in whatever a tint doesn't set. Each --edm-* below is just
+// a pointer at the live variable that shape stands in for, with the same
+// element-override-then-designation fallback the real page's stylesheet uses.
+export const THEME_CLASS = 'gs-theme-default'
+
+// What gs-button.scss falls back to for each button color/style:
+// [background var, text var]. Outline's border is its text color.
+const BUTTON_FALLBACKS = {
+  neutral: {
+    fill: ['--gs-color-on-surface', '--gs-color-surface'],
+    outline: [null, '--gs-color-on-surface'],
+    subtle: ['--gs-color-surface-variant', '--gs-color-on-surface-variant'],
+    transparent: [null, '--gs-color-on-surface'],
+  },
+  primary: {
+    fill: ['--gs-color-primary-container', '--gs-color-on-primary-container'],
+    outline: [null, '--gs-color-primary'],
+    subtle: ['--gs-color-primary-subtle', '--gs-color-on-primary-subtle'],
+    transparent: [null, '--gs-color-primary'],
+  },
+  secondary: {
+    fill: ['--gs-color-secondary-container', '--gs-color-on-secondary-container'],
+    outline: [null, '--gs-color-secondary'],
+    subtle: ['--gs-color-secondary-subtle', '--gs-color-on-secondary-subtle'],
+    transparent: [null, '--gs-color-secondary'],
+  },
+}
+
+// Register Now / Make A Donation / the active sub-nav tab chips follow the
+// color + style saved for those buttons (the same `buttonStyles` the live
+// site's btn() reads) and any Buttons-tab override (`--gs-btn-*`).
+function chipVars(n, buttonId, defColor, defAppearance, buttonStyles, theme) {
   const saved = buttonStyles?.[buttonStyleKey(theme, buttonId)]
-  const color = saved?.color ? saved.color.replace('-color', '') : defColor
+  // Grayscale only ever uses Grey buttons.
+  const color = theme === 'golfstatus' ? 'neutral' : saved?.color ? saved.color.replace('-color', '') : defColor
   const appearance = saved?.appearance ?? defAppearance
-  const scale = scales[color]
-  if (!scale) return null
-  const chip = { bg: 'transparent', border: 'transparent', label: scale[600] }
-  if (appearance === 'fill') Object.assign(chip, { bg: scale[600], border: scale[600], label: scale[50] })
-  else if (appearance === 'outline') Object.assign(chip, { border: scale[600] })
-  else if (appearance === 'subtle') Object.assign(chip, { bg: scale[100], border: scale[100], label: scale[900] })
+  const [bgVar, textVar] = BUTTON_FALLBACKS[color]?.[appearance] ?? BUTTON_FALLBACKS.primary.fill
+  const text = `var(--gs-btn-${color}-${appearance}-text, var(${textVar}))`
+  const bg = bgVar ? `var(--gs-btn-${color}-${appearance}-bg, var(${bgVar}))` : 'transparent'
   return {
-    [`--edm-cta${n}-bg`]: chip.bg,
-    [`--edm-cta${n}-border`]: chip.border,
-    [`--edm-cta${n}-label`]: chip.label,
+    [`--edm-cta${n}-bg`]: bg,
+    [`--edm-cta${n}-border`]: appearance === 'outline' ? text : bg,
+    [`--edm-cta${n}-label`]: text,
   }
 }
 
+// The saved overrides a preview should reflect — only once a premium
+// tournament has actually saved a style, same gate as the live page.
+function savedOverrides() {
+  if (!loadIsPremium() || !hasEventSiteStyle()) return {}
+  const { themeOverrides, elementOverrides, buttonOverrides } = loadEventSiteStyle()
+  return { themeOverrides, elementOverrides, buttonOverrides }
+}
+
 export function ctaThemeVars(primaryColor, secondaryColor, rawNeutralTint, buttonStyles) {
-  const neutralTint = normalizeNeutralTint(rawNeutralTint)
-  if (!primaryColor && !secondaryColor) return undefined
-  // Neutral Theme ('golfstatus') is the fixed grey preset, not a tint of
-  // the saved colors — leaving every var unset lets the stylesheet's own
-  // neutral fallbacks (header, CTA chips, surfaces) win.
-  if (neutralTint === 'golfstatus') return undefined
-  const primary = primaryColor ? generateScale(primaryColor) : null
-  const secondary = secondaryColor ? generateScale(secondaryColor) : null
-  // Neutral Tint ('primary'/'secondary') re-tints the mockup's grey chrome
-  // and placeholder shapes with that scale, same white->50, grey-50->100
-  // (softer than monochromatize()'s 50 so the hero card still reads against
-  // the page), grey-200->200, grey-800->800 substitution the live site's
-  // Monochromatic mode applies (monochromatic.js). 'neutral' leaves every
-  // --edm-* var unset, so the stylesheet's own flat greys win.
-  // 'full' tints surfaces with Secondary and borders/ink with Primary.
-  const surfaceScale = neutralTint === 'primary' ? primary : neutralTint === 'secondary' || neutralTint === 'full' ? secondary : null
-  const inkScale = neutralTint === 'full' ? primary : surfaceScale
+  const tint = rawNeutralTint
+  const { customThemeStyle, extraStyle } = eventSiteThemeVars({
+    siteStyle: { primaryColor, secondaryColor, ...savedOverrides() },
+    tint,
+    themeMode: 'light',
+    normalizeNeutralTint,
+  })
   return {
-    ...(primary && { '--gs-color-primary': primary[600], '--gs-color-on-primary-fill': primary[50] }),
-    // Neutral Tint's header is the plain Primary bar (tinted themes keep the
-    // dark ink header) — same rule as EventWebsitePage.jsx's --es-header-ink.
-    ...(primary && neutralTint === 'neutral' && { '--edm-header': primary[600] }),
-    ...chipVars('1', 'registerNow', neutralTint === 'secondary' ? 'secondary' : 'primary', 'fill', { primary, secondary }, buttonStyles, rawNeutralTint),
-    ...chipVars('2', 'makeDonation', 'secondary', 'outline', { primary, secondary }, buttonStyles, rawNeutralTint),
+    ...customThemeStyle,
+    ...extraStyle,
+    '--edm-header': 'var(--es-el-header-background, var(--gs-color-primary-container))',
+    '--edm-surface': 'var(--es-el-page-background, var(--gs-color-background))',
+    '--edm-card-bg': 'var(--es-el-section-box-background, var(--gs-color-surface-container-high))',
+    '--edm-border': 'var(--es-el-section-bottom-border, var(--gs-color-outline-variant))',
+    '--edm-frame-border': 'var(--gs-color-outline-variant)',
+    '--edm-ink': 'var(--es-el-page-text-default, var(--gs-color-on-background))',
+    ...chipVars('1', 'registerNow', tint === 'secondary' ? 'secondary' : 'primary', 'fill', buttonStyles, tint),
+    ...chipVars('2', 'makeDonation', 'secondary', 'outline', buttonStyles, tint),
     // Active subnav tab = the live site's subnavSelected button (Subtle
     // Primary by default, always Primary regardless of tint).
-    ...chipVars('3', 'subnavSelected', 'primary', 'subtle', { primary, secondary }, buttonStyles, rawNeutralTint),
-    ...(secondary && { '--gs-color-secondary': secondary[600] }),
-    ...(surfaceScale && inkScale && {
-      '--edm-surface': surfaceScale[50],
-      '--edm-card-bg': surfaceScale[100],
-      // Card/section borders = the live site's Outline Variant, pinned to
-      // step 100 (OUTLINE_VARIANT_MONO_STEP) of the text scale. The device
-      // frame's own outline stays one step darker (200) so it still reads
-      // against the thumbnail backdrop.
-      '--edm-border': inkScale[OUTLINE_VARIANT_MONO_STEP],
-      '--edm-frame-border': inkScale[200],
-      '--edm-ink': inkScale[800],
-    }),
+    ...chipVars('3', 'subnavSelected', 'primary', 'subtle', buttonStyles, tint),
   }
 }
 
@@ -234,7 +248,7 @@ function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTin
       {label && <div className="edm-label">{label}</div>}
       <div className="edm-mockup" ref={mockupRef} style={{ height: `${deskHeightPx}px` }}>
         <div
-          className="edm-desktop-window"
+          className={`edm-desktop-window ${THEME_CLASS}`}
           style={{ width: `${deskWidthPx}px`, height: `${deskHeightPx}px`, ...ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles) }}
         >
           {/* Header bar + brand icon + title bar + right-side action chip */}
@@ -292,7 +306,7 @@ function EventSiteDeviceMockup({ label, primaryColor, secondaryColor, neutralTin
         {/* The phone — PHONE_HEIGHT_FRACTION the desktop's height, hanging
             PHONE_OVERLAP_FRACTION of its own width past the desktop's right
             edge, vertically centered on it. */}
-        <div className="edm-mobile" style={{ ...ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles), left: `${phoneLeftPx}px`, top: `${phoneTopPx}px`, width: `${phoneWidthPx}px`, height: `${phoneHeightPx}px` }}>
+        <div className={`edm-mobile ${THEME_CLASS}`} style={{ ...ctaThemeVars(primaryColor, secondaryColor, neutralTint, buttonStyles), left: `${phoneLeftPx}px`, top: `${phoneTopPx}px`, width: `${phoneWidthPx}px`, height: `${phoneHeightPx}px` }}>
           {/* Status bar + brand icon + right-side action chip */}
           <Rect origin={MOBILE_ORIGIN} x={209.012} y={7.32779} w={54} h={10.5362} scale={phoneScale} className="edm-rect--header" />
           <BrandIcon origin={MOBILE_ORIGIN} x={211.218} y={9.53366} w={5.78} h={5.78} scale={phoneScale} />

@@ -590,3 +590,52 @@ select.wds-ramp-chip-designation option {
   vertical-align: -1px;
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
+
+// Theme tab: one card per designation, its colors (Background color / Color /
+// Border color) stacked inside so a pair reads as one thing.
+.wds-role-card {
+  margin: $large-pad 0;
+  border: 2px solid $grey-200;
+  border-radius: 12px;
+  background: $white;
+  overflow: hidden;
+
+  .wds-compare-row {
+    padding: $large-pad $large-pad $x-large-pad;
+
+    &:last-child { border-bottom: 0; }
+  }
+
+  .wds-compare-row-label {
+    font-weight: 500;
+    font-size: 13px;
+    color: $grey-600;
+  }
+}
+
+.wds-role-card-title {
+  display: flex;
+  align-items: baseline;
+  gap: $medium-pad;
+  padding: $medium-large-pad $large-pad;
+  background: $grey-50;
+  border-bottom: 2px solid $grey-200;
+  font-weight: 700;
+  font-size: 17px;
+  color: $black;
+}
+
+.wds-role-card-note {
+  font-weight: 400;
+  font-size: 12px;
+  color: $grey-600;
+}
+
+// A fill-with-text component's swatch also shows its text color.
+.wds-ramp-chip-color--pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}

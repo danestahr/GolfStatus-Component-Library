@@ -1,12 +1,15 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ELEMENT_DEFS } from '../../components/orders-forms/ColorExplorationFields.jsx'
 import {
   ELEMENT_ROLES,
+  ELEMENT_COMPONENTS,
+  ELEMENT_COMPONENT_BY_ELEMENT,
+  ELEMENT_OVERRIDE_THEMES,
   elementKeysAt,
   buttonVariantAt,
 } from '../../data/eventSiteElements.js'
-import { BUTTON_APPEARANCES, BUTTON_COLORS, BUTTON_IDS, buttonOverrideKey, buttonStyleKey } from '../../data/eventSiteButtons.js'
+import { canonicalRoleKey, roleCssVar } from '../../data/eventSiteThemeRoles.js'
+import { BUTTON_APPEARANCES, BUTTON_COLORS, BUTTON_DEFAULTS, BUTTON_IDS, buttonOverrideKey, buttonStyleKey } from '../../data/eventSiteButtons.js'
 import { NODE_STYLE_PROPS, selectorFor } from '../../data/eventSiteNodeStyles.js'
 import { SCALE_STEPS } from '../../gs-lib/helpers/colorScale.js'
 import './EventSiteContextMenu.scss'
@@ -16,8 +19,12 @@ import './EventSiteContextMenu.scss'
 // bring them back.
 const SHOW_BUTTON_COLOR_OVERRIDES = false
 
-const DEFS_BY_KEY = Object.fromEntries(ELEMENT_DEFS.map(def => [def.key, def]))
-const VALID_KEYS = new Set(Object.keys(DEFS_BY_KEY))
+// What you assign is a component — an element, or a background and the text
+// on it, which take one designation together (data/eventSiteElements.js).
+const COMPONENTS_BY_KEY = Object.fromEntries(ELEMENT_COMPONENTS.map(component => [component.key, component]))
+const VALID_KEYS = new Set(Object.keys(ELEMENT_COMPONENT_BY_ELEMENT))
+// Which of a designation's colors each free-form style property takes.
+const PROP_KIND = { background: 'background', color: 'text', borderColor: 'border' }
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
 // getComputedStyle hands back rgb()/rgba() — an <input type="color"> and the
@@ -67,7 +74,11 @@ export default function EventSiteContextMenu({
   const [pos, setPos] = useState({ left: menu.x, top: menu.y })
 
   const buttonVariant = useMemo(() => buttonVariantAt(menu.node), [menu.node])
-  const elementKeys = useMemo(() => elementKeysAt(menu.node, VALID_KEYS), [menu.node])
+  // Deepest element first, folded into the components they belong to.
+  const elementKeys = useMemo(
+    () => [...new Set(elementKeysAt(menu.node, VALID_KEYS).map(key => ELEMENT_COMPONENT_BY_ELEMENT[key].key))],
+    [menu.node]
+  )
   const [selected, setSelected] = useState(buttonVariant ? 'button' : elementKeys[0] ?? 'node')
   const [scope, setScope] = useState('one')
 
@@ -102,19 +113,21 @@ export default function EventSiteContextMenu({
     }
   }, [onClose])
 
-  const roleHex = role => toHex(getComputedStyle(pageEl).getPropertyValue(role.cssVar).trim())
+  const cssHex = cssVar => toHex(getComputedStyle(pageEl).getPropertyValue(cssVar).trim())
 
   // ---- Element assignment ------------------------------------------------
-  const assignElement = (def, roleKey) => {
-    const value = roleKey && roleKey !== def.baseRoleKey ? { role: roleKey } : null
+  // One designation goes to every part of the component, so a background and
+  // its text switch together; each part reads the matching color of it.
+  const assignElement = (component, roleKey) => {
+    const value = roleKey && roleKey !== component.baseRoleKey ? { role: roleKey } : null
     onChangeStyle(prev => {
       const next = { ...(prev.elementOverrides ?? {}) }
-      // Only the theme being viewed — every theme keeps its own assignments.
-      ;['light', 'dark'].forEach(m => {
-        const key = `${m}-${tint}-${def.key}`
+      // Every theme gets it — one pick is one pick everywhere.
+      ;['light', 'dark'].forEach(m => ELEMENT_OVERRIDE_THEMES.forEach(t => component.defs.forEach(def => {
+        const key = `${m}-${t}-${def.key}`
         if (value) next[key] = value
         else delete next[key]
-      })
+      })))
       return { ...prev, elementOverrides: next }
     })
   }
@@ -131,51 +144,68 @@ export default function EventSiteContextMenu({
     })
   }
 
+  // One style per button for every theme — written to all of them.
   const setButtonStyle = patch => {
     if (!buttonVariant) return
-    onChangeStyle(prev => ({
-      ...prev,
-      buttonStyles: {
-        ...(prev.buttonStyles ?? {}),
-        [buttonStyleKey(tint, buttonVariant.id)]: {
-          color: `${buttonVariant.color}-color`,
-          appearance: buttonVariant.appearance,
-          ...(prev.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)] ?? {}),
-          ...patch,
-        },
-      },
-    }))
+    onChangeStyle(prev => {
+      // Grayscale always renders Grey, so its on-screen color says nothing
+      // about the other themes — start from the button's own default there.
+      const current = {
+        color: tint === 'golfstatus' ? `${BUTTON_DEFAULTS[buttonVariant.id][0]}-color` : `${buttonVariant.color}-color`,
+        appearance: buttonVariant.appearance,
+        ...(prev.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)] ?? {}),
+        ...patch,
+      }
+      const next = { ...(prev.buttonStyles ?? {}) }
+      ELEMENT_OVERRIDE_THEMES.forEach(t => { next[buttonStyleKey(t, buttonVariant.id)] = current })
+      return { ...prev, buttonStyles: next }
+    })
   }
   const resetButtonStyle = () => {
     if (!buttonVariant) return
     onChangeStyle(prev => {
       const next = { ...(prev.buttonStyles ?? {}) }
-      delete next[buttonStyleKey(tint, buttonVariant.id)]
+      ELEMENT_OVERRIDE_THEMES.forEach(t => delete next[buttonStyleKey(t, buttonVariant.id)])
       return { ...prev, buttonStyles: next }
     })
   }
 
   const renderElementPanel = () => {
-    const def = DEFS_BY_KEY[selected]
-    if (!def) return null
+    const component = COMPONENTS_BY_KEY[selected]
+    if (!component) return null
     if (!canEditElements) return <div className="es-ctx-note">{blockedReason}</div>
-    const override = siteStyle.elementOverrides?.[`${mode}-${tint}-${def.key}`]
-    const activeRole = override?.role ?? (override ? null : def.baseRoleKey)
-    const base = ELEMENT_ROLES.find(r => r.key === def.baseRoleKey)
+    const override = siteStyle.elementOverrides?.[`${mode}-${tint}-${component.defs[0].key}`]
+    // A saved designation that's no longer in Theme.js renders pink on the page.
+    const missing = Boolean(override?.role) && !canonicalRoleKey(override.role)
+    const activeRole = override?.role ? canonicalRoleKey(override.role) : override ? null : component.baseRoleKey
+    const base = ELEMENT_ROLES.find(r => r.key === component.baseRoleKey)
     return (
       <>
         <div className="es-ctx-subhead">Designation</div>
+        {component.defs.length > 1 && (
+          <div className="es-ctx-note">Sets {component.defs.map(def => def.kind).filter((k, i, all) => all.indexOf(k) === i).join(' + ')} together.</div>
+        )}
+        {missing && <div className="es-ctx-note">This designation no longer exists in the theme — shown pink. Pick a new one.</div>}
         <div className="es-ctx-list">
           {ELEMENT_ROLES.map(role => (
             <button
               key={role.key}
               type="button"
               className={`es-ctx-item${activeRole === role.key ? ' is-active' : ''}`}
-              onClick={() => assignElement(def, role.key)}
+              onClick={() => assignElement(component, role.key)}
             >
-              <span className="es-ctx-swatch" style={{ background: roleHex(role) }} />
+              <span
+                className="es-ctx-swatch"
+                style={{
+                  background: cssHex(role.cssVar),
+                  // A fill's swatch also shows its text color — the pair it applies.
+                  ...(role.textCssVar && { color: cssHex(role.textCssVar), fontSize: 10, lineHeight: '14px', textAlign: 'center', fontWeight: 700 }),
+                }}
+              >
+                {role.textCssVar ? 'A' : ''}
+              </span>
               <span className="es-ctx-item-label">{role.label}</span>
-              {role.key === def.baseRoleKey && <span className="es-ctx-tag">default</span>}
+              {role.key === component.baseRoleKey && <span className="es-ctx-tag">default</span>}
               {activeRole === role.key && <span className="es-ctx-check">✓</span>}
             </button>
           ))}
@@ -184,7 +214,7 @@ export default function EventSiteContextMenu({
           type="button"
           className="es-ctx-reset"
           disabled={!override}
-          onClick={() => assignElement(def, null)}
+          onClick={() => assignElement(component, null)}
         >
           Reset to default{base ? ` (${base.label})` : ''}
         </button>
@@ -201,9 +231,10 @@ export default function EventSiteContextMenu({
     const isSaved = !!siteStyle.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)]
     return (
       <>
-        <div className="es-ctx-subhead">Color</div>
-        <div className="es-ctx-options">
-          {BUTTON_COLORS.filter(option => tint !== 'golfstatus' || option.key === 'neutral').map(option => (
+        {/* Grayscale only draws Grey buttons, so there's no color to pick there. */}
+        {tint !== 'golfstatus' && <div className="es-ctx-subhead">Color</div>}
+        {tint !== 'golfstatus' && <div className="es-ctx-options">
+          {BUTTON_COLORS.map(option => (
             <button
               key={option.key}
               type="button"
@@ -213,7 +244,7 @@ export default function EventSiteContextMenu({
               {option.label}
             </button>
           ))}
-        </div>
+        </div>}
         <div className="es-ctx-subhead">Style</div>
         <div className="es-ctx-options">
           {BUTTON_APPEARANCES.map(option => (
@@ -343,7 +374,7 @@ export default function EventSiteContextMenu({
                   <option value="">Default</option>
                   {saved[prop.key] && !saved[prop.key].startsWith('var(') && <option value="custom">Custom {saved[prop.key]}</option>}
                   {ELEMENT_ROLES.map(role => (
-                    <option key={role.key} value={`var(${role.cssVar})`}>{role.label}</option>
+                    <option key={role.key} value={`var(${roleCssVar(role.key, PROP_KIND[prop.key])})`}>{role.label}</option>
                   ))}
                   <option value="transparent">Transparent</option>
                 </select>
@@ -378,7 +409,7 @@ export default function EventSiteContextMenu({
 
   const chips = [
     ...(buttonVariant ? [{ id: 'button', label: `${BUTTON_IDS[buttonVariant.id] ?? 'Button'} button` }] : []),
-    ...elementKeys.map(key => ({ id: key, label: DEFS_BY_KEY[key].label })),
+    ...elementKeys.map(key => ({ id: key, label: COMPONENTS_BY_KEY[key].label })),
     { id: 'node', label: 'Any style' },
   ]
 
@@ -394,7 +425,7 @@ export default function EventSiteContextMenu({
           ? `${BUTTON_IDS[buttonVariant.id] ?? 'Button'} button`
           : selected === 'node'
             ? `<${menu.node.tagName.toLowerCase()}> style`
-            : DEFS_BY_KEY[selected]?.label}
+            : COMPONENTS_BY_KEY[selected]?.label}
       </div>
       {chips.length > 1 && (
         <div className="es-ctx-chips" aria-label="Elements under the cursor">

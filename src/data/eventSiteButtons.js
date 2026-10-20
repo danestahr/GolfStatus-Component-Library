@@ -1,7 +1,9 @@
 import { resolveOverrideHex } from '../gs-lib/helpers/monochromatic'
-import { ELEMENT_ROLES } from './eventSiteElements'
+import { roleCssVar, canonicalRoleKey, MISSING_ROLE_COLOR } from './eventSiteThemeRoles'
 
-const ROLE_CSS_VARS = Object.fromEntries(ELEMENT_ROLES.map(r => [r.key, r.cssVar]))
+// Which of a designation's colors a button part takes — the same fill/text/
+// border split elements use (eventSiteThemeRoles.js's rolePart).
+const PART_KIND = { bg: 'background', text: 'text', border: 'border' }
 
 // Per-button color riffs typed into Color Exploration's Buttons tab
 // (ColorExplorationFields.jsx) — one Fill/Subtle background + text, one
@@ -19,11 +21,12 @@ export const BUTTON_COLORS = [
   { key: 'secondary', label: 'Secondary' },
 ]
 
-// `parts` are [key, label] pairs — Outline's border and text are separate
-// colors, Fill/Subtle's are background and text.
+// `parts` are [key, label] pairs — Fill/Subtle are background and text;
+// Outline is text only (its border inherits it).
 export const BUTTON_APPEARANCES = [
   { key: 'fill', label: 'Fill', parts: [['bg', 'Background'], ['text', 'Text']] },
-  { key: 'outline', label: 'Outline', parts: [['border', 'Outline'], ['text', 'Text']] },
+  // The border is currentColor (gs-button.scss), so the text color drives both.
+  { key: 'outline', label: 'Outline', parts: [['text', 'Text']] },
   { key: 'subtle', label: 'Subtle', parts: [['bg', 'Background'], ['text', 'Text']] },
   // No background at all — the one text color drives both label and icon.
   { key: 'transparent', label: 'Transparent', parts: [['text', 'Text']] },
@@ -37,12 +40,17 @@ export const buttonStyleKey = (theme, id) => `${theme}-${id}`
 
 export const buttonVarName = (color, appearance, part) => `--gs-btn-${color}-${appearance}-${part}`
 
-// A button part can point at a theme role ({ role: 'surface' }) instead of a
-// color; `scales.roleHexes[mode]` (Color Exploration's preview) resolves it
-// to a hex, while the live site references the role's CSS variable directly.
-export function resolveButtonOverride(override, scales, mode) {
+// A button part can point at a theme designation ({ role: 'surface' })
+// instead of a color; `scales.roleHexes[mode]` (Color Exploration's preview,
+// keyed "role:kind") resolves it to a hex, while the live site references
+// the designation's CSS variable directly. A designation that no longer
+// exists in Theme.js resolves to pink.
+export function resolveButtonOverride(override, scales, mode, part) {
   if (!override) return null
-  if (override.role) return scales?.roleHexes?.[mode]?.[override.role] ?? null
+  if (override.role) {
+    const role = canonicalRoleKey(override.role)
+    return (role && scales?.roleHexes?.[mode]?.[`${role}:${override.kind ?? PART_KIND[part] ?? 'background'}`]) || MISSING_ROLE_COLOR
+  }
   return override.hex ?? resolveOverrideHex(override, scales)
 }
 
@@ -54,7 +62,14 @@ export function buttonOverrideVars(overrides, mode, scales) {
     BUTTON_APPEARANCES.forEach(({ key: appearance, parts }) => {
       parts.forEach(([part]) => {
         const override = overrides?.[buttonOverrideKey(mode, color, appearance, part)]
-        const hex = override?.role ? (ROLE_CSS_VARS[override.role] ? `var(${ROLE_CSS_VARS[override.role]})` : null) : resolveButtonOverride(override, scales, mode)
+        let hex
+        if (override?.role) {
+          const role = canonicalRoleKey(override.role)
+          // `kind` lets a part read a different color of the designation than
+          // its slot usually would (see ButtonDesignationSelect's readability rules).
+          const cssVar = role && roleCssVar(role, override.kind ?? PART_KIND[part])
+          hex = cssVar ? `var(${cssVar})` : MISSING_ROLE_COLOR
+        } else hex = resolveButtonOverride(override, scales, mode, part)
         if (hex) vars[buttonVarName(color, appearance, part)] = hex
       })
     })

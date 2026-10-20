@@ -195,7 +195,11 @@
 // instead of stretching to fill it or sitting pinned to the top with dead
 // space below.
 .ehs-row-preview {
-  flex: 1 1 50%;
+  // Fixed width (not the 50% share `.ehs-row-main` has) so the thumbnail
+  // doesn't rescale while the card widens/narrows around a drag's grip
+  // collapse (see `.ehs-drag-handle`) — `.ehs-row-main` absorbs the change.
+  flex: 0 0 425px;
+  width: 425px;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -235,5 +239,19 @@
   flex-shrink: 0;
   cursor: grab;
   touch-action: none;
+  // Grid 1fr -> 0fr (with the inner span's `min-width: 0`) animates the
+  // handle's auto width down to nothing, and the negative margin eats the
+  // flex gap beside it — together `.ehs-row-card` smoothly grows into the
+  // freed space while a drag is underway (see `.ehs-rows--reordering`,
+  // EventSiteHomepageSectionsList.scss).
+  display: grid;
+  grid-template-columns: 1fr;
+  transition: grid-template-columns 0.1s ease-out,
+    margin-left 0.1s ease-out, opacity 0.1s ease;
+
+  > * {
+    min-width: 0;
+    overflow: hidden;
+  }
 }
 

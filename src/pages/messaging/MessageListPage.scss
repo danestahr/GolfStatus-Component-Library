@@ -1,0 +1,170 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// Same override as the Teams page — the section headers right beneath the
+// shared search bar carry their own shadow, so the search bar drops its own
+// to avoid reading as a double border.
+.msg-page .efp-list-sticky {
+  box-shadow: none;
+}
+
+.msg-page .efp-search-row {
+  border-bottom: none;
+}
+
+// Each section wraps its own header + strip so the sticky header is scoped to
+// the section — the next section's header pushes the previous one out as it
+// scrolls into place instead of stacking underneath it.
+.msg-section-header {
+  position: sticky;
+  // Sticks right beneath EntityListPage's own sticky search bar.
+  top: var(--efp-sticky-offset, 0px);
+  z-index: 2;
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: $second-layer-shadow;
+}
+
+.msg-section-title {
+  font-size: $medium-font;
+  font-weight: $bold-font-weight;
+  color: $grey-800;
+}
+
+.msg-section-strip {
+  display: flex;
+  gap: $large-pad;
+  align-items: flex-start;
+  padding: $x-large-pad;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+}
+
+.msg-section-list {
+  background: $white;
+}
+
+.msg-row {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+
+  .msg-row-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $medium-large-pad;
+  }
+
+  .msg-row-text {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .msg-row-subject {
+    @include gs-font($small-font, $bold-font-weight, normal);
+    line-height: $regular-line-height;
+    color: $grey-800;
+  }
+
+  .msg-row-meta {
+    @include gs-font($small-font, $regular-font-weight, normal);
+    line-height: $regular-line-height;
+    color: $grey-800;
+    opacity: $medium-opacity;
+  }
+}
+
+.msg-card {
+  flex: 0 0 auto;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  background: $white;
+  border-radius: $medium-radius;
+  box-shadow: $first-layer-shadow;
+  cursor: pointer;
+
+  .msg-card-text {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .msg-card-subject {
+    @include gs-font($small-font, $bold-font-weight, normal);
+    line-height: $regular-line-height;
+    color: $grey-800;
+  }
+
+  .msg-card-meta {
+    @include gs-font($small-font, $regular-font-weight, normal);
+    line-height: $regular-line-height;
+    color: $grey-800;
+    opacity: $medium-opacity;
+  }
+
+}
+
+.msg-type-row {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: $light-border;
+  cursor: pointer;
+
+  .msg-type-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .msg-type-name {
+    @include gs-font($small-font, $bold-font-weight, normal);
+    line-height: $regular-line-height;
+    color: $grey-800;
+  }
+
+  .msg-type-desc {
+    @include gs-font($small-font, $regular-font-weight, normal);
+    line-height: $regular-line-height;
+    color: $grey-800;
+    opacity: $medium-opacity;
+  }
+}
+
+.msg-card-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: $medium-pad;
+  padding: $medium-pad $medium-large-pad;
+  border-radius: $huge-radius;
+  background: $grey-100;
+  color: $grey-800;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+
+  &--scheduled {
+    background: $grey-800;
+    color: $white;
+  }
+
+  &--sent {
+    background: $green-200;
+  }
+}

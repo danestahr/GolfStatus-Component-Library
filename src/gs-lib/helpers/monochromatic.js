@@ -65,7 +65,11 @@ export function resolveOverrideHex(override, { primaryScale, secondaryScale }) {
     case "secondary":
       return secondaryScale[override.step];
     case "grey":
-      return golfstatusColors[`grey${override.step}`];
+    case "cyan":
+    case "green":
+    case "orange":
+    case "red":
+      return golfstatusColors[`${override.family}${override.step}`];
     default:
       return null;
   }

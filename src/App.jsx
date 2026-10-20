@@ -14,6 +14,7 @@ import ExclusionPage from './pages/exclusion/ExclusionPage.jsx'
 import ExclusionPageV2 from './pages/exclusion/ExclusionPageV2.jsx'
 import TournamentSchedulerListPage from './pages/scheduler/TournamentSchedulerListPage.jsx'
 import TournamentSchedulerPage from './pages/scheduler/TournamentSchedulerPage.jsx'
+import MessageListPage from './pages/messaging/MessageListPage.jsx'
 import MessageDraftPage from './pages/messaging/MessageDraftPage.jsx'
 import OrdersDraft1Page from './pages/orders/OrdersDraft1Page.jsx'
 import OrdersFormsHubPage from './pages/orders-forms/OrdersFormsHubPage.jsx'
@@ -79,7 +80,8 @@ function AppShell() {
           <NavItem to="/exclusion" label="Exclusion V1" />
           <NavItem to="/exclusion-v2" label="Exclusion V2" />
           <NavItem to="/scheduler" label="Hole Assignments" />
-          <NavItem to="/messaging" label="Message Draft" />
+          <NavItem to="/messaging" label="Messages" end />
+          <NavItem to="/messaging/draft" label="Message Draft" />
           <NavItem to="/orders-forms/event-site-packages" label="Event Site & Packages" end />
           <NavItem to="/orders-forms/event-site-packages/forms" label="Edit Form Responses" />
           <NavItem to="/teams" label="Players & Teams" />
@@ -103,7 +105,8 @@ function AppShell() {
             <Route path="/exclusion-v2" element={<ExclusionPageV2 />} />
             <Route path="/scheduler" element={<TournamentSchedulerListPage />} />
             <Route path="/scheduler/:tournamentId" element={<TournamentSchedulerPage />} />
-            <Route path="/messaging" element={<MessageDraftPage />} />
+            <Route path="/messaging" element={<MessageListPage />} />
+            <Route path="/messaging/draft" element={<MessageDraftPage />} />
             <Route path="/orders-forms" element={<OrdersFormsHubPage />} />
             <Route path="/sponsors" element={<SponsorsListPage />} />
             <Route path="/teams" element={<TeamsListPage />} />
