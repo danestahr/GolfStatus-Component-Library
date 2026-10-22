@@ -117,7 +117,7 @@ function Person({ name, muted }) {
       <span className="es-avatar">
         <img className="es-avatar-image" src={avatarSample} alt="" />
       </span>
-      <span>{name}</span>
+      <span className="es-registrant-person-name">{name}</span>
     </div>
   )
 }

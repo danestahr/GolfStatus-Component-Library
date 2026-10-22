@@ -368,13 +368,13 @@
   transition: $fast;
 
   &:hover {
-    box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
+    box-shadow: var(--gs-ring, $focus-shadow);
     outline: none;
   }
 
-  &:focus {
+  &:focus-visible {
     outline: none;
-    box-shadow: $focus-shadow;
+    box-shadow: var(--gs-ring, $focus-shadow);
   }
 }
 

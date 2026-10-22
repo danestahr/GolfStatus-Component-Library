@@ -11,12 +11,12 @@ import { buttonOverrideVars } from './eventSiteButtons.js'
 // section thumbnails), so a designation change shows up identically in all of
 // them. Pure: same style + tint + mode in, same variables out.
 
-// The designations Primary/Secondary Tint re-tints — every Neutral fill and
-// border in Theme.js's `defaultTheme`. Primary/Secondary (the brand colors),
-// the container/error/tertiary roles and Scrim keep their own colors.
+// The designations Primary/Secondary Tint re-tints — only the customizable
+// Neutral fills and borders (see CUSTOMIZABLE_ROLE_KEYS). Primary/Secondary
+// (the brand colors), the containers, error/tertiary, Scrim and every other
+// neutral stay at Theme.js's default unless overridden.
 const TINTABLE_ROLE_KEYS = [
-  'background', 'surface', 'surfaceDim', 'surfaceBright', 'surfaceVariant',
-  'surfaceContainerLowest', 'surfaceContainerLow', 'surfaceContainerHigh', 'surfaceContainerHigest', 'menuContainer',
+  'background', 'surface', 'surfaceVariant', 'surfaceContainerHigh', 'menuContainer',
   'outline', 'outlineVariant',
 ]
 
@@ -39,7 +39,7 @@ const TEXT_TOKEN_PARTS = THEME_ROLES
   .filter(role => role.parts.some(p => p.part === 'background'))
   .map(role => ({ role, part: role.parts.find(p => p.part === 'text') }))
   .filter(({ part }) => part)
-const NEUTRAL_TEXT_ROLE_KEYS = new Set(['background', 'surface', 'surfaceDim', 'surfaceBright', 'surfaceVariant', 'surfaceContainerLowest', 'surfaceContainerLow', 'surfaceContainerHigh', 'surfaceContainerHigest', 'menuContainer'])
+const NEUTRAL_TEXT_ROLE_KEYS = new Set(['background', 'surface', 'surfaceVariant', 'surfaceContainerHigh', 'menuContainer'])
 
 // Which `--gs-color-*` a Theme Definitions / Theme-tab override
 // (`${mode}-${tint}-${storageKey}`) is written to. The brand Primary/
@@ -243,7 +243,7 @@ export function eventSiteThemeVars({ siteStyle, tint, themeMode, normalizeNeutra
   // that theme has no customThemeStyle of its own (it stays the fixed brand
   // preset), so these `--gs-btn-*` variables are layered on separately.
   const buttonStyle = enabled
-    ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, { primaryScale, secondaryScale })
+    ? buttonOverrideVars(siteStyle.buttonOverrides, themeMode, { primaryScale, secondaryScale }, tint)
     : {}
 
   return { customThemeStyle, extraStyle: { ...roleStyle, ...elementStyle, ...buttonStyle } }

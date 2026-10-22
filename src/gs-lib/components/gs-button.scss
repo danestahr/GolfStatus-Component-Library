@@ -128,7 +128,7 @@ gs-button {
       }
       &:focus {
         background: $red-700;
-        box-shadow: $focus-shadow;
+        box-shadow: var(--gs-ring, $focus-shadow);
       }
     }
 
@@ -230,6 +230,12 @@ gs-button {
     // Buttons tab, data/eventSiteButtons.js), falling back to the roles above.
     // Neutral — greys from the surface/on-surface roles, same override hooks.
     &.color-neutral-color {
+      &.style-disabled {
+        background: var(--gs-btn-neutral-disabled-bg, var(--gs-color-surface-variant));
+        color: var(--gs-btn-neutral-disabled-text, var(--gs-color-outline));
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
       &.style-fill {
         background: var(--gs-btn-neutral-fill-bg, var(--gs-color-on-surface));
         color: var(--gs-btn-neutral-fill-text, var(--gs-color-surface));
@@ -246,6 +252,27 @@ gs-button {
       &.style-transparent {
         background: transparent;
         color: var(--gs-btn-neutral-transparent-text, var(--gs-color-on-surface));
+      }
+    }
+    // Error — the theme's error designations, so it works on any button
+    // shape (pills included).
+    &.color-error-color {
+      &.style-fill {
+        background: var(--gs-btn-error-fill-bg, var(--gs-color-error));
+        color: var(--gs-btn-error-fill-text, var(--gs-color-on-error-container));
+      }
+      &.style-outline {
+        background: transparent;
+        border: 2px solid currentColor;
+        color: var(--gs-btn-error-outline-text, var(--gs-color-error));
+      }
+      &.style-subtle {
+        background: var(--gs-btn-error-subtle-bg, var(--gs-color-error-container));
+        color: var(--gs-btn-error-subtle-text, var(--gs-color-on-error-container));
+      }
+      &.style-transparent {
+        background: transparent;
+        color: var(--gs-btn-error-transparent-text, var(--gs-color-error));
       }
     }
     &.color-primary-color {
@@ -357,8 +384,12 @@ gs-button {
   }
 
   &.enabled {
+      &:focus-visible {
+        box-shadow: var(--gs-ring, $focus-shadow);
+        outline: none;
+      }
       &.outline:hover {
-        box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
+        box-shadow: var(--gs-ring, 0 0 0 4px rgba($grey-700, 0.5));
         outline: none;
       }
       &.underline:hover {
@@ -374,8 +405,12 @@ gs-button {
   gs-button {
     border: 2px solid transparent;
     &.enabled {
+      &:focus-visible {
+        box-shadow: var(--gs-ring, $focus-shadow);
+        outline: none;
+      }
       &.outline:hover {
-        box-shadow: 0 0 0 4px rgba($grey-700, 0.5);
+        box-shadow: var(--gs-ring, 0 0 0 4px rgba($grey-700, 0.5));
         outline: none;
       }
     }
@@ -392,8 +427,12 @@ gs-button {
     border: 2px solid transparent;
 
     &.enabled {
+      &:focus-visible {
+        box-shadow: var(--gs-ring, $focus-shadow);
+        outline: none;
+      }
       &.outline:hover {
-        box-shadow: 0 0 0 4px rgba($grey-400, 0.5);
+        box-shadow: var(--gs-ring, 0 0 0 4px rgba($grey-400, 0.5));
       }
     }
 

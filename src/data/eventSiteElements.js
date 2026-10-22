@@ -266,7 +266,7 @@ export function elementKeysAt(node, validKeys) {
 export function buttonVariantAt(node) {
   const button = node.closest('gs-button[data-button-id]')
   if (!button) return null
-  const color = ['primary', 'secondary', 'neutral'].find(c => button.classList.contains(`color-${c}-color`))
+  const color = ['primary', 'secondary', 'neutral', 'error'].find(c => button.classList.contains(`color-${c}-color`))
   const appearance = ['fill', 'outline', 'subtle', 'transparent'].find(a => button.classList.contains(`style-${a}`))
   return color && appearance ? { id: button.dataset.buttonId, color, appearance } : null
 }

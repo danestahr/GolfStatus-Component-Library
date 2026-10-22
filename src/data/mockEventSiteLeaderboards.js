@@ -25,6 +25,9 @@ const teamEntries = type =>
       total: total === 0 ? 'E' : total > 0 ? `+${total}` : `${total}`,
       thru: i % 4 === 3 ? '14' : 'F',
       strokes,
+      r1: total === 0 ? 'E' : total > 0 ? `+${total}` : `${total}`,
+      r2: 'E',
+      r3: 'E',
       points: 100 - i * 6,
     }
   })

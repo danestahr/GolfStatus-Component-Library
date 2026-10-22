@@ -58,6 +58,8 @@
   --gs-color-on-surface-variant: #{$grey-800};
 
   --gs-color-outline: #{$grey-700};
+  // The one hover/focus ring every button and tile shares.
+  --gs-ring: 0 0 0 4px #{rgba($grey-700, 0.5)};
   --gs-color-outline-variant: #{$grey-100};
 
   --gs-color-scrim: #{$black};
@@ -125,6 +127,7 @@
   --gs-color-on-surface-variant: #{$grey-100};
 
   --gs-color-outline: #{$white};
+  --gs-ring: 0 0 0 4px #{rgba($grey-400, 0.5)};
   --gs-color-outline-variant: #{$grey-800};
 
   --gs-color-scrim: #{$black};

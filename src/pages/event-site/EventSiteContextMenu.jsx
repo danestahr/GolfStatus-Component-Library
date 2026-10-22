@@ -9,15 +9,14 @@ import {
   buttonVariantAt,
 } from '../../data/eventSiteElements.js'
 import { canonicalRoleKey, roleCssVar } from '../../data/eventSiteThemeRoles.js'
-import { BUTTON_APPEARANCES, BUTTON_COLORS, BUTTON_DEFAULTS, BUTTON_IDS, buttonOverrideKey, buttonStyleKey } from '../../data/eventSiteButtons.js'
+import { BUTTON_APPEARANCES, buttonAppearancesFor, BUTTON_IDS, BUTTON_PICK_COLORS, buttonOverrideKey, buttonStyleKey } from '../../data/eventSiteButtons.js'
 import { NODE_STYLE_PROPS, selectorFor } from '../../data/eventSiteNodeStyles.js'
 import { SCALE_STEPS } from '../../gs-lib/helpers/colorScale.js'
 import './EventSiteContextMenu.scss'
 
-// Per-button color overrides (Background/Text/Outline pickers) are built but
-// hidden for now — the menu only lets a button pick its style. Flip this to
-// bring them back.
-const SHOW_BUTTON_COLOR_OVERRIDES = false
+// Per-button color overrides (Background/Text pickers) sit under Color and
+// Style so every button gets the full set of options.
+const SHOW_BUTTON_COLOR_OVERRIDES = true
 
 // What you assign is a component — an element, or a background and the text
 // on it, which take one designation together (data/eventSiteElements.js).
@@ -135,7 +134,7 @@ export default function EventSiteContextMenu({
   // ---- Button override ---------------------------------------------------
   const setButtonPart = (part, override) => {
     if (!buttonVariant) return
-    const key = buttonOverrideKey(mode, buttonVariant.color, buttonVariant.appearance, part)
+    const key = buttonOverrideKey(mode, buttonVariant.color, buttonVariant.appearance, part, tint)
     onChangeStyle(prev => {
       const next = { ...(prev.buttonOverrides ?? {}) }
       if (override) next[key] = override
@@ -148,14 +147,14 @@ export default function EventSiteContextMenu({
   const setButtonStyle = patch => {
     if (!buttonVariant) return
     onChangeStyle(prev => {
-      // Grayscale always renders Grey, so its on-screen color says nothing
-      // about the other themes — start from the button's own default there.
       const current = {
-        color: tint === 'golfstatus' ? `${BUTTON_DEFAULTS[buttonVariant.id][0]}-color` : `${buttonVariant.color}-color`,
+        color: `${buttonVariant.color}-color`,
         appearance: buttonVariant.appearance,
         ...(prev.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)] ?? {}),
         ...patch,
       }
+      // A style the new color doesn't have (Disabled is Generic-only) falls back to Subtle.
+      if (!buttonAppearancesFor(current.color.replace('-color', '')).some(a => a.key === current.appearance)) current.appearance = 'subtle'
       const next = { ...(prev.buttonStyles ?? {}) }
       ELEMENT_OVERRIDE_THEMES.forEach(t => { next[buttonStyleKey(t, buttonVariant.id)] = current })
       return { ...prev, buttonStyles: next }
@@ -231,10 +230,9 @@ export default function EventSiteContextMenu({
     const isSaved = !!siteStyle.buttonStyles?.[buttonStyleKey(tint, buttonVariant.id)]
     return (
       <>
-        {/* Grayscale only draws Grey buttons, so there's no color to pick there. */}
-        {tint !== 'golfstatus' && <div className="es-ctx-subhead">Color</div>}
-        {tint !== 'golfstatus' && <div className="es-ctx-options">
-          {BUTTON_COLORS.map(option => (
+        <div className="es-ctx-subhead">Color</div>
+        <div className="es-ctx-options">
+          {BUTTON_PICK_COLORS.map(option => (
             <button
               key={option.key}
               type="button"
@@ -244,10 +242,10 @@ export default function EventSiteContextMenu({
               {option.label}
             </button>
           ))}
-        </div>}
+        </div>
         <div className="es-ctx-subhead">Style</div>
         <div className="es-ctx-options">
-          {BUTTON_APPEARANCES.map(option => (
+          {buttonAppearancesFor(color).map(option => (
             <button
               key={option.key}
               type="button"
@@ -262,7 +260,7 @@ export default function EventSiteContextMenu({
           Reset to default
         </button>
         {SHOW_BUTTON_COLOR_OVERRIDES && parts.map(([part, label]) => {
-          const key = buttonOverrideKey(mode, color, appearance, part)
+          const key = buttonOverrideKey(mode, color, appearance, part, tint)
           const override = siteStyle.buttonOverrides?.[key] ?? null
           const liveHex = toHex(computed[PART_CSS[part]])
           return (

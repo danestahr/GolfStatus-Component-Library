@@ -8,6 +8,8 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  &:not(.is-muted) { font-weight: 700; }
+  font-weight: 400;
   &.is-muted { opacity: 0.7; }
+  // A muted person is already 70% as a whole, so only the others dim their name.
+  &:not(.is-muted) .es-registrant-person-name { opacity: 0.7; }
 }

@@ -157,6 +157,7 @@ const BUTTON_FALLBACKS = {
     fill: ['--gs-color-on-surface', '--gs-color-surface'],
     outline: [null, '--gs-color-on-surface'],
     subtle: ['--gs-color-surface-variant', '--gs-color-on-surface-variant'],
+    disabled: ['--gs-color-surface-variant', '--gs-color-outline'],
     transparent: [null, '--gs-color-on-surface'],
   },
   primary: {
@@ -164,6 +165,12 @@ const BUTTON_FALLBACKS = {
     outline: [null, '--gs-color-primary'],
     subtle: ['--gs-color-primary-subtle', '--gs-color-on-primary-subtle'],
     transparent: [null, '--gs-color-primary'],
+  },
+  error: {
+    fill: ['--gs-color-error', '--gs-color-on-error-container'],
+    outline: [null, '--gs-color-error'],
+    subtle: ['--gs-color-error-container', '--gs-color-on-error-container'],
+    transparent: [null, '--gs-color-error'],
   },
   secondary: {
     fill: ['--gs-color-secondary-container', '--gs-color-on-secondary-container'],
@@ -178,8 +185,7 @@ const BUTTON_FALLBACKS = {
 // site's btn() reads) and any Buttons-tab override (`--gs-btn-*`).
 function chipVars(n, buttonId, defColor, defAppearance, buttonStyles, theme) {
   const saved = buttonStyles?.[buttonStyleKey(theme, buttonId)]
-  // Grayscale only ever uses Grey buttons.
-  const color = theme === 'golfstatus' ? 'neutral' : saved?.color ? saved.color.replace('-color', '') : defColor
+  const color = saved?.color ? saved.color.replace('-color', '') : defColor
   const appearance = saved?.appearance ?? defAppearance
   const [bgVar, textVar] = BUTTON_FALLBACKS[color]?.[appearance] ?? BUTTON_FALLBACKS.primary.fill
   const text = `var(--gs-btn-${color}-${appearance}-text, var(${textVar}))`

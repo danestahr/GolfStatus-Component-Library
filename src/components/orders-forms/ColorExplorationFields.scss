@@ -200,6 +200,9 @@ $ramp-head-height: 116px;
 .wds-ramp-pill--light .wds-ramp-chip-hex,
 .wds-role-chip-slot--light .wds-ramp-chip-label,
 .wds-role-chip-slot--light .wds-ramp-chip-designation,
+.wds-role-chip-slot--light .wds-ramp-chip-default-note,
+.wds-role-chip-slot--light .wds-ramp-chip-tag,
+.wds-role-chip-slot--light .wds-ramp-chip-action,
 .wds-role-chip-slot--light .wds-ramp-chip-hex {
   color: $black;
 }
@@ -209,6 +212,9 @@ $ramp-head-height: 116px;
 .wds-ramp-pill--dark .wds-ramp-chip-hex,
 .wds-role-chip-slot--dark .wds-ramp-chip-label,
 .wds-role-chip-slot--dark .wds-ramp-chip-designation,
+.wds-role-chip-slot--dark .wds-ramp-chip-default-note,
+.wds-role-chip-slot--dark .wds-ramp-chip-tag,
+.wds-role-chip-slot--dark .wds-ramp-chip-action,
 .wds-role-chip-slot--dark .wds-ramp-chip-hex {
   color: $white;
 }
@@ -248,7 +254,9 @@ $ramp-head-height: 116px;
 .wds-compare-header {
   display: grid;
   grid-template-columns: repeat(var(--wds-theme-cols, 3), minmax(0, 1fr));
-  gap: $medium-pad $large-pad;
+  // Wide gutter between theme columns (the header shares this rule, so the
+  // column names stay lined up over their cells).
+  gap: $medium-pad 72px;
 }
 
 // Pinned to the top of the panel's own scroll so the theme names stay in
@@ -257,7 +265,7 @@ $ramp-head-height: 116px;
   position: sticky;
   top: 0;
   background: $white;
-  z-index: 1;
+  z-index: 2;
   padding: $medium-pad 0;
   border-bottom: 2px solid $grey-200;
 }
@@ -598,7 +606,9 @@ select.wds-ramp-chip-designation option {
   border: 2px solid $grey-200;
   border-radius: 12px;
   background: $white;
-  overflow: hidden;
+  // `clip`, not `hidden`: still rounds the corners but doesn't turn the card
+  // into a scroll container, which would stop the title below sticking.
+  overflow: clip;
 
   .wds-compare-row {
     padding: $large-pad $large-pad $x-large-pad;
@@ -614,6 +624,10 @@ select.wds-ramp-chip-designation option {
 }
 
 .wds-role-card-title {
+  // Stays in view under the sticky theme header while you scroll through the card.
+  position: sticky;
+  top: 35px;
+  z-index: 1;
   display: flex;
   align-items: baseline;
   gap: $medium-pad;
@@ -638,4 +652,199 @@ select.wds-ramp-chip-designation option {
   justify-content: center;
   font-weight: 700;
   font-size: 14px;
+}
+
+// Theme tab: group notes, Theme.js key names, Default tag + Override/Reset.
+.wds-role-group-note {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.wds-role-card-key {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(128, 128, 128, 0.15);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.wds-ramp-chip-tag {
+  align-self: flex-start;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.wds-ramp-chip-action {
+  align-self: center;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.55;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.wds-ramp-chip--default {
+  height: auto;
+  gap: 6px;
+  padding: 12px 0;
+  align-items: center;
+}
+
+.wds-ramp-chip-default-note {
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+// Tap-to-pick swatch (RampChip's onPickColor): the native color input sits
+// invisibly over the swatch.
+.wds-ramp-chip-pick {
+  position: relative;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+
+  input[type='color'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+// Theme tab cards list Light, then Dark, each with its fill and text rows
+// together.
+.wds-role-card-mode-block + .wds-role-card-mode-block {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+.wds-role-card-mode {
+  margin: 0 0 8px;
+  padding: 0 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+// Everywhere but the Theme tab's parts rows the details just stack under the
+// swatch, exactly as before.
+.wds-ramp-chip-details {
+  display: contents;
+}
+
+// A fill and its text stacked, each a row: swatch on the left, its details
+// (designation, hex, reset) on the right, under its property name.
+.wds-role-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wds-role-part-label {
+  margin-bottom: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.wds-role-parts .wds-role-row-theme {
+  display: block;
+}
+
+.wds-role-parts .wds-ramp-chip {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.wds-role-parts .wds-ramp-chip-color,
+.wds-role-parts .wds-ramp-chip-pick {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+.wds-role-parts .wds-ramp-chip-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 2px;
+}
+
+.wds-role-parts .wds-ramp-chip-designation,
+.wds-role-parts .wds-ramp-chip-hex {
+  text-align: left;
+}
+
+.wds-role-parts .wds-ramp-chip-action {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.wds-role-parts .wds-ramp-chip--default {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+// Light/Dark label over each theme's set.
+.wds-role-part-mode {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+// Theme picker above the Buttons tab's Primary/Secondary sections.
+.wds-btn-theme-tabs {
+  display: flex;
+  gap: $small-pad;
+  margin-bottom: $large-pad;
+}
+
+.wds-btn-theme-tab {
+  padding: $medium-pad $large-pad;
+  border: 1px solid $grey-300;
+  border-radius: 200px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &.is-active {
+    background: $grey-800;
+    border-color: $grey-800;
+    color: $white;
+  }
 }

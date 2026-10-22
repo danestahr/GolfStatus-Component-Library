@@ -459,8 +459,6 @@ export default function EventWebsitePage() {
   // customization, ignored until a style's been saved on a premium tournament.
   const btn = (buttonId, color, appearance) => {
     const saved = isPremium && hasSavedStyle ? siteStyle.buttonStyles?.[buttonStyleKey(tint, buttonId)] : null
-    // Grayscale only ever uses Grey buttons.
-    if (tint === 'golfstatus') return { buttonId, color: 'neutral-color', appearance: saved?.appearance ?? appearance }
     return { buttonId, color: saved?.color ?? color, appearance: saved?.appearance ?? appearance }
   }
 

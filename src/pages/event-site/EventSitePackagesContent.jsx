@@ -128,7 +128,8 @@ export default function EventSitePackagesContent({ categoryLabels, scrollToKey, 
                   buttonIcon={item.icon}
                   isFocusable
                   aria-label={item.label}
-                  color={btn('packagesNav', 'primary-color', 'fill').color} // Grey under Grayscale
+                  buttonId="packagesNav"
+                  color={btn('packagesNav', 'primary-color', 'fill').color}
                   appearance={item.key === nav.activeKey ? 'fill' : 'subtle'}
                   onClick={() => nav.jump(item.key)}
                 />

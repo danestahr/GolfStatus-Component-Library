@@ -16,10 +16,18 @@ const PART_KIND = { bg: 'background', text: 'text', border: 'border' }
 // ahead of the shared `--gs-color-*` role tokens, so a button edit never
 // bleeds into the header or anything else reading those roles.
 export const BUTTON_COLORS = [
-  { key: 'neutral', label: 'Grey' },
+  { key: 'neutral', label: 'Generic' },
   { key: 'primary', label: 'Primary' },
   { key: 'secondary', label: 'Secondary' },
+  { key: 'error', label: 'Error' },
 ]
+
+// Primary and Secondary look different in every theme (Grayscale, Subtle,
+// Bold), so their overrides are saved per theme; Generic and Error are the
+// same in all of them.
+export const THEMED_BUTTON_COLORS = ['primary', 'secondary']
+
+export const BUTTON_PICK_COLORS = BUTTON_COLORS
 
 // `parts` are [key, label] pairs — Fill/Subtle are background and text;
 // Outline is text only (its border inherits it).
@@ -30,9 +38,19 @@ export const BUTTON_APPEARANCES = [
   { key: 'subtle', label: 'Subtle', parts: [['bg', 'Background'], ['text', 'Text']] },
   // No background at all — the one text color drives both label and icon.
   { key: 'transparent', label: 'Transparent', parts: [['text', 'Text']] },
+  // Generic only — the greyed-out look of a button that can't be pressed.
+  { key: 'disabled', label: 'Disabled', parts: [['bg', 'Background'], ['text', 'Text']] },
 ]
 
-export const buttonOverrideKey = (mode, color, appearance, part) => `${mode}-${color}-${appearance}-${part}`
+// Generic needs just Subtle and Disabled; every other color has the four
+// regular styles.
+export const buttonAppearancesFor = color =>
+  BUTTON_APPEARANCES.filter(a => (color === 'neutral' ? ['subtle', 'disabled'] : ['fill', 'outline', 'subtle', 'transparent']).includes(a.key))
+
+// `theme` only matters for Primary/Secondary — an override saved before they
+// went per-theme (no theme prefix) still applies as the fallback.
+export const buttonOverrideKey = (mode, color, appearance, part, theme) =>
+  theme && THEMED_BUTTON_COLORS.includes(color) ? `${theme}-${mode}-${color}-${appearance}-${part}` : `${mode}-${color}-${appearance}-${part}`
 
 // Named-button style picks are stored per theme so one theme's right-click
 // edit never leaks into another's.
@@ -56,12 +74,12 @@ export function resolveButtonOverride(override, scales, mode, part) {
 
 // Every saved override for one mode as { '--gs-btn-*': hex }, ready
 // to spread into an inline style.
-export function buttonOverrideVars(overrides, mode, scales) {
+export function buttonOverrideVars(overrides, mode, scales, theme) {
   const vars = {}
   BUTTON_COLORS.forEach(({ key: color }) => {
-    BUTTON_APPEARANCES.forEach(({ key: appearance, parts }) => {
+    buttonAppearancesFor(color).forEach(({ key: appearance, parts }) => {
       parts.forEach(([part]) => {
-        const override = overrides?.[buttonOverrideKey(mode, color, appearance, part)]
+        const override = overrides?.[buttonOverrideKey(mode, color, appearance, part, theme)] ?? overrides?.[buttonOverrideKey(mode, color, appearance, part)]
         let hex
         if (override?.role) {
           const role = canonicalRoleKey(override.role)
@@ -105,6 +123,10 @@ export const BUTTON_IDS = {
   qtyStepper: 'Quantity Stepper',
   subnavSelected: 'Sub Nav (Selected)',
   subnavUnselected: 'Sub Nav (Not Selected)',
+  packagesNav: 'Packages Nav',
+  favorite: 'Favorite (Starred)',
+  favoriteOff: 'Favorite (Not Starred)',
+  uploadImage: 'Upload Image',
 }
 
 // The [color, appearance] each of those buttons has when nothing's been
@@ -135,4 +157,8 @@ export const BUTTON_DEFAULTS = {
   qtyStepper: ['primary', 'subtle'],
   subnavSelected: ['primary', 'subtle'],
   subnavUnselected: ['primary', 'transparent'],
+  packagesNav: ['primary', 'fill'],
+  favorite: ['secondary', 'fill'],
+  favoriteOff: ['neutral', 'subtle'],
+  uploadImage: ['primary', 'subtle'],
 }

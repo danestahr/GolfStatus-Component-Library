@@ -33,7 +33,8 @@
 }
 
 .es-rounds-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; @include tablet() { grid-template-columns: 1fr; } }
-.es-rounds-link-tile {
+.es-rounds-links .es-rounds-link-tile {
+  border: 0;
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-rows: auto auto;

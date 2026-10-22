@@ -9,6 +9,19 @@ import { normalizeHex } from '../gs-lib/helpers/monochromatic'
 
 export const MISSING_ROLE_COLOR = '#FF69B4'
 
+// The only designations Subtle/Bold actually customize (the devs' own
+// Subtle.json / Bold.json override exactly these, plus the Outline pair and
+// the two Container Highs). Every other designation stays at Theme.js's
+// default unless it's explicitly overridden. In display order.
+export const CUSTOMIZABLE_ROLE_KEYS = [
+  'primaryContainer', 'primaryContainerHigh',
+  'secondaryContainer', 'secondaryContainerHigh',
+  'menuContainer',
+  'background', 'surface', 'surfaceVariant', 'surfaceContainerHigh',
+  'outline', 'outlineVariant',
+]
+export const CUSTOMIZABLE_ROLES = new Set(CUSTOMIZABLE_ROLE_KEYS)
+
 const ROLE_LABELS = {
   primary: 'Primary',
   secondary: 'Secondary',
@@ -70,6 +83,33 @@ function buildRole(key) {
 
 export const THEME_ROLES = Object.keys(defaultTheme).map(buildRole)
 export const THEME_ROLE_BY_KEY = Object.fromEntries(THEME_ROLES.map(role => [role.key, role]))
+
+// Display / export order: the brand colors, then the designations in the
+// devs' Subtle/Bold file order (with the two Container Highs slotted beside
+// their containers, the Outline pair after the customized surfaces), then
+// the remaining surfaces and scrim, then tertiary and error. Anything not
+// listed (a designation added to Theme.js later) goes last, in Theme.js's
+// own order.
+const DISPLAY_ORDER = [
+  'primary', 'secondary',
+  'primaryContainer', 'primaryContainerHigh',
+  'secondaryContainer', 'secondaryContainerHigh',
+  'menuContainer', 'background', 'surfaceVariant', 'surface', 'surfaceContainerHigh',
+  'outline', 'outlineVariant',
+  'surfaceDim', 'surfaceBright', 'surfaceContainerLow', 'surfaceContainerLowest', 'surfaceContainerHigest',
+  'scrim',
+  'tertiary', 'tertiaryContainer',
+  'error', 'errorContainer',
+]
+const displayRank = key => { const i = DISPLAY_ORDER.indexOf(key); return i === -1 ? DISPLAY_ORDER.length : i }
+export const THEME_ROLES_IN_DISPLAY_ORDER = [...THEME_ROLES].sort((x, y) => displayRank(x.key) - displayRank(y.key))
+
+// `${mode}-${tint}-${storageKey}` suffixes of the customizable designations'
+// colors (their fill, text and border rows) — every other saved override is
+// reset to default (see data/eventSiteStyle.js).
+export const CUSTOMIZABLE_STORAGE_KEYS = new Set(
+  CUSTOMIZABLE_ROLE_KEYS.flatMap(key => THEME_ROLE_BY_KEY[key].parts.map(part => part.storageKey))
+)
 export const THEME_ROLE_LABELS = THEME_ROLES.map(role => role.label)
 export const THEME_ROLE_KEY_BY_LABEL = Object.fromEntries(THEME_ROLES.map(role => [role.label.toLowerCase(), role.key]))
 
