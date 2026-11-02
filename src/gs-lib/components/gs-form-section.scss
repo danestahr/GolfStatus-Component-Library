@@ -7,6 +7,15 @@ gs-form-section {
   width: 100%;
   gap: $large-pad;
 
+  &.gap-xx-large {
+    gap: $xx-large-pad;
+  }
+
+  // Section title bar: 16px.
+  > gs-action-bar > .head {
+    font-size: $medium-font;
+  }
+
   >gs-item-list{
     .horizontal {
       width: 100%;

@@ -21,8 +21,8 @@
   "div.es-registrant-tile:nth-child(17) div.es-registrant-people:nth-child(2) div.es-registrant-person:nth-child(4) span:nth-child(2)": {
     "font-size": "14"
   },
-  ".grid": {
-    "gap": "16"
+  "gs-action-drawer .grid": {
+    "gap": "8"
   },
   ".es-sponsor-tile": {
     "gap": "12"

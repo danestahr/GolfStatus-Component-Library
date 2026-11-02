@@ -19,10 +19,11 @@ export default function GSFormSection(props) {
     title,
     sectionActions,
     fields,
-    extras
+    extras,
+    gap
   } = props ?? {}
   return (
-    <gs-form-section>
+    <gs-form-section class={gap ? `gap-${gap}` : undefined}>
       {title && (
         <GSActionBar
           header={title}

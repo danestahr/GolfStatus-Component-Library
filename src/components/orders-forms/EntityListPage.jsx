@@ -10,7 +10,7 @@ import './EntityListPage.scss'
 // Event Site & Packages) — the same action bar + sticky search + scrollable
 // list structure as Orders & Payouts (OrdersDraft1Page.jsx), just without
 // the funds card, which is specific to orders.
-export default function EntityListPage({ className, header, pageActions, searchPlaceholder, search, onSearchChange, emptyMessage, children }) {
+export default function EntityListPage({ className, header, pageActions, searchPlaceholder, search, onSearchChange, searchActions, searchClearIcon = faXmark, searchClearButtonProps, keepClearSpace, emptyMessage, children }) {
   // Measures the sticky search bar's actual height so any sticky sub-header
   // rendered in `children` (e.g. SponsorTierSection's tier header) can stick
   // right beneath it via --efp-sticky-offset, instead of both landing at
@@ -38,12 +38,14 @@ export default function EntityListPage({ className, header, pageActions, searchP
             <div className="efp-search-row">
               <GSinput
                 leftIcon={faMagnifyingGlass}
-                rightIcon={search ? faXmark : null}
+                rightIcon={search || keepClearSpace ? searchClearIcon : null}
+                rightButtonProps={keepClearSpace && !search ? { ...searchClearButtonProps, style: { visibility: 'hidden' }, isFocusable: false } : searchClearButtonProps}
                 rightIconClick={() => onSearchChange('')}
                 placeholder={searchPlaceholder}
                 textValue={search}
                 onChange={e => onSearchChange(e.target.value)}
               />
+              {searchActions}
             </div>
           </div>
 

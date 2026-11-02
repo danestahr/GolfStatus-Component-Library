@@ -1,0 +1,54 @@
+@import '../gs-lib/styles/golfstatus.scss';
+
+// Shared look of the app's black left rails — the tournament-management
+// sidebar (pages/tournaments/overview/TournamentSidebar.scss) and the
+// prototype's own page nav (App.jsx / AppNav.scss).
+
+@mixin dark-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: 24px 24px 0;
+
+  // The logo mark is dark artwork; flipped to white for the black rail.
+  img {
+    width: 60px;
+    height: 60px;
+    filter: invert(1);
+  }
+
+  span {
+    @include gs-font($x-small-font, $bold-font-weight, $small-medium-letter-spacing);
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+}
+
+@mixin dark-sidebar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 54px;
+  padding: 0 24px;
+  border: 0;
+  border-left: 4px solid transparent;
+  background: none;
+  color: $white;
+  text-align: left;
+  text-decoration: none;
+  @include gs-font($medium-font, $regular-font-weight, normal);
+  cursor: pointer;
+
+  svg {
+    font-size: $x-small-font;
+  }
+
+  &:hover {
+    background: rgba($white, 0.08);
+  }
+}
+
+@mixin dark-sidebar-item-active {
+  border-left-color: $green-400;
+  color: $green-400;
+}

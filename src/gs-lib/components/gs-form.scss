@@ -6,7 +6,12 @@ gs-form{
   .gs-form-header{
     @include padding($x-large-pad);
     border-bottom: $light-border;
-    font-size: $large-font;
+    font-size: $medium-font;
+
+    // Form title bar: 16px (the bar's own heading doesn't inherit the wrapper's size).
+    gs-action-bar > .head {
+      font-size: $medium-font;
+    }
   }
 
 }

@@ -1,0 +1,39 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+// Every Quick Start action drawer: an explicit 8px gap between buttons (in
+// place of the list items' own margins), with 4px of padding around the row.
+.qs-panel gs-action-drawer gs-item-list > .grid {
+  gap: $medium-pad;
+  padding: $small-pad;
+
+  gs-list-item {
+    margin: 0;
+  }
+}
+
+// Action drawer for Quick Start steps 1-3 (see stepActions.js): an icon-only
+// Back arrow beside Save & Continue, centered, with Save & Continue 208px wide.
+// On small screens Save & Continue fills the rest of the row.
+.qs-panel--steps gs-action-drawer gs-item-list > .grid {
+  flex-wrap: nowrap;
+  justify-content: center;
+
+  gs-list-item {
+    width: 208px;
+    max-width: 208px;
+
+    // Back: just the icon button's own width.
+    &:first-child {
+      flex: none;
+      width: auto;
+    }
+  }
+
+  @include large-phone {
+    gs-list-item:last-child {
+      max-width: none;
+      width: auto;
+      flex: 1;
+    }
+  }
+}

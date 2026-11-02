@@ -24,6 +24,10 @@ import './AppSidePanel.scss'
  *   noTransition  boolean — skip the open/close slide animation, e.g. for a panel opened on top of another (optional)
  *   dimOverlay    boolean — darken the backdrop (default true); pass false when this panel opens on top of
  *                 another already-dimmed AppSidePanel, so the two overlays don't stack into a darker tint (optional)
+ *   actionsKey    changes to remount the action drawer's buttons, so a multi-screen panel's
+ *                 buttons appear in their final style instead of animating (gs-button's own
+ *                 0.3s transition) from whatever the previous screen's button in that slot
+ *                 looked like (optional)
  *   bodyRef       ref attached to the scrollable body div — lets a caller read/reset/restore
  *                 scrollTop across content swaps, since the div itself never unmounts (optional)
  *   children      scrollable panel content
@@ -43,6 +47,7 @@ export default function AppSidePanel({
   animateWidth,
   noTransition,
   dimOverlay = true,
+  actionsKey,
   bodyRef,
   children,
 }) {
@@ -80,7 +85,7 @@ export default function AppSidePanel({
           </div>
 
           {actions?.length > 0 && (
-            <GSActionDrawer actions={actions} />
+            <GSActionDrawer key={actionsKey} actions={actions} />
           )}
         </div>
       </GSSidePanel>

@@ -1,0 +1,91 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.image-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $large-pad;
+  width: 100%;
+  padding: 25px;
+  border: 1px dashed $grey-200;
+  border-radius: $medium-radius;
+  cursor: pointer;
+
+  // Hover / drag-over: faint fill in place of the dashed border (padding
+  // stays the same since the border width is swapped for it).
+  &--hover {
+    border-color: transparent;
+    background: rgba($grey-800, 0.05);
+  }
+}
+
+.image-upload-hint {
+  @include gs-font($x-small-font, $regular-font-weight, normal);
+  line-height: 16px;
+  text-align: center;
+  color: $grey-800;
+  opacity: $medium-opacity;
+}
+
+.image-upload-card {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  width: 256px;
+  max-width: 100%;
+  padding: $medium-pad;
+  background: $white;
+  border-radius: $medium-radius;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+}
+
+// 2:1 crop, matching the banner ratio.
+.image-upload-frame {
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border: 1px solid $grey-100;
+  border-radius: 2px;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+    object-fit: cover;
+  }
+}
+
+.image-upload-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $x-large-pad;
+  @include gs-font($x-small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+
+  > span {
+    flex: 1;
+    min-width: 0;
+    opacity: $medium-opacity;
+  }
+
+  gs-button.transparent {
+    color: $black;
+  }
+}
+
+.image-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.image-upload-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}

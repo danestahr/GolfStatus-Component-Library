@@ -1,0 +1,65 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+.qs-stepper {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $medium-pad;
+  padding: $large-pad;
+  background: $grey-100;
+}
+
+.qs-step {
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+  padding: $medium-pad $medium-large-pad;
+  border-radius: $huge-radius;
+  color: $grey-800;
+  font-size: $x-small-font;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  svg {
+    font-size: $x-small-font;
+  }
+
+  // Outline circle for stages that aren't done yet.
+  .qs-step-dot {
+    box-sizing: border-box;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+  }
+
+  // Active: solid black. Done: green. Available: plain, no fill. Disabled: the
+  // plain look faded to 35% and not clickable.
+  &--active {
+    background: $grey-800;
+    color: $white;
+  }
+
+  &--done {
+    background: $green-200;
+  }
+
+  &--disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--clickable {
+    cursor: pointer;
+  }
+
+  @include large-phone {
+    &:not(.qs-step--active) .qs-step-label {
+      display: none;
+    }
+  }
+}

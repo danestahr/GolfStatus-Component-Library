@@ -1,0 +1,6 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+// The name input's clear button reads as a plain black icon.
+gs-form-section gs-input gs-button.transparent {
+  color: $black;
+}

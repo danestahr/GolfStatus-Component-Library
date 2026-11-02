@@ -1,0 +1,291 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+$to-breakpoint: 1100px;
+
+.to-page {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: $white;
+  font-family: $font-family;
+}
+
+// The sidebar fills the page's height and scrolls on its own; this column is
+// the only thing that scrolls with the page content.
+.to-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  > * {
+    flex-shrink: 0;
+  }
+}
+
+// ── Top bar (drawer menu) — only below the breakpoint ──
+
+.to-topbar {
+  display: none;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad;
+  background: $black;
+  color: $white;
+
+  img {
+    width: 28px;
+    height: 28px;
+    filter: invert(1);
+  }
+
+  span {
+    flex: 1;
+    @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+    text-transform: uppercase;
+  }
+
+  button {
+    border: 0;
+    background: none;
+    color: $white;
+    font-size: $medium-font;
+    cursor: pointer;
+  }
+
+  @media (max-width: $to-breakpoint) {
+    display: flex;
+  }
+}
+
+// ── Hero: page title, countdown, tournament card ──
+
+.to-hero {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: 0 24px 56px;
+  background: linear-gradient(180deg, #000 0%, #3a3a3a 100%);
+  color: $white;
+
+  @media (max-width: $to-breakpoint) {
+    padding-bottom: $x-large-pad;
+  }
+}
+
+.to-hero-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0 0;
+
+  h1 {
+    margin: 0;
+    @include gs-font($large-font, $bold-font-weight, normal);
+  }
+
+  // Settings & Preferences: white, transparent.
+  gs-button.transparent {
+    color: $white;
+  }
+
+  // Icon-only on tablet and phone.
+  @media (max-width: $to-breakpoint) {
+    padding-top: $large-pad;
+
+    .button-title {
+      display: none;
+    }
+  }
+}
+
+.to-starts {
+  margin: 56px 0 0;
+  @include gs-font($medium-font, $bold-font-weight, normal);
+
+  @media (max-width: $to-breakpoint) {
+    margin-top: $x-large-pad;
+  }
+}
+
+.to-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-radius: $large-radius;
+  background: rgba($white, 0.14);
+
+  @media (max-width: $to-breakpoint) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.to-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  min-width: 0;
+}
+
+.to-card-top {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+
+  gs-button.transparent {
+    color: $white;
+  }
+}
+
+.to-card-image {
+  width: 114px;
+  height: 58px;
+  overflow: hidden;
+  border: 1px solid rgba($white, 0.6);
+  border-radius: $medium-radius;
+  background: #808080;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.to-card-text {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+
+  > div {
+    opacity: $medium-opacity;
+  }
+
+  .to-card-name {
+    font-weight: $bold-font-weight;
+    opacity: 1;
+  }
+}
+
+.to-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+  width: 300px;
+  flex: none;
+
+  gs-button {
+    width: 100%;
+  }
+
+  @media (max-width: $to-breakpoint) {
+    width: 100%;
+  }
+}
+
+// ── Sections ──
+
+.to-sections {
+  flex: 1;
+  background: $white;
+}
+
+.to-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+
+  &:hover {
+    background: $grey-100;
+  }
+}
+
+.to-section-title {
+  @include gs-font($small-font, $bold-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+}
+
+.to-section-description {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+  opacity: $medium-opacity;
+}
+
+// ── Round cards ──
+
+.to-rounds {
+  display: flex;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.to-round {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  box-shadow: $first-layer-shadow;
+}
+
+.to-round-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $medium-large-pad;
+}
+
+.to-round-number {
+  @include gs-font($small-font, $bold-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+}
+
+.to-round-meta {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+  opacity: $medium-opacity;
+}
+
+.to-round-actions {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+
+  gs-button {
+    width: 100%;
+  }
+}
+
+// Support-chat launcher, pinned to the corner of the viewport.
+.to-chat {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  width: 60px;
+  height: 60px;
+  border: 2px solid $white;
+  border-radius: 50%;
+  background: $black;
+  color: $white;
+  font-size: $x-large-font;
+  cursor: pointer;
+  box-shadow: $first-layer-shadow;
+}

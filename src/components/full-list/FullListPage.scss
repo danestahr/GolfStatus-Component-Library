@@ -1,0 +1,164 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+// ── Page chrome (see FullListPage.jsx) ──
+
+// Header action bar buttons drop to icon-only at the large-phone breakpoint.
+.fl-page gs-action-bar > .actions .button-title {
+  @include large-phone {
+    display: none;
+  }
+}
+
+.fl-page .efp-search-row {
+  gap: $x-large-pad;
+
+  // Search fills the row beside the filter button on small screens (the
+  // shared 100% width would otherwise push the filter button off the row).
+  gs-input {
+    @include large-phone {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+    }
+
+    // Clear (times-circle) button: transparent, black icon.
+    gs-button.transparent {
+      color: $black;
+    }
+  }
+}
+
+// ── Filter popover — anchors to its button; the backdrop catches outside clicks ──
+
+.fl-filter {
+  position: relative;
+  flex: none;
+
+  gs-button.transparent {
+    color: $black;
+  }
+}
+
+.fl-filter-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.fl-filter-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 10;
+  min-width: 200px;
+  padding: $medium-pad 0;
+  background: $white;
+  border-radius: $medium-radius;
+  box-shadow: $first-layer-shadow;
+}
+
+.fl-filter-title {
+  padding: $medium-pad $large-pad;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  color: $grey-800;
+  opacity: $medium-opacity;
+}
+
+.fl-filter-option,
+.fl-filter-clear {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $medium-large-pad $large-pad;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  color: $grey-800;
+  cursor: pointer;
+
+  &:hover {
+    background: $grey-100;
+  }
+}
+
+.fl-filter-clear {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-weight: $bold-font-weight;
+}
+
+// ── Row (see FullListRow) ──
+
+.fl-row {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  background: $white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+
+  @include large-phone {
+    flex-wrap: wrap;
+  }
+}
+
+.fl-row-image {
+  flex: none;
+  width: 240px;
+  height: 120px;
+  overflow: hidden;
+  border: 1px solid $grey-100;
+  border-radius: $medium-radius;
+  background: $grey-100;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @include large-phone {
+    display: none;
+  }
+}
+
+.fl-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $medium-large-pad;
+}
+
+.fl-row-text {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.fl-row-title {
+  @include gs-font($small-font, $bold-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+}
+
+.fl-row-meta {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+  opacity: $medium-opacity;
+}
+
+.fl-row-counts {
+  flex: none;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+  opacity: 0.5;
+  white-space: nowrap;
+
+  // Hides at the same breakpoint as the row image.
+  @include large-phone {
+    display: none;
+  }
+}

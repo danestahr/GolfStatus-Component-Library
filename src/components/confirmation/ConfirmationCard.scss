@@ -1,0 +1,39 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+}
+
+.confirmation-intro {
+  margin: 0;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: 20px;
+  color: $grey-800;
+  opacity: $medium-opacity;
+}
+
+.confirmation-card {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-large-pad;
+  padding: $x-large-pad;
+  border: 1px solid $grey-200;
+  border-radius: $medium-radius;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+}
+
+.confirmation-title {
+  font-weight: $bold-font-weight;
+}
+
+.confirmation-line {
+  opacity: $medium-opacity;
+}
+
+.confirmation-note {
+  opacity: 0.5;
+}

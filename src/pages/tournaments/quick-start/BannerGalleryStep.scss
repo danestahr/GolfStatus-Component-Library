@@ -1,0 +1,38 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+.qs-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $x-large-pad;
+}
+
+// 4:1 crop of each preset, full width.
+.qs-gallery-tile {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 1;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: $medium-radius;
+  background: $grey-100;
+  cursor: pointer;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover {
+    box-shadow: 0 0 0 2px $grey-300;
+  }
+
+  &:focus-visible,
+  &--selected {
+    outline: none;
+    box-shadow: 0 0 0 3px $grey-800;
+  }
+}

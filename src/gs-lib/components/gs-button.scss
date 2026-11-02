@@ -378,9 +378,18 @@ gs-button {
       }
     }
   }
+  // Disabled: flat surface-dim grey fill with the label and icon dimmed to 35%
+  // (replaces the old whole-button 50% opacity, which made a black button read
+  // as a washed-out black rather than as a disabled one).
   &.disabled {
     cursor: default;
-    opacity: .5;
+    background: $grey-200;
+    color: $grey-800;
+
+    .button-icon,
+    .button-title {
+      opacity: 0.35;
+    }
   }
 
   &.enabled {

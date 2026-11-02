@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import logo from './assets/GS_Logo.svg'
+import './AppNav.scss'
 
 // Pages
 import InvoiceListPage from './pages/invoices/InvoiceListPage.jsx'
 import InvoiceDetailPage from './pages/invoices/InvoiceDetailPage.jsx'
 import TournamentsPage from './pages/tournaments/TournamentsPage.jsx'
+import TournamentOverviewPage from './pages/tournaments/overview/TournamentOverviewPage.jsx'
 import SettingsPage from './pages/settings/SettingsPage.jsx'
 import ScorecardListPage from './pages/scorecards/ScorecardListPage.jsx'
 import ScorecardDetailPage from './pages/scorecards/ScorecardDetailPage.jsx'
@@ -56,7 +59,10 @@ export default function App() {
 function AppShell() {
   const mainRef = useRef(null)
   const location = useLocation()
-  const isStandalonePage = location.pathname.startsWith('/event-site')
+  // The tournament overview carries its own tournament-management sidebar, so
+  // it replaces the prototype nav too (/tournaments/quick-start stays on the list).
+  const isOverviewPage = /^\/tournaments\/(?!quick-start)[^/]+/.test(location.pathname)
+  const isStandalonePage = location.pathname.startsWith('/event-site') || isOverviewPage
 
   return (
     <>
@@ -64,29 +70,29 @@ function AppShell() {
       <div style={{ display: 'flex', height: '100vh' }}>
 
         {/* Sidebar nav */}
-        {!isStandalonePage && <nav style={{
-          width: 300, background: '#111', padding: '24px 16px',
-          display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0,
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 20, letterSpacing: '0.05em' }}>
-            GOLFSTATUS
+        {!isStandalonePage && <nav className="app-nav">
+          <div className="app-nav-brand">
+            <img src={logo} alt="" />
+            <span>GolfStatus</span>
           </div>
-          <NavItem to="/invoices" label="Invoices" />
-          <NavItem to="/scorecards" label="Scorecards" />
-          <NavItem to="/tournaments" label="Tournaments" />
-          <NavItem to="/settings" label="Settings" />
-          <NavItem to="/compare" label="Compare" />
-          <NavItem to="/infinite-list" label="Infinite List" />
-          <NavItem to="/exclusion" label="Exclusion V1" />
-          <NavItem to="/exclusion-v2" label="Exclusion V2" />
-          <NavItem to="/scheduler" label="Hole Assignments" />
-          <NavItem to="/messaging" label="Messages" end />
-          <NavItem to="/messaging/draft" label="Message Draft" />
-          <NavItem to="/orders-forms/event-site-packages" label="Event Site & Packages" end />
-          <NavItem to="/orders-forms/event-site-packages/forms" label="Edit Form Responses" />
-          <NavItem to="/teams" label="Players & Teams" />
-          <NavItem to="/sponsors" label="Sponsors" />
-          <NavItem to="/orders" label="Orders & Payouts" />
+          <div className="app-nav-items">
+            <NavItem to="/invoices" label="Invoices" />
+            <NavItem to="/scorecards" label="Scorecards" />
+            <NavItem to="/tournaments" label="Tournaments" />
+            <NavItem to="/settings" label="Settings" />
+            <NavItem to="/compare" label="Compare" />
+            <NavItem to="/infinite-list" label="Infinite List" />
+            <NavItem to="/exclusion" label="Exclusion V1" />
+            <NavItem to="/exclusion-v2" label="Exclusion V2" />
+            <NavItem to="/scheduler" label="Hole Assignments" />
+            <NavItem to="/messaging" label="Messages" end />
+            <NavItem to="/messaging/draft" label="Message Draft" />
+            <NavItem to="/orders-forms/event-site-packages" label="Event Site & Packages" end />
+            <NavItem to="/orders-forms/event-site-packages/forms" label="Edit Form Responses" />
+            <NavItem to="/teams" label="Players & Teams" />
+            <NavItem to="/sponsors" label="Sponsors" />
+            <NavItem to="/orders" label="Orders & Payouts" />
+          </div>
         </nav>}
 
         {/* Page content */}
@@ -98,6 +104,8 @@ function AppShell() {
             <Route path="/scorecards" element={<ScorecardListPage />} />
             <Route path="/scorecards/:id" element={<ScorecardDetailPage />} />
             <Route path="/tournaments" element={<TournamentsPage />} />
+            <Route path="/tournaments/quick-start/*" element={<TournamentsPage />} />
+            <Route path="/tournaments/:tournamentId" element={<TournamentOverviewPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/compare" element={<ComparisonPage />} />
             <Route path="/infinite-list" element={<InfiniteListPage />} />
@@ -135,13 +143,8 @@ function AppShell() {
 
 function NavItem({ to, label, end }) {
   return (
-    <NavLink to={to} end={end} style={({ isActive }) => ({
-      display: 'block', padding: '8px 12px', borderRadius: 6,
-      fontSize: 14, lineHeight: 1.2, fontWeight: 500, textDecoration: 'none',
-      background: isActive ? '#ffffff18' : 'transparent',
-      color: isActive ? '#fff' : '#ffffff99',
-    })}>
-      {label}
+    <NavLink to={to} end={end} className={({ isActive }) => `app-nav-item${isActive ? ' app-nav-item--active' : ''}`}>
+      <span>{label}</span>
     </NavLink>
   )
 }

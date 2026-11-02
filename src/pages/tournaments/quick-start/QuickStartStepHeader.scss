@@ -1,0 +1,32 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+.qs-step-header {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-bottom: 1px solid $grey-100;
+  color: $grey-800;
+}
+
+.qs-step-header-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+
+  h3 {
+    margin: 0;
+    font-size: $large-font;
+    font-weight: $bold-font-weight;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 0;
+    @include gs-font($small-font, $regular-font-weight, normal);
+    line-height: $regular-line-height;
+    opacity: $medium-opacity;
+  }
+}

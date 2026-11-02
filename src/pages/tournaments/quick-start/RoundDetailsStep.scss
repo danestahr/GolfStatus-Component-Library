@@ -1,0 +1,83 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+.rd-datetime {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(151, 151, 151, 0.5);
+  border-radius: $medium-radius;
+  background: $white;
+  color: $grey-800;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: 28px;
+}
+
+.rd-course {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  width: 100%;
+}
+
+.rd-course-inputs {
+  display: flex;
+  gap: $large-pad;
+
+  gs-input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
+  @include large-phone {
+    flex-direction: column;
+  }
+}
+
+.rd-course-empty {
+  padding: 120px $x-large-pad;
+  border-radius: $medium-radius;
+  background: $grey-100;
+  text-align: center;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $black;
+  opacity: $medium-opacity;
+}
+
+.rd-course-results {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.rd-facility {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+  padding: $medium-large-pad $large-pad;
+  border: 1px solid $grey-200;
+  border-radius: $medium-radius;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+  cursor: pointer;
+
+  &:hover {
+    background: $grey-100;
+  }
+
+  &--selected {
+    border-color: $grey-800;
+    box-shadow: inset 0 0 0 1px $grey-800;
+  }
+}
+
+.rd-facility-name {
+  font-weight: $bold-font-weight;
+}
+
+.rd-facility-meta {
+  opacity: $medium-opacity;
+}
