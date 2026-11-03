@@ -9,7 +9,7 @@ import WebsiteDetailsStep from './WebsiteDetailsStep.jsx'
 import BannerGalleryStep from './BannerGalleryStep.jsx'
 import TournamentCreatedStep from './TournamentCreatedStep.jsx'
 import QuickStartStepHeader from './QuickStartStepHeader.jsx'
-import { FACILITIES, DEFAULT_ROUND_FORMAT } from '../../../data/mockFacilities'
+import { FACILITIES, DEFAULT_ROUND_FORMAT, soleCourse, isNineHoleTrio, coursesFor, ALL_TEE_IDS } from '../../../data/mockFacilities'
 import QuickStartStepper, { QUICK_START_STAGES } from './QuickStartStepper.jsx'
 import { stepActions } from './stepActions.js'
 import './QuickStartPanel.scss'
@@ -32,7 +32,14 @@ const initialQuickStart = () => ({
   // and the course is preselected when the prospect's course is in the directory.
   start_datetime: `${QUICK_START_PROSPECT.tournament_date}T10:00`,
   round_format: DEFAULT_ROUND_FORMAT.value,
+  round_holes: 18,
   facility: FACILITIES.find(f => f.name === QUICK_START_PROSPECT.course_name) ?? null,
+  // A facility with a single course has it picked for it.
+  course_id: soleCourse(FACILITIES.find(f => f.name === QUICK_START_PROSPECT.course_name))?.id ?? null,
+  course_id_2: null,
+  course_not_listed: false,
+  holes: 'all',
+  tees: ALL_TEE_IDS,
   // Website details — the banner is a File (upload) or a preset image URL (gallery).
   banner_image: null,
   event_description: defaultEventDescription(QUICK_START_PROSPECT.organization),
@@ -93,7 +100,10 @@ export default function QuickStartPanel({ isOpen, onClose }) {
   // a page that isn't saved yet, always in sequence.
   const stageComplete = {
     tournament: Boolean(quickStart.tournament_name.trim()),
-    rounds: Boolean(quickStart.start_datetime && quickStart.facility),
+    rounds: Boolean(quickStart.start_datetime && quickStart.round_format && (quickStart.course_not_listed || (quickStart.facility && quickStart.course_id)) && quickStart.tees.length &&
+      (!isNineHoleTrio(quickStart.facility) || quickStart.round_holes !== 18 || quickStart.course_id_2) &&
+      // An 18-hole course played for 9 holes needs its front or back nine picked.
+      (coursesFor(quickStart.facility).find(c => c.id === quickStart.course_id)?.holes !== 18 || quickStart.round_holes !== 9 || ['front', 'back'].includes(quickStart.holes))),
     website: true,
   }
   const enabledStages = QUICK_START_STAGES.filter((stage, i) =>

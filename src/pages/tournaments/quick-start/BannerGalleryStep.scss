@@ -7,11 +7,12 @@
   padding: $x-large-pad;
 }
 
-// 4:1 crop of each preset, full width.
+// 3:1 crop of each preset, full width. The images themselves are 2:1; the event
+// site shows them uncropped, with more room as it follows the screen size.
 .qs-gallery-tile {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 1;
+  aspect-ratio: 3 / 1;
   padding: 0;
   overflow: hidden;
   border: 0;

@@ -26,8 +26,11 @@
     margin: 0;
     @include gs-font($small-font, $regular-font-weight, normal);
     line-height: $regular-line-height;
-    color: $grey-800;
-    opacity: $medium-opacity;
+    color: rgba($grey-800, $medium-opacity);
+
+    a {
+      color: $cyan-700;
+    }
   }
 
   a {

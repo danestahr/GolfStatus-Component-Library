@@ -30,14 +30,28 @@
   display: flex;
   gap: $large-pad;
 
-  gs-input {
-    flex: 1;
+  // Course name 50% | country 25% | state/province 25% (flex shares, gaps aside).
+  > * {
+    flex: 1 1 0;
     min-width: 0;
+  }
+
+  > :first-child {
+    flex-grow: 2;
+  }
+
+  gs-input {
     width: auto;
   }
 
+  // Phones: the name search takes the first row; country and state/province
+  // share the row beneath it.
   @include large-phone {
-    flex-direction: column;
+    flex-wrap: wrap;
+
+    > :first-child {
+      flex: 0 0 100%;
+    }
   }
 }
 
@@ -49,6 +63,24 @@
   @include gs-font($small-font, $regular-font-weight, normal);
   line-height: $regular-line-height;
   color: $black;
+  opacity: $medium-opacity;
+}
+
+.rd-course-empty--note {
+  // Heading at full strength, body text softened (the plain empty state fades all).
+  opacity: 1;
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
+.rd-course-empty-title {
+  margin-bottom: $medium-pad;
+  font-weight: $bold-font-weight;
+}
+
+.rd-course-empty-body {
+  max-width: 480px;
+  margin: 0 auto;
   opacity: $medium-opacity;
 }
 
@@ -87,4 +119,88 @@
 
 .rd-facility-meta {
   opacity: $medium-opacity;
+}
+
+.rd-selected-facility,
+.rd-course-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+}
+
+.rd-selected-facility {
+  padding-right: 4px;
+  align-items: center;
+  background: $grey-50;
+}
+
+.rd-course-card {
+  padding-right: 4px;
+  flex-direction: column;
+  align-items: stretch;
+  border: 1px solid $grey-200;
+  cursor: pointer;
+
+  &:hover {
+    background: $grey-100;
+  }
+
+  &--selected {
+    background: $grey-50;
+    border-color: transparent;
+    cursor: default;
+
+    &:hover {
+      background: $grey-50;
+    }
+  }
+}
+
+.rd-course-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  // A single column on phones.
+  @include large-phone {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rd-course-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $large-pad;
+}
+
+
+// Tile text wraps instead of overflowing; flex children need min-width: 0 to be
+// allowed to shrink below their content.
+.rd-facility,
+.rd-selected-facility,
+.rd-course-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+
+  > div,
+  .rd-course-head > div {
+    min-width: 0;
+  }
+}
+
+// Tiles get 24px all round, selected (the picked facility / course) and available
+// (course options and facility search results) alike.
+.rd-selected-facility,
+.rd-course-card,
+.rd-course-card:not(.rd-course-card--selected),
+.rd-facility {
+  padding: 24px;
 }
