@@ -1676,11 +1676,12 @@ export default function ColorExplorationFields({
   }
   const themeFile = theme => {
     const name = THEME_FILE_NAMES[theme.key]
+    // Grayscale IS the default theme, so it exports every designation.
     // Subtle and Bold always carry the event's Primary and Secondary (hex) —
-    // they're what the rest of the theme is built from. Grayscale is the
-    // default theme and keeps the default brand colors.
+    // they're what the rest of the theme is built from.
     const roleIncluded = role =>
-      (theme.key !== 'golfstatus' && ['primary', 'secondary'].includes(role.key)) ||
+      theme.key === 'golfstatus' ||
+      ['primary', 'secondary'].includes(role.key) ||
       role.parts.some(part => ['light', 'dark'].some(mode => theme[mode].find(item => item.key === part.storageKey)?.overridden))
     const tokens = {}
     ROLE_ORDER.filter(roleIncluded).forEach(role => {
@@ -1692,7 +1693,7 @@ export default function ColorExplorationFields({
     return {
       name: `${name}.js`,
       content: [
-        '// Only the designations that have been overridden are exported (plus Primary and Secondary, always, on Subtle and Bold).',
+        '// Grayscale exports every designation; Subtle and Bold export only the overridden ones (plus Primary and Secondary, always).',
         '// Values are designation names (e.g. "$grey-800", "$primary-200"); the Primary and Secondary designations and custom colors are hex.',
         '// Anything not listed here falls back to the default theme (Theme.js defaultTheme).',
         `// ${theme.label} theme.`,

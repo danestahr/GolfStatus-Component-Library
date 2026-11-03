@@ -63,7 +63,7 @@ $wds-swatch-height: 48px;
 // .wds-scale-row's usual $medium-pad gap.
 .wds-hex-inputs {
   @include h-stack(flex-start, flex-start);
-  gap: $large-pad;
+  gap: $xx-large-pad;
   width: 100%;
   margin-bottom: $large-pad;
 }

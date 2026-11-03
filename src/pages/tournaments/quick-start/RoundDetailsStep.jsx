@@ -15,30 +15,48 @@ const courseCount = f => {
   return Object.keys(counts).sort((a, b) => a - b).map(h => `${counts[h]} x ${h}-Hole`).join(', ')
 }
 
+// Grey empty-state box: bold title, softened body, optional action buttons.
+function CourseEmpty({ title, body, wide, children }) {
+  return (
+    <div className="rd-course-empty">
+      <div className="rd-course-empty-title">{title}</div>
+      <div className={`rd-course-empty-body${wide ? ' rd-course-empty-body--wide' : ''}`}>{body}</div>
+      {children && <div className="rd-course-empty-actions">{children}</div>}
+    </div>
+  )
+}
+
 // Course search: the course name, then country (USA or Canada) and state or
 // province (a dropdown, labelled to match the country). ENTER in the name runs
 // the search; picking a country or state does too. Matches list below as
 // selectable tiles (or an empty-state message). Starts out searched for the
 // prospect's course so it's already picked.
-function CourseSearch({ facility, onSelect, initialName }) {
-  const [name, setName] = useState(initialName)
+function CourseSearch({ facility, onSelect, onNotListed, onUnsure, initialName }) {
+  const [name, setName] = useState(initialName ?? '')
   const [state, setState] = useState('')
   const [country, setCountry] = useState(COUNTRIES[0])
-  const [results, setResults] = useState(() => searchFacilities(initialName, '', COUNTRIES[0].value))
+  // null = nothing searched yet, so no results area.
+  const run = (n, st, c) => (n.trim() || st ? searchFacilities(n, st, c) : null)
+  const [results, setResults] = useState(() => run(initialName ?? '', '', COUNTRIES[0].value))
 
-  const search = () => setResults(searchFacilities(name, state, country.value))
+  const search = () => setResults(run(name, state, country.value))
+  const clearSearch = () => {
+    setName('')
+    setState('')
+    setCountry(COUNTRIES[0])
+    setResults(null)
+  }
   // Switching country drops the old state/province and searches that country.
   const changeCountry = option => {
     setCountry(option)
     setState('')
-    setResults(searchFacilities(name, '', option.value))
+    setResults(run(name, '', option.value))
   }
   const changeState = option => {
     const next = option?.value ?? ''
     setState(next)
-    setResults(searchFacilities(name, next, country.value))
+    setResults(run(name, next, country.value))
   }
-
   return (
     <div className="rd-course">
       <div className="rd-course-inputs">
@@ -48,6 +66,12 @@ function CourseSearch({ facility, onSelect, initialName }) {
           textValue={name}
           onChange={e => setName(e.target.value)}
           onSubmit={search}
+          rightIcon={faCircleXmark}
+          rightIconClick={() => { setName(''); setResults(run('', state, country.value)) }}
+          rightButtonProps={{
+            type: 'secondary transparent',
+            style: name ? undefined : { visibility: 'hidden' },
+          }}
         />
         <div>
           <GSSelect
@@ -72,8 +96,17 @@ function CourseSearch({ facility, onSelect, initialName }) {
         </div>
       </div>
 
-      {results.length === 0 ? (
-        <div className="rd-course-empty">We couldn’t find the facility you’re looking for…</div>
+      {/* Nothing searched yet: prompt to search, or say it's unknown/unlisted. */}
+      {results === null ? (
+        <CourseEmpty title="Find your Golf Facility" body="Where are you planning to host this tournament?">
+          <GSButton title="I’m not sure yet" type="white" onClick={onUnsure} isFocusable />
+          <GSButton title="I can’t find my course" type="white" onClick={onNotListed} isFocusable />
+        </CourseEmpty>
+      ) : results.length === 0 ? (
+        <CourseEmpty title="We couldn’t find the course you’re looking for..." body="Try changing the search term...">
+          <GSButton title="Clear Search" type="transparent" onClick={clearSearch} isFocusable />
+          <GSButton title="My course is not listed" onClick={onNotListed} isFocusable />
+        </CourseEmpty>
       ) : (
         <div className="rd-course-results">
           {results.map(f => (
@@ -182,6 +215,8 @@ function SoleCourseSetup({ course, roundHoles, holes, onChange }) {
   )
 }
 
+const FORMATS_URL = 'https://golfstatus.com/golfforgood/golf-tournament-formats'
+
 // How many holes the round is. Informs the course section below.
 const ROUND_HOLE_OPTIONS = [
   { value: 18, label: '18 Holes' },
@@ -191,12 +226,14 @@ const ROUND_HOLE_OPTIONS = [
 // Quick Start step 2: when and where the first round is played. Footer actions
 // live in QuickStartPanel.
 export default function RoundDetailsStep({ quickStart, onChange }) {
-  const { start_datetime, round_format, round_holes, facility, course_id, course_id_2, holes, tees, course_not_listed } = quickStart
+  const { start_datetime, round_format, round_holes, facility, course_id, course_id_2, holes, tees, course_not_listed, course_unsure } = quickStart
   // "I don't see my course": swaps the search flow for a note that the team will
   // set the course up; "Search Courses" brings the flow back.
   const toggleNotListed = () => onChange(course_not_listed
-    ? { course_not_listed: false }
-    : { course_not_listed: true, facility: null, course_id: null, course_id_2: null, tees: ALL_TEE_IDS, holes: 'all' })
+    ? { course_not_listed: false, course_unsure: false }
+    : { course_not_listed: true, course_unsure: false, facility: null, course_id: null, course_id_2: null, tees: ALL_TEE_IDS, holes: 'all' })
+  // "I'm not sure yet": the same no-course path as not listed, but with the "Haven't Picked" note.
+  const setUnsure = () => onChange({ course_not_listed: true, course_unsure: true, facility: null, course_id: null, course_id_2: null, tees: ALL_TEE_IDS, holes: 'all' })
   const trio = facility && isNineHoleTrio(facility)
   // Two courses (a 9 and an 18, or two 18s): one combined choice of what's played.
   const mixed = facility && coursesFor(facility).length === 2
@@ -283,6 +320,7 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
       fields={[
         {
           label: 'Start Date & Time',
+          description: 'Golfers will tee off at this time.',
           required: true,
           isEditable: true,
           customView: true,
@@ -292,7 +330,12 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
               className="rd-datetime"
               type="datetime-local"
               value={start_datetime}
-              onChange={e => onChange({ start_datetime: e.target.value })}
+              onChange={e => {
+                // Picking a date on an empty field lands on the current time (or 12:00 AM); start at 10:00 AM instead.
+                let value = e.target.value
+                if (value && !start_datetime) value = `${value.slice(0, 11)}10:00`
+                onChange({ start_datetime: value })
+              }}
             />
           ),
         },
@@ -302,24 +345,33 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
           isEditable: true,
           customView: true,
           value: (
-            <GSSelect
-              options={ROUND_FORMATS}
-              selectedOption={ROUND_FORMATS.find(o => o.value === round_format)}
-              onChange={option => onChange({ round_format: option.value })}
-              isSearchable={false}
-              menuPortalTarget={document.body}
-              menuPosition="fixed"
-            />
+            <div className="rd-format">
+              <div className="rd-format-description">
+                <span className="rd-format-description-text">Most charity tournaments are Scrambles.</span>{' '}
+                <a className="rd-format-help" href={FORMATS_URL} target="_blank" rel="noreferrer">Which format should I choose?</a>
+              </div>
+              <GSSelect
+                options={ROUND_FORMATS}
+                selectedOption={ROUND_FORMATS.find(o => o.value === round_format)}
+                onChange={option => onChange({ round_format: option.value })}
+                isSearchable={false}
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+              />
+            </div>
           ),
         },
         {
           label: 'Number of Holes',
+          description: 'Most charity tournaments are 18 Holes.',
           required: true,
           isEditable: true,
           customView: true,
           value: (
             <GSRadioGroup
               isLtr
+              // No padding, so the radios line up with the label (visible overflow keeps the focus ring from clipping).
+              style={{ padding: 0, overflow: 'visible' }}
               options={ROUND_HOLE_OPTIONS}
               selectedOption={roundHoleOption}
               selectionChanged={option => onChange({
@@ -338,7 +390,8 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
       title="Course Setup"
       // Hidden once a facility is picked: there's nothing left to not find.
       sectionActions={facility ? [] : [{
-        buttonTitle: course_not_listed ? 'Search Courses' : "I don't see my course",
+        // With no course on file the box is where it starts, and the way out is "I know my course".
+        buttonTitle: course_not_listed ? 'Select Golf Facility' : 'My course is not listed',
         actionClick: toggleNotListed,
         type: 'transparent',
         size: 'secondary',
@@ -348,15 +401,17 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         isEditable: true,
         customView: true,
         value: (
-          <div className="rd-course-empty rd-course-empty--note">
-            <div className="rd-course-empty-title">Can’t find your course?</div>
-            <div className="rd-course-empty-body">We’ll set a placeholder course and your customer support specialist will be in contact to help you out!</div>
-          </div>
+          course_unsure ? (
+            <CourseEmpty wide title="Haven’t Picked a Golf Course?" body="We’ll set a placeholder course in the meantime – once you select a course, your customer support specialist will be in contact to help you out!" />
+          ) : (
+            <CourseEmpty title="We may not have your course yet!" body="We’ll set a placeholder course in the meantime – your customer support specialist will be in contact to help you add this course!" />
+          )
         ),
       }] : [
         {
           // Once a course is picked the card stands alone, with no field header.
-          label: facility ? undefined : 'Course Search',
+          label: facility ? undefined : 'Golf Facility',
+          description: facility ? undefined : 'Ensure you\'ve confirmed your date with the golf facility that you select.',
           required: true,
           isEditable: true,
           customView: true,
@@ -370,6 +425,8 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
             <CourseSearch
               facility={facility}
               onSelect={f => onChange({ facility: f, course_id: soleCourse(f)?.id ?? null, course_id_2: null, tees: ALL_TEE_IDS, holes: 'all' })}
+              onNotListed={toggleNotListed}
+              onUnsure={setUnsure}
               initialName={quickStart.course_name}
             />
           ),

@@ -6,6 +6,7 @@ import FullListPage, { FullListRow, FullListRowText } from '../../components/ful
 import { TOURNAMENTS, TOURNAMENT_STATUSES, statusMeta } from '../../data/mockTournaments'
 import { getCreatedTournaments } from '../../data/createdTournaments'
 import QuickStartPanel from './quick-start/QuickStartPanel.jsx'
+import { QUICK_START_PROSPECTS, scenarioFromPath } from '../../data/mockQuickStart'
 import eventHero from '../../assets/event-hero.png'
 
 function TournamentRow({ tournament, onOpen }) {
@@ -41,7 +42,10 @@ export default function TournamentsPage() {
   const navigate = useNavigate()
   // Quick Start lives at /tournaments/quick-start, over this same list (the list stays
   // mounted behind the slide-out); /tournaments is the list on its own.
-  const quickStartOpen = useLocation().pathname.startsWith('/tournaments/quick-start')
+  const { pathname } = useLocation()
+  const quickStartOpen = pathname.startsWith('/tournaments/quick-start')
+  // Which prospect it opens for comes from the URL (see data/mockQuickStart.js).
+  const prospect = QUICK_START_PROSPECTS[scenarioFromPath(pathname)]
 
   const query = search.trim().toLowerCase()
   const visible = [...getCreatedTournaments(), ...TOURNAMENTS].filter(t =>
@@ -68,7 +72,7 @@ export default function TournamentsPage() {
     >
       {visible.map(t => <TournamentRow key={t.id} tournament={t} onOpen={() => navigate(`/tournaments/${t.id}`)} />)}
     </FullListPage>
-    <QuickStartPanel isOpen={quickStartOpen} onClose={() => navigate('/tournaments')} />
+    <QuickStartPanel isOpen={quickStartOpen} onClose={() => navigate('/tournaments')} prospect={prospect} />
     </>
   )
 }

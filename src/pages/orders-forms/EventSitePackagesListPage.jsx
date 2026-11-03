@@ -92,7 +92,7 @@ const NAV_ROWS = [
     hidden: true,
   },
   {
-    id: 'website-design-style',
+    id: 'website-colors',
     title: 'Website Colors',
     description: 'Manage the event site’s primary and accent colors.',
     // Premium-only — non-premium tournaments can't customize colors, so the
@@ -185,7 +185,7 @@ function insertIdByPrice(order, getPrice, id) {
 
 const FORMS_PATH = '/orders-forms/event-site-packages/forms'
 const HOMEPAGE_PATH = '/orders-forms/event-site-packages/homepage'
-const STYLE_PATH = '/orders-forms/event-site-packages/website-design-style'
+const STYLE_PATH = '/orders-forms/event-site-packages/website-colors'
 const COLOR_EXPLORATION_PATH = '/orders-forms/event-site-packages/color-exploration'
 const SITE_PAGES_PATH = '/orders-forms/event-site-packages/pages'
 const PACKAGES_PATH = '/orders-forms/event-site-packages/packages'
@@ -273,7 +273,7 @@ export default function EventSitePackagesListPage() {
   // top action bar — purely so this prototype can show off both visual
   // states side by side; there's no real plan/entitlement system behind it.
   // `isPremium` is still read by PackagesListContent/EventSiteHomepageSectionsList
-  // (and the `website-design-style` row above) to gate what each shows, they
+  // (and the `website-colors` row above) to gate what each shows, they
   // just no longer render a toggle of their own. Persisted (see
   // data/eventSitePremium.js) so /event-site (EventWebsitePage.jsx) can read
   // the same flag back and lock its own theme to GolfStatus's baseline
@@ -1262,7 +1262,7 @@ export default function EventSitePackagesListPage() {
                         ? openFormsPanel
                         : row.id === 'event-site-homepage'
                         ? openHomepagePanel
-                        : row.id === 'website-design-style'
+                        : row.id === 'website-colors'
                         ? openStylePanel
                         : row.id === 'color-exploration'
                         ? openColorExplorationPanel

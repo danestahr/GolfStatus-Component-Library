@@ -1,0 +1,30 @@
+@import '../../gs-lib/styles/golfstatus.scss';
+
+.info-callout {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad;
+  border-radius: $medium-radius;
+  background: $cyan-50;
+  color: $cyan-700;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+}
+
+.info-callout-icon {
+  flex: none;
+  font-size: 18px;
+}
+
+.info-callout-text {
+  min-width: 0;
+}
+
+.info-callout-title {
+  font-weight: $bold-font-weight;
+}
+
+.info-callout-body {
+  opacity: 0.7;
+}

@@ -95,3 +95,19 @@
     display: none;
   }
 }
+
+// Wrong-ratio state: a warning message in place of the dimensions, then FIX and trash.
+.image-upload-details--invalid {
+  > span {
+    display: flex;
+    align-items: flex-start;
+    gap: $medium-pad;
+    opacity: 1;
+  }
+
+  .image-upload-invalid svg {
+    flex: none;
+    margin-top: 2px;
+    color: $orange-600;
+  }
+}

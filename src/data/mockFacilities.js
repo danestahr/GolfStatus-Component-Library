@@ -138,7 +138,13 @@ const FORMAT_LABELS = [
 // "Four Person Scramble (4)" -> "four-person-scramble-4"
 const slug = label => label.toLowerCase().replace(/[()]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
-export const ROUND_FORMATS = FORMAT_LABELS.map(label => ({ value: slug(label), label }))
+// Most formats are just a label; the default also carries a note shown under it.
+const FORMAT_NOTES = { 'Four Person Scramble (4)': 'Most Common' }
+export const ROUND_FORMATS = FORMAT_LABELS.map(label => ({
+  value: slug(label),
+  label,
+  ...(FORMAT_NOTES[label] ? { subLabel: FORMAT_NOTES[label] } : {}),
+}))
 
 // What a new round starts as, and the few the seeded tournaments cycle through.
 export const DEFAULT_ROUND_FORMAT = ROUND_FORMATS.find(f => f.label === 'Four Person Scramble (4)')

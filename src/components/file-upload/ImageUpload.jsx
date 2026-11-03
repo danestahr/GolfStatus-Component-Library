@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { faCircleArrowUp, faImages, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { useEffect, useRef, useState } from 'react'
+import { faCircleArrowUp, faCircleExclamation, faImages, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSButton from '../../gs-lib/components/gs-button'
 import './ImageUpload.scss'
 
@@ -29,14 +30,22 @@ const describe = ({ width, height }) => {
 // `actions` adds per-image buttons ahead of the trash, each
 // { icon, onClick(file), key? } (e.g. crop, replace) — the tile's action row
 // grows with them.
-export default function ImageUpload({ image, onChange, actions = [], onGallery, hint = 'Tap or drag a file to upload. The image ratio is 2:1. Accepted file types are .JPG, .PNG, .GIF under 25MB.' }) {
+export default function ImageUpload({ image, onChange, onFix, enforceRatio = true, actions = [], onGallery, hint = 'Tap or drag a file to upload. The image ratio is 2:1. Accepted file types are .JPG, .PNG, .GIF under 25MB.' }) {
   const inputRef = useRef(null)
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState(null)
 
   const isFile = image instanceof File
-  const previewUrl = useMemo(() => (isFile ? URL.createObjectURL(image) : image || null), [image, isFile])
-  useEffect(() => () => { if (isFile && previewUrl) URL.revokeObjectURL(previewUrl) }, [previewUrl, isFile])
+  // A File's object URL is made (and revoked) inside the effect: made in useMemo,
+  // React's dev-mode double mount would revoke it before the image loaded when the
+  // component remounts already holding a file (e.g. coming back from the crop screen).
+  const [previewUrl, setPreviewUrl] = useState(null)
+  useEffect(() => {
+    if (!isFile) { setPreviewUrl(image || null); return undefined }
+    const url = URL.createObjectURL(image)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [image, isFile])
   useEffect(() => { if (!image) setSize(null) }, [image])
 
   // Browsers downscale big photos in one jump, which aliases fine detail. Halve
@@ -79,6 +88,11 @@ export default function ImageUpload({ image, onChange, actions = [], onGallery, 
     if (file && ACCEPT_TYPES.test(file.type)) onChange(file)
   }
 
+  // A picked file that isn't 2:1 is kept, but the card flags it and (with `onFix`)
+  // offers a FIX button, which the caller points at the crop screen. `enforceRatio={false}`
+  // turns the check off (any size is fine).
+  const wrongRatio = enforceRatio && Boolean(size) && Math.abs(size.width / size.height - 2) > 0.01
+
   return (
     <div
       className={`image-upload${hover ? ' image-upload--hover' : ''}${image ? ' image-upload--has-file' : ''}`}
@@ -97,26 +111,51 @@ export default function ImageUpload({ image, onChange, actions = [], onGallery, 
               alt=""
             />
           </div>
-          <div className="image-upload-details">
-            <span>{size ? describe(size) : isFile ? image.name : ''}</span>
-            <div className="image-upload-actions">
-              {actions.map((action, i) => (
+          {wrongRatio ? (
+            <div className="image-upload-details image-upload-details--invalid">
+              <span className="image-upload-invalid">
+                <FontAwesomeIcon icon={faCircleExclamation} />
+                Image ratio does not meet requirement of 2:1
+              </span>
+              <div className="image-upload-actions">
+                {onFix && (
+                  <GSButton
+                    title="Fix"
+                    type="orange"
+                    onClick={e => { e?.stopPropagation?.(); onFix(image) }}
+                    isFocusable
+                  />
+                )}
                 <GSButton
-                  key={action.key ?? i}
-                  buttonIcon={action.icon}
+                  buttonIcon={faTrash}
                   type="transparent"
-                  onClick={e => { e?.stopPropagation?.(); action.onClick?.(image) }}
+                  onClick={e => { e?.stopPropagation?.(); onChange(null) }}
                   isFocusable
                 />
-              ))}
-              <GSButton
-                buttonIcon={faTrash}
-                type="transparent"
-                onClick={e => { e?.stopPropagation?.(); onChange(null) }}
-                isFocusable
-              />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="image-upload-details">
+              <span>{size ? describe(size) : isFile ? image.name : ''}</span>
+              <div className="image-upload-actions">
+                {actions.map((action, i) => (
+                  <GSButton
+                    key={action.key ?? i}
+                    buttonIcon={action.icon}
+                    type="transparent"
+                    onClick={e => { e?.stopPropagation?.(); action.onClick?.(image) }}
+                    isFocusable
+                  />
+                ))}
+                <GSButton
+                  buttonIcon={faTrash}
+                  type="transparent"
+                  onClick={e => { e?.stopPropagation?.(); onChange(null) }}
+                  isFocusable
+                />
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="image-upload-buttons">

@@ -1,4 +1,4 @@
-import { faCircleXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCircleXmark, faPen } from '@fortawesome/free-solid-svg-icons'
 import GSFormSection from '../../../gs-lib/components/gs-form-section'
 import GSinput from '../../../gs-lib/components/gs-input'
 import ImageUpload from '../../../components/file-upload/ImageUpload.jsx'
@@ -11,7 +11,7 @@ export const defaultTournamentName = organization =>
 
 // Quick Start step 1: name the tournament (prefilled) and add an optional
 // image. Footer actions (Save & continue / Cancel) live in QuickStartPanel.
-export default function TournamentDetailsStep({ quickStart, onChange }) {
+export default function TournamentDetailsStep({ quickStart, onChange, onCropImage }) {
   const { tournament_name, tournament_image } = quickStart
 
   return (
@@ -20,6 +20,7 @@ export default function TournamentDetailsStep({ quickStart, onChange }) {
       fields={[
         {
           label: 'Tournament Name',
+          description: 'Help golfers find your tournament.',
           required: true,
           isEditable: true,
           customView: true,
@@ -40,9 +41,17 @@ export default function TournamentDetailsStep({ quickStart, onChange }) {
         },
         {
           label: 'Tournament image',
+          description: 'This image appears on your event website and in GolfStatus event search results.',
           isEditable: true,
           customView: true,
-          value: <ImageUpload image={tournament_image} onChange={file => onChange({ tournament_image: file })} />,
+          value: (
+            <ImageUpload
+              image={tournament_image}
+              onChange={file => onChange({ tournament_image: file })}
+              onFix={file => onCropImage('tournament_image', file, 2)}
+              actions={tournament_image instanceof File ? [{ icon: faPen, onClick: file => onCropImage('tournament_image', file, 2) }] : []}
+            />
+          ),
         },
       ]}
     />

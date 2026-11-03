@@ -56,6 +56,9 @@
 }
 
 .rd-course-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 120px $x-large-pad;
   border-radius: $medium-radius;
   background: $grey-100;
@@ -63,25 +66,28 @@
   @include gs-font($small-font, $regular-font-weight, normal);
   line-height: $regular-line-height;
   color: $black;
-  opacity: $medium-opacity;
-}
-
-.rd-course-empty--note {
-  // Heading at full strength, body text softened (the plain empty state fades all).
-  opacity: 1;
-  padding-top: 80px;
-  padding-bottom: 80px;
 }
 
 .rd-course-empty-title {
-  margin-bottom: $medium-pad;
-  font-weight: $bold-font-weight;
+  margin-bottom: $medium-large-pad;
+  @include gs-font($medium-font, $bold-font-weight, normal);
+  line-height: $regular-line-height;
 }
 
 .rd-course-empty-body {
   max-width: 480px;
-  margin: 0 auto;
   opacity: $medium-opacity;
+}
+
+.rd-course-empty-body--wide {
+  max-width: none;
+}
+
+.rd-course-empty-actions {
+  display: flex;
+  gap: $medium-large-pad;
+  justify-content: center;
+  margin-top: $xx-large-pad;
 }
 
 .rd-course-results {
@@ -203,4 +209,28 @@
 .rd-course-card:not(.rd-course-card--selected),
 .rd-facility {
   padding: 24px;
+}
+
+// Round Format: a help link between the label and the dropdown.
+.rd-format {
+  display: flex;
+  flex-direction: column;
+  gap: $medium-pad;
+}
+
+.rd-format-description {
+  @include gs-font($x-small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: $grey-800;
+}
+
+.rd-format-description-text {
+  // Plain description text sits at 70%; the link beside it stays full strength.
+  opacity: 0.7;
+}
+
+.rd-format-help {
+  font-weight: $bold-font-weight;
+  color: #4a9da1;
+  text-decoration: underline;
 }

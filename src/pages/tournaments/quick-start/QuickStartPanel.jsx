@@ -9,11 +9,11 @@ import WebsiteDetailsStep from './WebsiteDetailsStep.jsx'
 import BannerGalleryStep from './BannerGalleryStep.jsx'
 import TournamentCreatedStep from './TournamentCreatedStep.jsx'
 import QuickStartStepHeader from './QuickStartStepHeader.jsx'
+import ImageCropStep from './ImageCropStep.jsx'
 import { FACILITIES, DEFAULT_ROUND_FORMAT, soleCourse, isNineHoleTrio, coursesFor, ALL_TEE_IDS } from '../../../data/mockFacilities'
 import QuickStartStepper, { QUICK_START_STAGES } from './QuickStartStepper.jsx'
 import { stepActions } from './stepActions.js'
 import './QuickStartPanel.scss'
-import { QUICK_START_PROSPECT } from '../../../data/mockQuickStart'
 
 // Steps, in order. One AppSidePanel swaps between them by state (never a
 // second stacked panel) so the tournaments list stays put behind it:
@@ -24,40 +24,57 @@ import { QUICK_START_PROSPECT } from '../../../data/mockQuickStart'
 const defaultEventDescription = organization =>
   `<div>Get ready to tee off at ${organization}’s golf event! Every swing supports ${organization}’s mission, so join us for good vibes and a great cause. Register early, be part of the fun, and let’s do good together!</div>`
 
-const initialQuickStart = () => ({
-  ...QUICK_START_PROSPECT,
-  tournament_name: defaultTournamentName(QUICK_START_PROSPECT.organization),
+// The directory facility for the prospect's course name: an exact match, else the
+// first whose name contains it ("Pine Valley" -> Pine Valley Golf Course). Nothing
+// when we don't have a course name.
+const findProspectFacility = courseName => {
+  const wanted = courseName?.trim().toLowerCase()
+  if (!wanted) return null
+  return FACILITIES.find(f => f.name.toLowerCase() === wanted) ?? FACILITIES.find(f => f.name.toLowerCase().includes(wanted)) ?? null
+}
+
+const initialQuickStart = prospect => ({
+  ...prospect,
+  tournament_name: defaultTournamentName(prospect.organization),
   tournament_image: null,
-  // Round details — start time is a placeholder until the prospect sets it,
-  // and the course is preselected when the prospect's course is in the directory.
-  start_datetime: `${QUICK_START_PROSPECT.tournament_date}T10:00`,
+  // Round details — the start is the prospect's date at 10:00 AM; with no date it stays empty
+  // (picking one then defaults the time to 10:00 AM, see RoundDetailsStep), and the course is
+  // preselected when the prospect's course is in the directory.
+  start_datetime: prospect.tournament_date ? `${prospect.tournament_date}T10:00` : '',
   round_format: DEFAULT_ROUND_FORMAT.value,
   round_holes: 18,
-  facility: FACILITIES.find(f => f.name === QUICK_START_PROSPECT.course_name) ?? null,
+  facility: findProspectFacility(prospect.course_name),
   // A facility with a single course has it picked for it.
-  course_id: soleCourse(FACILITIES.find(f => f.name === QUICK_START_PROSPECT.course_name))?.id ?? null,
+  course_id: soleCourse(findProspectFacility(prospect.course_name))?.id ?? null,
   course_id_2: null,
-  course_not_listed: false,
+  // No course on file: the "Haven't Picked a Golf Course?" box shows until they pick "Select Golf Facility".
+  // A course on file that isn't in the directory starts in the search (empty results), not the box.
+  course_not_listed: !prospect.course_name,
+  course_unsure: !prospect.course_name,
   holes: 'all',
   tees: ALL_TEE_IDS,
   // Website details — the banner is a File (upload) or a preset image URL (gallery).
   banner_image: null,
-  event_description: defaultEventDescription(QUICK_START_PROSPECT.organization),
+  event_description: defaultEventDescription(prospect.organization),
 })
 
 // TEMPORARY testing flag — see finish() below. The confirmation screen is kept.
 const SKIP_CONFIRMATION = true
 
-export default function QuickStartPanel({ isOpen, onClose }) {
+export default function QuickStartPanel({ isOpen, onClose, prospect }) {
   const [step, setStep] = useState('acknowledgment')
   const bodyRef = useRef(null)
   // The panel body never unmounts between steps, so reset its scroll on each.
   useEffect(() => { bodyRef.current?.scrollTo(0, 0) }, [step])
-  const [quickStart, setQuickStart] = useState(initialQuickStart)
+  const [quickStart, setQuickStart] = useState(() => initialQuickStart(prospect))
   const [accepted, setAccepted] = useState(false)
   const [created, setCreated] = useState(null)
   // Stages whose page has been saved (Save & Continue) this session.
   const [saved, setSaved] = useState([])
+  // The crop screen: which image field is being cropped, the file, the step to
+  // come back to, and the latest cropped blob the editor reported.
+  const [cropTarget, setCropTarget] = useState(null)
+  const [cropBlob, setCropBlob] = useState(null)
   const navigate = useNavigate()
 
   const update = patch => setQuickStart(prev => ({ ...prev, ...patch }))
@@ -69,9 +86,10 @@ export default function QuickStartPanel({ isOpen, onClose }) {
       setAccepted(false)
       setCreated(null)
       setSaved([])
-      setQuickStart(initialQuickStart())
+      setCropTarget(null)
+      setQuickStart(initialQuickStart(prospect))
     }
-  }, [isOpen])
+  }, [isOpen, prospect])
 
   // Reaching the confirmation is what creates the tournament (once, even if
   // the user steps back and forward again).
@@ -86,6 +104,21 @@ export default function QuickStartPanel({ isOpen, onClose }) {
     }
     setStep('confirmation')
   }
+
+  // Crop screen: opened for an uploaded image that isn't 2:1 (or from an image's
+  // crop button). Save puts the cropped file in the field; Cancel leaves it.
+  const startCrop = (field, file, ratio) => {
+    setCropTarget({ field, file, ratio, returnStep: step })
+    setCropBlob(null)
+    setStep('crop')
+  }
+  const saveCrop = () => {
+    if (!cropBlob || !cropTarget) return
+    const name = `${(cropTarget.file.name || 'image').replace(/\.[^.]+$/, '')}-cropped.png`
+    update({ [cropTarget.field]: new File([cropBlob], name, { type: cropBlob.type || 'image/png' }) })
+    setStep(cropTarget.returnStep)
+  }
+  const cancelCrop = () => setStep(cropTarget?.returnStep ?? 'website')
 
   // Saving a page (Save & Continue) is what opens the next one.
   const saveAndGo = (stageId, next) => {
@@ -124,8 +157,8 @@ export default function QuickStartPanel({ isOpen, onClose }) {
       content: (
         <>
           {stepper('tournament')}
-          <QuickStartStepHeader title="Tournament Setup" />
-          <TournamentDetailsStep quickStart={quickStart} onChange={update} />
+          <QuickStartStepHeader title="Tournament Setup" subtitle="All information can be edited at any time." />
+          <TournamentDetailsStep quickStart={quickStart} onChange={update} onCropImage={startCrop} />
         </>
       ),
       actions: stepActions({
@@ -140,7 +173,7 @@ export default function QuickStartPanel({ isOpen, onClose }) {
       content: (
         <>
           {stepper('rounds')}
-          <QuickStartStepHeader title="Round Setup" />
+          <QuickStartStepHeader title="Round Setup" subtitle="All information can be edited at any time." />
           <RoundDetailsStep quickStart={quickStart} onChange={update} />
         </>
       ),
@@ -156,14 +189,14 @@ export default function QuickStartPanel({ isOpen, onClose }) {
       content: (
         <>
           {stepper('website')}
-          <QuickStartStepHeader title="Website Setup" />
-          <WebsiteDetailsStep quickStart={quickStart} onChange={update} onGallery={() => setStep('banners')} />
+          <QuickStartStepHeader title="Website Setup" subtitle="All information can be edited at any time." />
+          <WebsiteDetailsStep quickStart={quickStart} onChange={update} onGallery={() => setStep('banners')} onCropImage={startCrop} />
         </>
       ),
       actions: stepActions({
         onBack: () => setStep('rounds'),
         onContinue: finish,
-        continueLabel: 'Finish Setup',
+        continueLabel: 'View Tournament',
       }),
       isStep: true,
       onBack: () => setStep('rounds'),
@@ -185,6 +218,21 @@ export default function QuickStartPanel({ isOpen, onClose }) {
         </>
       ),
       onBack: () => setStep('website'),
+    },
+    // Crop screen — a locked 2:1 crop over an uploaded image.
+    crop: {
+      title: 'Crop Image',
+      content: cropTarget && (
+        <>
+          <QuickStartStepHeader title="Crop Image" subtitle={cropTarget.ratio ? 'Drag to position the crop and resize it. Images are cropped to 2:1.' : 'Drag to position the crop and resize it.'} />
+          <ImageCropStep key={cropTarget.file.name + cropTarget.file.size} file={cropTarget.file} ratio={cropTarget.ratio ?? undefined} onCrop={setCropBlob} />
+        </>
+      ),
+      actions: [
+        { name: 'Save', type: 'black', isDisabled: !cropBlob, action: saveCrop },
+        { name: 'Cancel', type: 'light-grey', action: cancelCrop },
+      ],
+      onBack: cancelCrop,
     },
     // Last screen — the tournament exists, and Tournament Overview opens its page.
     confirmation: {

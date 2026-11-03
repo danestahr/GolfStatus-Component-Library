@@ -43,15 +43,15 @@ const DEFAULT_COLOR_CHOICES = ['#1D4FA8', '#3B8EA5', '#2A6B4F', '#F4A340', '#C03
 
 // Primary + Secondary starter pairs, one per DEFAULT_COLOR_CHOICES entry
 // (same order, so each gradient sits under its own solid swatch). Tapping
-// one commits both colors at once. Each Secondary is the Primary's
-// complement — a different hue family (roughly opposite on the wheel).
+// one commits both colors at once. Each Secondary is a soft, light tone
+// (sky, cream, mint) that its Primary fades to.
 const DEFAULT_COLOR_PAIRS = [
-  ['#1D4FA8', '#E8892B'],
-  ['#3B8EA5', '#D9694A'],
-  ['#2A6B4F', '#A83E6C'],
-  ['#F4A340', '#3F7FC4'],
-  ['#C0392B', '#2A9BA3'],
-  ['#4B3A9E', '#D4B12F'],
+  ['#1D4FA8', '#A9C7EE'],
+  ['#3B8EA5', '#F2E6D0'],
+  ['#2A6B4F', '#9CD3BE'],
+  ['#F4A340', '#A9C7EE'],
+  ['#C0392B', '#F2E6D0'],
+  ['#4B3A9E', '#9CD3BE'],
 ]
 
 // <input type="color"> only accepts a full 6-digit #rrggbb — expands a
@@ -124,7 +124,6 @@ function HexColorField({ label, color, onChangeColor, showEmpty, onRemove, onPic
   }
   return (
     <div className="wds-hex-field">
-      {label && <div className="wds-hex-label">{label}</div>}
       <GSinput
         textValue={draft}
         placeholder="#RRGGBB"
@@ -227,7 +226,8 @@ const NEUTRAL_MODE_OPTIONS = [
 function availableThemeValues(hasPrimary, hasSecondary) {
   if (!hasPrimary) return ['golfstatus']
   // Subtle and Bold are hidden for now (NEUTRAL_MODE_OPTIONS still defines them).
-  return ['golfstatus', 'neutral-two-tone', 'full']
+  // Grayscale is only for when no color is set.
+  return ['neutral-two-tone', 'full']
 }
 
 // A saved tint that the current colors no longer offer shows as its nearest
@@ -235,6 +235,7 @@ function availableThemeValues(hasPrimary, hasSecondary) {
 function coerceTint(tint, allowed) {
   if (allowed.includes(tint)) return tint
   if (allowed.length === 1) return allowed[0]
+  if (tint === 'golfstatus') return 'neutral-two-tone'
   const twoTone = allowed.includes('full')
   if (tint === 'neutral' || tint === 'neutral-two-tone') return twoTone ? 'neutral-two-tone' : 'neutral'
   return twoTone ? 'full' : 'primary'
@@ -361,6 +362,8 @@ export default function WebsiteDesignStyleFields({
   const changePrimary = hex => {
     setPrimaryPicked(true)
     onChangePrimaryColor(hex)
+    // Grayscale goes away once a color is set — land on Subtle instead.
+    if (neutralTint === 'golfstatus') onChangeNeutralTint('neutral-two-tone')
     // Secondary follows Primary until it's set separately.
     if (!secondaryPicked) onChangeSecondaryColor(hex)
   }
@@ -379,6 +382,8 @@ export default function WebsiteDesignStyleFields({
     setPrimaryPicked(false)
     onChangePrimaryColor(DEFAULT_EVENT_SITE_STYLE.primaryColor)
     if (!secondaryPicked) onChangeSecondaryColor(DEFAULT_EVENT_SITE_STYLE.secondaryColor)
+    // Back to no color: Grayscale is the only theme again.
+    onChangeNeutralTint('golfstatus')
   }
   const removeSecondary = () => {
     setSecondaryPicked(false)
@@ -410,7 +415,7 @@ export default function WebsiteDesignStyleFields({
     <div className="ordr1-list">
       <GSActionBar
         type="form-header H3"
-        header="Website Design and Style"
+        header="Website Colors"
         pageActions={[
           ...(canReset
             ? [{ type: 'light-grey', actionIcon: faRotateLeft, isFocusable: true, 'aria-label': 'Reset colors', actionClick: resetColors }]
