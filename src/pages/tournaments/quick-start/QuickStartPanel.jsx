@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { addCreatedTournament } from '../../../data/createdTournaments'
 import AppSidePanel from '../../../components/AppSidePanel'
@@ -9,7 +9,7 @@ import WebsiteDetailsStep from './WebsiteDetailsStep.jsx'
 import BannerGalleryStep from './BannerGalleryStep.jsx'
 import TournamentCreatedStep from './TournamentCreatedStep.jsx'
 import QuickStartStepHeader from './QuickStartStepHeader.jsx'
-import { FACILITIES, ROUND_FORMATS } from '../../../data/mockFacilities'
+import { FACILITIES, DEFAULT_ROUND_FORMAT } from '../../../data/mockFacilities'
 import QuickStartStepper, { QUICK_START_STAGES } from './QuickStartStepper.jsx'
 import { stepActions } from './stepActions.js'
 import './QuickStartPanel.scss'
@@ -31,15 +31,21 @@ const initialQuickStart = () => ({
   // Round details — start time is a placeholder until the prospect sets it,
   // and the course is preselected when the prospect's course is in the directory.
   start_datetime: `${QUICK_START_PROSPECT.tournament_date}T10:00`,
-  round_format: ROUND_FORMATS[0].value,
+  round_format: DEFAULT_ROUND_FORMAT.value,
   facility: FACILITIES.find(f => f.name === QUICK_START_PROSPECT.course_name) ?? null,
   // Website details — the banner is a File (upload) or a preset image URL (gallery).
   banner_image: null,
   event_description: defaultEventDescription(QUICK_START_PROSPECT.organization),
 })
 
+// TEMPORARY testing flag — see finish() below. The confirmation screen is kept.
+const SKIP_CONFIRMATION = true
+
 export default function QuickStartPanel({ isOpen, onClose }) {
   const [step, setStep] = useState('acknowledgment')
+  const bodyRef = useRef(null)
+  // The panel body never unmounts between steps, so reset its scroll on each.
+  useEffect(() => { bodyRef.current?.scrollTo(0, 0) }, [step])
   const [quickStart, setQuickStart] = useState(initialQuickStart)
   const [accepted, setAccepted] = useState(false)
   const [created, setCreated] = useState(null)
@@ -63,7 +69,14 @@ export default function QuickStartPanel({ isOpen, onClose }) {
   // Reaching the confirmation is what creates the tournament (once, even if
   // the user steps back and forward again).
   const finish = () => {
-    if (!created) setCreated(addCreatedTournament(quickStart))
+    const tournament = created ?? addCreatedTournament(quickStart)
+    if (!created) setCreated(tournament)
+    // TEMPORARY: skip the confirmation screen and go straight to the overview
+    // while new flows are tested. To restore, set this flag to false.
+    if (SKIP_CONFIRMATION) {
+      navigate(`/tournaments/${tournament.id}`)
+      return
+    }
     setStep('confirmation')
   }
 
@@ -140,6 +153,7 @@ export default function QuickStartPanel({ isOpen, onClose }) {
       actions: stepActions({
         onBack: () => setStep('rounds'),
         onContinue: finish,
+        continueLabel: 'Finish Setup',
       }),
       isStep: true,
       onBack: () => setStep('rounds'),
@@ -185,6 +199,7 @@ export default function QuickStartPanel({ isOpen, onClose }) {
       title={screen.title ?? 'Tournament Quick Start'}
       actions={screen.actions}
       actionsKey={step}
+      bodyRef={bodyRef}
     >
       {screen.content}
     </AppSidePanel>

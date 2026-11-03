@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { faCircleUp, faImages, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCircleArrowUp, faImages, faTrash } from '@fortawesome/free-solid-svg-icons'
 import GSButton from '../../gs-lib/components/gs-button'
 import './ImageUpload.scss'
 
@@ -29,7 +29,7 @@ const describe = ({ width, height }) => {
 // `actions` adds per-image buttons ahead of the trash, each
 // { icon, onClick(file), key? } (e.g. crop, replace) — the tile's action row
 // grows with them.
-export default function ImageUpload({ image, onChange, actions = [], onGallery, hint = 'Tap or drag a file to upload.' }) {
+export default function ImageUpload({ image, onChange, actions = [], onGallery, hint = 'Tap or drag a file to upload. The image ratio is 2:1. Accepted file types are .JPG, .PNG, .GIF under 25MB.' }) {
   const inputRef = useRef(null)
   const [hover, setHover] = useState(false)
   const [size, setSize] = useState(null)
@@ -38,6 +38,42 @@ export default function ImageUpload({ image, onChange, actions = [], onGallery, 
   const previewUrl = useMemo(() => (isFile ? URL.createObjectURL(image) : image || null), [image, isFile])
   useEffect(() => () => { if (isFile && previewUrl) URL.revokeObjectURL(previewUrl) }, [previewUrl, isFile])
   useEffect(() => { if (!image) setSize(null) }, [image])
+
+  // Browsers downscale big photos in one jump, which aliases fine detail. Halve
+  // it step by step on a canvas to a thumbnail ~2x the tile width instead.
+  const [thumb, setThumb] = useState(null)
+  useEffect(() => {
+    setThumb(null)
+    if (!previewUrl) return
+    let cancelled = false
+    const img = new Image()
+    img.onload = () => {
+      if (cancelled) return
+      setSize({ width: img.naturalWidth, height: img.naturalHeight })
+      const targetW = 720
+      if (img.naturalWidth <= targetW * 1.5) return
+      let source = img
+      let w = img.naturalWidth
+      let h = img.naturalHeight
+      while (w > targetW) {
+        const nw = Math.max(targetW, Math.round(w / 2))
+        const nh = Math.round(h * (nw / w))
+        const canvas = document.createElement('canvas')
+        canvas.width = nw
+        canvas.height = nh
+        const ctx = canvas.getContext('2d')
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(source, 0, 0, nw, nh)
+        source = canvas
+        w = nw
+        h = nh
+      }
+      setThumb(source.toDataURL('image/png'))
+    }
+    img.src = previewUrl
+    return () => { cancelled = true }
+  }, [previewUrl])
 
   const pick = file => {
     if (file && ACCEPT_TYPES.test(file.type)) onChange(file)
@@ -57,9 +93,8 @@ export default function ImageUpload({ image, onChange, actions = [], onGallery, 
         <div className="image-upload-card">
           <div className="image-upload-frame">
             <img
-              src={previewUrl}
+              src={thumb ?? previewUrl}
               alt=""
-              onLoad={e => setSize({ width: e.target.naturalWidth, height: e.target.naturalHeight })}
             />
           </div>
           <div className="image-upload-details">
@@ -85,7 +120,7 @@ export default function ImageUpload({ image, onChange, actions = [], onGallery, 
         </div>
       ) : (
         <div className="image-upload-buttons">
-          <GSButton title="Upload" buttonIcon={faCircleUp} type="light-grey" isFocusable />
+          <GSButton title="Upload" buttonIcon={faCircleArrowUp} type="light-grey" isFocusable />
           {onGallery && (
             <GSButton
               title="Gallery"

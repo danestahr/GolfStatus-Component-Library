@@ -1,15 +1,17 @@
 @import '../../../gs-lib/styles/golfstatus.scss';
 
+.qs-stepper-wrap {
+  padding: 12px;
+}
+
 .qs-stepper {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: $medium-pad;
   padding: $large-pad;
-  background: $grey-100;
+  background: $grey-50;
+  border-radius: 16px;
 }
 
 .qs-step {

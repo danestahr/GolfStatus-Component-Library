@@ -19,10 +19,38 @@ export const searchFacilities = (name, state) => {
   )
 }
 
-export const ROUND_FORMATS = [
-  { value: 'four-person-scramble', label: 'Four Person Scramble (4)' },
-  { value: 'two-person-scramble', label: 'Two Person Scramble (2)' },
-  { value: 'best-ball', label: 'Best Ball' },
-  { value: 'stroke-play', label: 'Individual Stroke Play' },
-  { value: 'stableford', label: 'Stableford' },
+// Round formats, in the order they appear in the dropdown. The number is how
+// many players are on a team.
+const FORMAT_LABELS = [
+  'Individual Match Play (1)',
+  'Individual Stroke Play (1)',
+  'Social Event (1)',
+  'Two Person Best Ball (2)',
+  'Two Person Best Ball Match Play (2)',
+  'Two Person Scramble (2)',
+  'Two Person Scramble Match Play (2)',
+  'Two Person Shamble (2)',
+  'Two Person Shamble Match Play (2)',
+  'Three Person Scramble (3)',
+  'Four Person Best Ball (4)',
+  'Four Person Celebrity Pro-Am Best Ball (4)',
+  'Four Person Scramble (4)',
+  'Four Person Sectional Pro-Am Best Ball (4)',
+  'Four Person Shamble (4)',
+  'Five Person Best Ball (5)',
+  'Five Person Pro-Am Best Ball (5)',
+  'Five Person Pro-Am Scramble (5)',
+  'Five Person Scramble (5)',
+  'Five Person Shamble (5)',
+  'Six Person Scramble (6)',
 ]
+
+// "Four Person Scramble (4)" -> "four-person-scramble-4"
+const slug = label => label.toLowerCase().replace(/[()]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+export const ROUND_FORMATS = FORMAT_LABELS.map(label => ({ value: slug(label), label }))
+
+// What a new round starts as, and the few the seeded tournaments cycle through.
+export const DEFAULT_ROUND_FORMAT = ROUND_FORMATS.find(f => f.label === 'Four Person Scramble (4)')
+export const SEED_ROUND_FORMATS = ['Four Person Scramble (4)', 'Two Person Best Ball (2)', 'Individual Stroke Play (1)', 'Two Person Scramble (2)']
+  .map(label => ROUND_FORMATS.find(f => f.label === label))

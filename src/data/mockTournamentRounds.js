@@ -1,4 +1,4 @@
-import { ROUND_FORMATS } from './mockFacilities'
+import { SEED_ROUND_FORMATS } from './mockFacilities'
 
 // A round card's status drives its pill and its two actions (see
 // TournamentOverviewPage.jsx's ROUND_ACTIONS).
@@ -17,7 +17,7 @@ export function roundsFor(tournament) {
     const pad = n => String(n).padStart(2, '0')
     return {
       number: i + 1,
-      format: ROUND_FORMATS[i % ROUND_FORMATS.length].label,
+      format: SEED_ROUND_FORMATS[i % SEED_ROUND_FORMATS.length].label,
       startsAt: `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T08:00`,
       course: tournament.course,
       status: tournament.status === 'draft' ? 'draft' : tournament.status === 'completed' ? 'final' : ACTIVE_CYCLE[i % ACTIVE_CYCLE.length],

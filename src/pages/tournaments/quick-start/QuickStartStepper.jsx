@@ -25,6 +25,7 @@ export default function QuickStartStepper({ activeId, enabledIds, doneIds = [], 
   const activeIndex = stages.findIndex(s => s.id === activeId)
 
   return (
+    <div className="qs-stepper-wrap">
     <div className="qs-stepper">
       {stages.map((stage, i) => {
         const enabled = !enabledIds || enabledIds.includes(stage.id)
@@ -43,6 +44,7 @@ export default function QuickStartStepper({ activeId, enabledIds, doneIds = [], 
           </div>
         )
       })}
+    </div>
     </div>
   )
 }

@@ -7,6 +7,12 @@ gs-form-section {
   width: 100%;
   gap: $large-pad;
 
+  // No divider under the last section (which is also the only one when a
+  // form has just one).
+  &:last-of-type {
+    border-bottom: none;
+  }
+
   &.gap-xx-large {
     gap: $xx-large-pad;
   }

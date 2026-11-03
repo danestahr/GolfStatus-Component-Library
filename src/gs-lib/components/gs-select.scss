@@ -1,5 +1,81 @@
 @import '../styles/golfstatus.scss';
 
+@mixin select-menu {
+  .gs-select__menu {
+    margin-top: 0;
+    border-radius: $medium-large-border-radius;;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    box-shadow: $no-top-second-layer-shadow;
+    border: none;
+
+    .gs-select__menu-list {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      box-sizing: border-box;
+      margin: auto $small-pad;
+      
+      .gs-select__menu-notice {
+        @include gs-font($x-small-font, $regular-font-weight, unset);
+        opacity: 0.7;
+        line-height: $spacious-line-height;
+      }
+
+      .gs-select__option {
+        display: inline-block;
+        padding: $medium-large-pad;
+
+        &:hover {
+          cursor: pointer;
+        }
+
+        &.gs-select__option--is-focused {
+          transition: $fast;
+          border-radius: $medium-large-border-radius;;
+        }
+
+        &.gs-select__option--is-selected {
+          color: unset;
+          border-radius: $medium-radius;
+        }
+
+        .custom-select-option {
+          @include v-stack(center, unset);
+          margin: auto;
+
+          .main-select-label {
+            @include gs-font($small-font, $regular-font-weight, unset);
+            line-height: $spacious-line-height;
+          }
+    
+          .sub-select-label {
+            @include gs-font($x-small-font, $regular-font-weight, unset);
+            opacity: 0.7;
+            line-height: $spacious-line-height;
+          }
+        }
+      }
+    }    
+  }
+}
+
+@mixin select-menu-colors {
+  .gs-select__menu {
+    .gs-select__menu-list {
+      .gs-select__option {
+        &.gs-select__option--is-focused {
+          background: $grey-50;
+        }
+
+        &.gs-select__option--is-selected {
+          background-color: $grey-50;
+        }
+      }
+    }
+  }
+}
+
 gs-select {
   @include gs-font($small-font, $regular-font-weight, unset);
   
@@ -132,63 +208,7 @@ gs-select {
     }
   }
 
-  .gs-select__menu {
-    margin-top: 0;
-    border-radius: $medium-large-border-radius;;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    box-shadow: $no-top-second-layer-shadow;
-    border: none;
-
-    .gs-select__menu-list {
-      display: flex;
-      flex-direction: column;
-      overflow: auto;
-      box-sizing: border-box;
-      margin: auto $small-pad;
-      
-      .gs-select__menu-notice {
-        @include gs-font($x-small-font, $regular-font-weight, unset);
-        opacity: 0.7;
-        line-height: $spacious-line-height;
-      }
-
-      .gs-select__option {
-        display: inline-block;
-        padding: $medium-large-pad;
-
-        &:hover {
-          cursor: pointer;
-        }
-
-        &.gs-select__option--is-focused {
-          transition: $fast;
-          border-radius: $medium-large-border-radius;;
-        }
-
-        &.gs-select__option--is-selected {
-          color: unset;
-          border-radius: $medium-radius;
-        }
-
-        .custom-select-option {
-          @include v-stack(center, unset);
-          margin: auto;
-
-          .main-select-label {
-            @include gs-font($small-font, $regular-font-weight, unset);
-            line-height: $spacious-line-height;
-          }
-    
-          .sub-select-label {
-            @include gs-font($x-small-font, $regular-font-weight, unset);
-            opacity: 0.7;
-            line-height: $spacious-line-height;
-          }
-        }
-      }
-    }    
-  }
+  @include select-menu;
 
   .gs-select--is-disabled {
     .select-dropdown-indicator {
@@ -228,23 +248,20 @@ gs-select:not(.custom-styles) {
     }
   }
 
-  .gs-select__menu {
-    .gs-select__menu-list {
-      .gs-select__option {
-        &.gs-select__option--is-focused {
-          background: $grey-50;
-        }
-
-        &.gs-select__option--is-selected {
-          background-color: $grey-50;
-        }
-      }
-    }
-  }
+  @include select-menu-colors;
 }
 
 .dark{
   gs-select{
     color: $grey-800;
   }
+}
+
+// Menus portaled to <body> (menuPortalTarget) must sit above side panels (z-index 100).
+.gs-select__menu-portal {
+  z-index: 1000 !important;
+
+  // The portal sits outside <gs-select>, so share the menu styles with it.
+  @include select-menu;
+  @include select-menu-colors;
 }

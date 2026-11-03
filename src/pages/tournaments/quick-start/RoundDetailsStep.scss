@@ -1,8 +1,15 @@
 @import '../../../gs-lib/styles/golfstatus.scss';
 
 .rd-datetime {
+  display: block;
   box-sizing: border-box;
   width: 100%;
+  // iOS gives date inputs an intrinsic min-width and native styling that can
+  // push them past the container on narrow screens.
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
   padding: 9px 10px;
   border: 1px solid rgba(151, 151, 151, 0.5);
   border-radius: $medium-radius;

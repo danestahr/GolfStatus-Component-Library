@@ -104,7 +104,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
           isEditable: true,
           customView: true,
           externalValue: facility?.id ?? '',
-          description: "Hit 'ENTER' to search for a facility. Then select one from the list below.",
           value: (
             <CourseSearch
               facility={facility}

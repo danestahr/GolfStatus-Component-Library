@@ -21,7 +21,7 @@ export default function WebsiteDetailsStep({ quickStart, onChange, onGallery }) 
               image={banner_image}
               onChange={image => onChange({ banner_image: image })}
               onGallery={onGallery}
-              hint="Tap or drag file to upload. Accepted Files: .JPG, .PNG, .GIF"
+              hint="Tap or drag a file to upload. The image ratio is 2:1. Accepted file types are .JPG, .PNG, .GIF under 25MB."
             />
           ),
         },

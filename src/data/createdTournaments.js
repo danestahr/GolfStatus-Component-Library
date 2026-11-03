@@ -1,4 +1,4 @@
-import { ROUND_FORMATS } from './mockFacilities'
+import { ROUND_FORMATS, DEFAULT_ROUND_FORMAT } from './mockFacilities'
 import defaultTournamentImage from '../assets/default-tournament-image.jpg'
 
 // Tournaments created through Quick Start, kept in memory for the session so
@@ -35,7 +35,7 @@ export function addCreatedTournament(quickStart) {
     roundList: [
       {
         number: 1,
-        format: ROUND_FORMATS.find(f => f.value === quickStart.round_format)?.label ?? ROUND_FORMATS[0].label,
+        format: ROUND_FORMATS.find(f => f.value === quickStart.round_format)?.label ?? DEFAULT_ROUND_FORMAT.label,
         startsAt: quickStart.start_datetime,
         course,
         status: 'draft',
