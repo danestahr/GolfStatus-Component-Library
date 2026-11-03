@@ -1,6 +1,6 @@
 // Mock facility directory for Quick Start's course search (round details).
 export const FACILITIES = [
-  { id: 'f1', name: 'Pine Valley', city: 'Pine Valley', state: 'NJ', country: 'USA' },
+  { id: 'f1', name: 'Pine Valley Golf Course', city: 'Pine Valley', state: 'NJ', country: 'USA' },
   { id: 'f2', name: 'Pine Valley Golf Club', city: 'Dallas', state: 'TX', country: 'USA' },
   { id: 'f3', name: 'Pine Valley Resort', city: 'Pinehurst', state: 'NC', country: 'USA' },
   { id: 'f4', name: 'Pine Valley Country Club', city: 'Austin', state: 'TX', country: 'USA' },

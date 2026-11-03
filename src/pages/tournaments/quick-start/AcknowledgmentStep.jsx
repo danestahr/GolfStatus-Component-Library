@@ -13,7 +13,7 @@ const PRIVACY_URL = 'https://golfstatus.com/golfstatus-privacy-policy'
 // and gates the flow behind accepting the Terms of Service / Privacy Policy.
 // The footer actions (Get Started / Cancel) live in QuickStartPanel.
 export default function AcknowledgmentStep({ quickStart, accepted, onAcceptedChange }) {
-  const { first_name, organization, tournament_date, course_name } = quickStart
+  const { first_name, organization, tournament_name, tournament_date, course_name } = quickStart
 
   return (
     <>
@@ -29,7 +29,7 @@ export default function AcknowledgmentStep({ quickStart, accepted, onAcceptedCha
             <ConfirmationCard
               intro={`${first_name}, here’s what we’ve gathered so far:`}
               groups={[
-                { title: organization, lines: [organization] },
+                { title: tournament_name, lines: [organization] },
                 { lines: [formatDate(tournament_date), course_name] },
               ]}
               note="Tournament information can be edited at any time"
