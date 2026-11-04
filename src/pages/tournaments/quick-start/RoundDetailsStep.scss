@@ -61,7 +61,7 @@
   align-items: center;
   padding: 120px $x-large-pad;
   border-radius: $medium-radius;
-  background: $grey-100;
+  background: $grey-50;
   text-align: center;
   @include gs-font($small-font, $regular-font-weight, normal);
   line-height: $regular-line-height;
@@ -69,6 +69,7 @@
 }
 
 .rd-course-empty-title {
+  max-width: 480px;
   margin-bottom: $medium-large-pad;
   @include gs-font($medium-font, $bold-font-weight, normal);
   line-height: $regular-line-height;
@@ -77,10 +78,6 @@
 .rd-course-empty-body {
   max-width: 480px;
   opacity: $medium-opacity;
-}
-
-.rd-course-empty-body--wide {
-  max-width: none;
 }
 
 .rd-course-empty-actions {

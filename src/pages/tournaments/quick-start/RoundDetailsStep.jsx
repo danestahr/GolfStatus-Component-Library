@@ -16,11 +16,11 @@ const courseCount = f => {
 }
 
 // Grey empty-state box: bold title, softened body, optional action buttons.
-function CourseEmpty({ title, body, wide, children }) {
+function CourseEmpty({ title, body, children }) {
   return (
     <div className="rd-course-empty">
       <div className="rd-course-empty-title">{title}</div>
-      <div className={`rd-course-empty-body${wide ? ' rd-course-empty-body--wide' : ''}`}>{body}</div>
+      <div className="rd-course-empty-body">{body}</div>
       {children && <div className="rd-course-empty-actions">{children}</div>}
     </div>
   )
@@ -104,8 +104,8 @@ function CourseSearch({ facility, onSelect, onNotListed, onUnsure, initialName }
         </CourseEmpty>
       ) : results.length === 0 ? (
         <CourseEmpty title="We couldn’t find the course you’re looking for..." body="Try changing the search term...">
-          <GSButton title="Clear Search" type="transparent" onClick={clearSearch} isFocusable />
-          <GSButton title="My course is not listed" onClick={onNotListed} isFocusable />
+          <GSButton title="Clear Search" type="light-grey" onClick={clearSearch} isFocusable />
+          <GSButton title="My course is not listed" type="light-grey" onClick={onNotListed} isFocusable />
         </CourseEmpty>
       ) : (
         <div className="rd-course-results">
@@ -402,7 +402,7 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         customView: true,
         value: (
           course_unsure ? (
-            <CourseEmpty wide title="Haven’t Picked a Golf Course?" body="We’ll set a placeholder course in the meantime – once you select a course, your customer support specialist will be in contact to help you out!" />
+            <CourseEmpty title="Haven’t Picked a Golf Course?" body="We’ll set a placeholder course in the meantime – once you select a course, your customer support specialist will be in contact to help you out!" />
           ) : (
             <CourseEmpty title="We may not have your course yet!" body="We’ll set a placeholder course in the meantime – your customer support specialist will be in contact to help you add this course!" />
           )

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { addCreatedTournament } from '../../../data/createdTournaments'
+import GSButton from '../../../gs-lib/components/gs-button'
 import AppSidePanel from '../../../components/AppSidePanel'
 import AcknowledgmentStep from './AcknowledgmentStep.jsx'
 import TournamentDetailsStep, { defaultTournamentName } from './TournamentDetailsStep.jsx'
@@ -221,10 +222,13 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
     },
     // Crop screen — a locked 2:1 crop over an uploaded image.
     crop: {
-      title: 'Crop Image',
+      title: cropTarget?.field === 'banner_image' ? 'Edit Banner Image' : 'Edit Tournament Image',
       content: cropTarget && (
         <>
-          <QuickStartStepHeader title="Crop Image" subtitle={cropTarget.ratio ? 'Drag to position the crop and resize it. Images are cropped to 2:1.' : 'Drag to position the crop and resize it.'} />
+          <QuickStartStepHeader
+            title="Edit Image"
+            action={<GSButton title="Preview Image" isDisabled={!cropBlob} onClick={() => cropBlob && window.open(URL.createObjectURL(cropBlob), '_blank')} isFocusable />}
+          />
           <ImageCropStep key={cropTarget.file.name + cropTarget.file.size} file={cropTarget.file} ratio={cropTarget.ratio ?? undefined} onCrop={setCropBlob} />
         </>
       ),
