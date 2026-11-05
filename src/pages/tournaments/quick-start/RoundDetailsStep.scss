@@ -207,14 +207,9 @@
 }
 
 .rd-course-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-
-  // A single column on phones.
-  @include large-phone {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .rd-course-head {

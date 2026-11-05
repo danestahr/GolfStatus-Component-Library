@@ -288,7 +288,8 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
   // different ones (holes 1-9, then 10-18). Tees follow.
   const trioFields = [
     {
-      label: 'Holes 1-9',
+      // Only an 18-hole round has two selections to tell apart.
+      label: round_holes === 18 ? 'Holes 1-9' : 'Course',
       isEditable: true,
       customView: true,
       externalValue: course_id ?? '',
@@ -431,7 +432,7 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         // A single 9-hole course's "played once/twice" description is hidden for now: the
         // facility card says it all (SoleCourseSetup still renders it if the condition is widened).
         ...(sole && sole.holes === 18 && round_holes === 9 ? [{
-          label: sole.holes === 9 ? 'Round Course' : 'Holes 1-9',
+          label: 'Course',
           isEditable: true,
           customView: true,
           externalValue: course_id ?? '',
