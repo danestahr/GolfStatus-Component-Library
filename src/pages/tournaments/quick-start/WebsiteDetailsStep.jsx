@@ -15,7 +15,6 @@ export default function WebsiteDetailsStep({ quickStart, onChange, onGallery, on
       fields={[
         {
           label: 'Banner Image',
-          description: 'An image with a centered subject is recommended to best adapt to screen size. Avoid using images with text or key information.',
           isEditable: true,
           customView: true,
           value: (
@@ -25,7 +24,7 @@ export default function WebsiteDetailsStep({ quickStart, onChange, onGallery, on
               enforceRatio={false}
               actions={banner_image instanceof File ? [{ icon: faPen, onClick: file => onCropImage('banner_image', file, null) }] : []}
               onGallery={onGallery}
-              hint="Tap or drag a file to upload. Accepted file types are .JPG, .PNG, .GIF under 25MB. Minimum suggested size: 2000 px wide, 500-1000 px high. Suggested ratios: 2:1, 3:1, 4:1."
+              hint="Tap or drag a file to upload. Accepted file types are .JPG, .PNG, .GIF under 25MB. Suggested size: 2000 px wide at 2:1, 3:1, 4:1 ratios."
             />
           ),
         },

@@ -141,7 +141,47 @@
 .rd-selected-facility {
   padding-right: 4px;
   align-items: center;
-  background: $grey-50;
+  gap: $x-large-pad;
+  background: rgba($grey-200, 0.2);
+  border-radius: 8px;
+
+  .rd-facility-info {
+    flex: 1;
+  }
+}
+
+// Overline 2 (10px bold, 1.5px tracking, uppercase) in black at 50% for the no-logo initials.
+.rd-facility-initials {
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+// Facility logo: a 2:1 box (112 x 56) with a hairline border.
+.rd-facility-logo {
+  flex: none;
+  width: 112px;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $grey-100;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: $medium-radius;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  // Hidden on phones so the name and location get the room.
+  @include large-phone {
+    display: none;
+  }
 }
 
 .rd-course-card {
@@ -208,26 +248,18 @@
   padding: 24px;
 }
 
-// Round Format: a help link between the label and the dropdown.
+// Round Format: a help link below the dropdown, in the field-hint position.
 .rd-format {
   display: flex;
   flex-direction: column;
   gap: $medium-pad;
 }
 
-.rd-format-description {
-  @include gs-font($x-small-font, $regular-font-weight, normal);
-  line-height: $regular-line-height;
-  color: $grey-800;
-}
-
-.rd-format-description-text {
-  // Plain description text sits at 70%; the link beside it stays full strength.
-  opacity: 0.7;
-}
-
 .rd-format-help {
+  @include gs-font($x-small-font, $bold-font-weight, normal);
+  line-height: $regular-line-height;
   font-weight: $bold-font-weight;
-  color: #4a9da1;
+  color: $cyan-700;
+  opacity: 1;
   text-decoration: underline;
 }

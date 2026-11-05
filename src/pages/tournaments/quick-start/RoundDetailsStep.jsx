@@ -98,9 +98,9 @@ function CourseSearch({ facility, onSelect, onNotListed, onUnsure, initialName }
 
       {/* Nothing searched yet: prompt to search, or say it's unknown/unlisted. */}
       {results === null ? (
-        <CourseEmpty title="Find your Golf Facility" body="Where are you planning to host this tournament?">
+        <CourseEmpty title="Find your golf facility" body="Where are you planning to host this tournament?">
           <GSButton title="I’m not sure yet" type="white" onClick={onUnsure} isFocusable />
-          <GSButton title="I can’t find my course" type="white" onClick={onNotListed} isFocusable />
+          <GSButton title="My course is not listed" type="white" onClick={onNotListed} isFocusable />
         </CourseEmpty>
       ) : results.length === 0 ? (
         <CourseEmpty title="We couldn’t find the course you’re looking for..." body="Try changing the search term...">
@@ -130,12 +130,19 @@ function CourseSearch({ facility, onSelect, onNotListed, onUnsure, initialName }
 
 // A picked facility, shown in place of the search. The x clears it (and the
 // course picked under it) to search again.
+// "Pine Valley Golf Course" -> "PVGC".
+const facilityInitials = name => name.split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase()
+
 function SelectedFacility({ facility, onClear }) {
   return (
     <div className="rd-selected-facility">
-      <div>
+      {/* Without a logo image (facility.logo), the box shows the facility's initials. */}
+      <div className="rd-facility-logo">
+        {facility.logo ? <img src={facility.logo} alt="" /> : <span className="rd-facility-initials">{facilityInitials(facility.name)}</span>}
+      </div>
+      <div className="rd-facility-info">
         <div className="rd-facility-name">{facility.name}</div>
-        <div className="rd-facility-meta">{facility.city}, {facility.state}</div>
+        <div className="rd-facility-meta">{facility.city}, {facility.state}, {facility.country}</div>
       </div>
       <GSButton buttonIcon={faCircleXmark} type="transparent" onClick={onClear} isFocusable />
     </div>
@@ -264,7 +271,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
   }
   const mixedFields = [{
     label: 'Course',
-    required: true,
     isEditable: true,
     customView: true,
     externalValue: mixedSelectedId() ?? '',
@@ -283,7 +289,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
   const trioFields = [
     {
       label: 'Holes 1-9',
-      required: true,
       isEditable: true,
       customView: true,
       externalValue: course_id ?? '',
@@ -298,7 +303,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
     },
     ...(round_holes === 18 ? [{
       label: 'Holes 10-18',
-      required: true,
       isEditable: true,
       customView: true,
       externalValue: course_id_2 ?? '',
@@ -320,8 +324,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
       fields={[
         {
           label: 'Start Date & Time',
-          description: 'Golfers will tee off at this time.',
-          required: true,
           isEditable: true,
           customView: true,
           externalValue: start_datetime,
@@ -341,15 +343,10 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         },
         {
           label: 'Format',
-          required: true,
           isEditable: true,
           customView: true,
           value: (
             <div className="rd-format">
-              <div className="rd-format-description">
-                <span className="rd-format-description-text">Most charity tournaments are Scrambles.</span>{' '}
-                <a className="rd-format-help" href={FORMATS_URL} target="_blank" rel="noreferrer">Which format should I choose?</a>
-              </div>
               <GSSelect
                 options={ROUND_FORMATS}
                 selectedOption={ROUND_FORMATS.find(o => o.value === round_format)}
@@ -358,13 +355,12 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
                 menuPortalTarget={document.body}
                 menuPosition="fixed"
               />
+              <a className="rd-format-help" href={FORMATS_URL} target="_blank" rel="noreferrer">Which format should I choose?</a>
             </div>
           ),
         },
         {
           label: 'Number of Holes',
-          description: 'Most charity tournaments are 18 Holes.',
-          required: true,
           isEditable: true,
           customView: true,
           value: (
@@ -387,13 +383,13 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
       ]}
     />
     <GSFormSection
-      title="Course Setup"
+      title="Golf Facility & Course"
       // Hidden once a facility is picked: there's nothing left to not find.
       sectionActions={facility ? [] : [{
         // With no course on file the box is where it starts, and the way out is "I know my course".
         buttonTitle: course_not_listed ? 'Select Golf Facility' : 'My course is not listed',
         actionClick: toggleNotListed,
-        type: 'transparent',
+        type: 'light-grey',
         size: 'secondary',
       }]}
       type="vertical xx-large-gap"
@@ -402,17 +398,15 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         customView: true,
         value: (
           course_unsure ? (
-            <CourseEmpty title="Haven’t Picked a Golf Course?" body="We’ll set a placeholder course in the meantime – once you select a course, your customer support specialist will be in contact to help you out!" />
+            <CourseEmpty title="Haven’t picked a golf course?" body="We’ll set a placeholder course in the meantime – once you select a course, your client success specialist will be in contact to help you add this course!" />
           ) : (
-            <CourseEmpty title="We may not have your course yet!" body="We’ll set a placeholder course in the meantime – your customer support specialist will be in contact to help you add this course!" />
+            <CourseEmpty title="We may not have this course yet!" body="We’ll set a placeholder course in the meantime – your client success specialist will be in contact to help you add this course!" />
           )
         ),
       }] : [
         {
           // Once a course is picked the card stands alone, with no field header.
-          label: facility ? undefined : 'Golf Facility',
-          description: facility ? undefined : 'Ensure you\'ve confirmed your date with the golf facility that you select.',
-          required: true,
+          label: 'Golf Facility',
           isEditable: true,
           customView: true,
           externalValue: facility?.id ?? '',
@@ -438,7 +432,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         // facility card says it all (SoleCourseSetup still renders it if the condition is widened).
         ...(sole && sole.holes === 18 && round_holes === 9 ? [{
           label: sole.holes === 9 ? 'Round Course' : 'Holes 1-9',
-          required: true,
           isEditable: true,
           customView: true,
           externalValue: course_id ?? '',
@@ -446,7 +439,6 @@ export default function RoundDetailsStep({ quickStart, onChange }) {
         }] : []),
         ...(facility && !trio && !mixed && !sole ? [{
           label: 'Course',
-          required: true,
           isEditable: true,
           customView: true,
           externalValue: course_id ?? '',

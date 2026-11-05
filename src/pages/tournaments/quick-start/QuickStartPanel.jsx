@@ -11,7 +11,7 @@ import BannerGalleryStep from './BannerGalleryStep.jsx'
 import TournamentCreatedStep from './TournamentCreatedStep.jsx'
 import QuickStartStepHeader from './QuickStartStepHeader.jsx'
 import ImageCropStep from './ImageCropStep.jsx'
-import { FACILITIES, DEFAULT_ROUND_FORMAT, soleCourse, isNineHoleTrio, coursesFor, ALL_TEE_IDS } from '../../../data/mockFacilities'
+import { FACILITIES, DEFAULT_ROUND_FORMAT, soleCourse, ALL_TEE_IDS } from '../../../data/mockFacilities'
 import QuickStartStepper, { QUICK_START_STAGES } from './QuickStartStepper.jsx'
 import { stepActions } from './stepActions.js'
 import './QuickStartPanel.scss'
@@ -128,24 +128,11 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
   }
 
   // The stepper only reaches pages that have been saved — a page you've merely
-  // visited (or are about to) stays disabled until it's saved, even if you move
-  // back off it. Saved pages (and the ones before them) must still be complete
-  // for the stepper to go there; the action drawer is how you move forward to
-  // a page that isn't saved yet, always in sequence.
-  const stageComplete = {
-    tournament: Boolean(quickStart.tournament_name.trim()),
-    rounds: Boolean(quickStart.start_datetime && quickStart.round_format && (quickStart.course_not_listed || (quickStart.facility && quickStart.course_id)) && quickStart.tees.length &&
-      (!isNineHoleTrio(quickStart.facility) || quickStart.round_holes !== 18 || quickStart.course_id_2) &&
-      // An 18-hole course played for 9 holes needs its front or back nine picked.
-      (coursesFor(quickStart.facility).find(c => c.id === quickStart.course_id)?.holes !== 18 || quickStart.round_holes !== 9 || ['front', 'back'].includes(quickStart.holes))),
-    website: true,
-  }
-  const enabledStages = QUICK_START_STAGES.filter((stage, i) =>
-    saved.includes(stage.id) &&
-    QUICK_START_STAGES.slice(0, i).every(earlier => saved.includes(earlier.id) && stageComplete[earlier.id])
-  ).map(stage => stage.id)
-  // Done = completed and saved.
-  const doneStages = enabledStages.filter(id => stageComplete[id])
+  // visited (or are about to) stays disabled until it's saved. Nothing is
+  // required: blank fields are filled in with defaults when the tournament is
+  // created (see addCreatedTournament), so every saved page counts as done.
+  const enabledStages = QUICK_START_STAGES.filter(stage => saved.includes(stage.id)).map(stage => stage.id)
+  const doneStages = enabledStages
   const stepper = activeId => <QuickStartStepper activeId={activeId} enabledIds={enabledStages} doneIds={doneStages} onSelect={setStep} />
 
   const screens = {
@@ -165,7 +152,6 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
       actions: stepActions({
         onBack: () => setStep('acknowledgment'),
         onContinue: () => saveAndGo('tournament', 'rounds'),
-        isDisabled: !stageComplete.tournament,
       }),
       isStep: true,
       onBack: () => setStep('acknowledgment'),
@@ -181,7 +167,6 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
       actions: stepActions({
         onBack: () => setStep('tournament'),
         onContinue: () => saveAndGo('rounds', 'website'),
-        isDisabled: !stageComplete.rounds,
       }),
       isStep: true,
       onBack: () => setStep('tournament'),
@@ -205,10 +190,10 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
     // Step 3a — preset banner picker. Picking one fills the banner and goes
     // back to Website Setup; there's no footer, the tiles are the action.
     banners: {
-      title: 'Banner Images',
+      title: 'Banner Image Gallery',
       content: (
         <>
-          <QuickStartStepHeader title="Banner Images" />
+          <QuickStartStepHeader title="Banner Image Gallery" />
           <BannerGalleryStep
             selected={quickStart.banner_image}
             onSelect={preset => {
@@ -222,7 +207,7 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
     },
     // Crop screen — a locked 2:1 crop over an uploaded image.
     crop: {
-      title: cropTarget?.field === 'banner_image' ? 'Edit Banner Image' : 'Edit Tournament Image',
+      title: cropTarget?.field === 'banner_image' ? 'Edit Banner Image' : 'Edit Tournament Logo',
       content: cropTarget && (
         <>
           <QuickStartStepHeader
@@ -258,7 +243,7 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
       onClose={onClose}
       onBack={screen.onBack}
       className={`qs-panel${screen.isStep ? ' qs-panel--steps' : ''}`}
-      title={screen.title ?? 'Tournament Quick Start'}
+      title={screen.title ?? 'Quick Start'}
       actions={screen.actions}
       actionsKey={step}
       bodyRef={bodyRef}

@@ -37,7 +37,7 @@ export default function AcknowledgmentStep({ quickStart, accepted, onAcceptedCha
             />
 
             <InfoCallout icon={faUserPen} title="What if things change?">
-              No problem. You can edit this anytime, and you’ll soon have full access to the tournament management software for even more flexibility.
+              No problem – You can edit this anytime, and you’ll soon have full access to the tournament management software for even more flexibility.
             </InfoCallout>
 
             <div className="qs-ack-terms">

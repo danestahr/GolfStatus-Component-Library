@@ -20,8 +20,6 @@ export default function TournamentDetailsStep({ quickStart, onChange, onCropImag
       fields={[
         {
           label: 'Tournament Name',
-          description: 'Help golfers find your tournament.',
-          required: true,
           isEditable: true,
           customView: true,
           externalValue: tournament_name,
@@ -40,8 +38,7 @@ export default function TournamentDetailsStep({ quickStart, onChange, onCropImag
           ),
         },
         {
-          label: 'Tournament image',
-          description: 'This image appears on your event website and in GolfStatus event search results.',
+          label: 'Tournament Logo',
           isEditable: true,
           customView: true,
           value: (
