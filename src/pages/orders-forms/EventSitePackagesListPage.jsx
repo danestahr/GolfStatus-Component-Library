@@ -183,13 +183,11 @@ function insertIdByPrice(order, getPrice, id) {
   return [...order.slice(0, at), id, ...order.slice(at)]
 }
 
-const FORMS_PATH = '/orders-forms/event-site-packages/forms'
-const HOMEPAGE_PATH = '/orders-forms/event-site-packages/homepage'
-const STYLE_PATH = '/orders-forms/event-site-packages/website-colors'
-const COLOR_EXPLORATION_PATH = '/orders-forms/event-site-packages/color-exploration'
-const SITE_PAGES_PATH = '/orders-forms/event-site-packages/pages'
-const PACKAGES_PATH = '/orders-forms/event-site-packages/packages'
-const PACKAGE_CATEGORY_PATH = `${PACKAGES_PATH}/category`
+// Mounted both standalone and under a tournament
+// (/tournaments/:id/event-site-packages); every in-page path is built off
+// whichever base the page was opened at.
+const STANDALONE_BASE = '/orders-forms/event-site-packages'
+const TOURNAMENT_BASE = /^\/tournaments\/[^/]+\/event-site-packages/
 
 // One side panel for the whole Forms flow (list → add form → form overview →
 // add question), same single-panel-many-screens convention as TeamsListPage/
@@ -204,6 +202,14 @@ const PACKAGE_CATEGORY_PATH = `${PACKAGES_PATH}/category`
 export default function EventSitePackagesListPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const BASE = location.pathname.match(TOURNAMENT_BASE)?.[0] ?? STANDALONE_BASE
+  const FORMS_PATH = `${BASE}/forms`
+  const HOMEPAGE_PATH = `${BASE}/homepage`
+  const STYLE_PATH = `${BASE}/website-colors`
+  const COLOR_EXPLORATION_PATH = `${BASE}/color-exploration`
+  const SITE_PAGES_PATH = `${BASE}/pages`
+  const PACKAGES_PATH = `${BASE}/packages`
+  const PACKAGE_CATEGORY_PATH = `${PACKAGES_PATH}/category`
   const { formId: formOverviewId, categoryKey, homepageSectionId } = useParams()
   const [search, setSearch] = useState('')
   // Per-page show/hide switch on the Event Site Pages screen (see
@@ -793,7 +799,7 @@ export default function EventSitePackagesListPage() {
   }
 
   function handleCancelStyle() {
-    navigate('/orders-forms/event-site-packages')
+    navigate(BASE)
   }
 
   function openColorExplorationPanel() {
@@ -1301,7 +1307,7 @@ export default function EventSitePackagesListPage() {
         // of or close mid-"save" (the timer in `handleAddFormSave` would
         // still land on the new form afterward regardless, which would be a
         // confusing jump back if the panel had already navigated away).
-        onClose={creatingForm ? undefined : () => navigate('/orders-forms/event-site-packages')}
+        onClose={creatingForm ? undefined : () => navigate(BASE)}
         onBack={
           creatingForm ||
           !panelOpen ||

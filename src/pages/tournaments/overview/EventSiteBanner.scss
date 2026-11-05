@@ -1,0 +1,172 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+// Event site card (Figma "Hero Banner"). The wrapper is the query container,
+// so the card reshapes by its own width, wherever a bento cell puts it.
+.es-banner-wrap {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.es-banner {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  height: 100%;
+  padding: 36px $x-large-pad;
+  border-radius: $large-radius;
+  background: $grey-800;
+  color: $white;
+  font-family: $font-family;
+  box-sizing: border-box;
+}
+
+.es-banner-top,
+.es-banner-bottom {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+}
+
+.es-banner-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.es-banner-name {
+  @include gs-font($medium-font + 4, $bold-font-weight, normal);
+  line-height: 1.2;
+}
+
+.es-banner-url,
+.es-banner-text {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: rgba($white, 0.7);
+  overflow-wrap: anywhere;
+}
+
+.es-banner-url {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.es-banner-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: $medium-pad;
+}
+
+.es-banner-divider {
+  width: 100%;
+  height: 0;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid rgba($white, 0.2);
+}
+
+.es-banner-bottom {
+  justify-content: space-between;
+}
+
+.es-banner-preview {
+  flex: none;
+  width: 300px;
+  max-width: 100%;
+}
+
+.es-banner-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $medium-large-pad;
+  text-align: right;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  color: rgba($white, 0.7);
+}
+
+.es-banner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: $medium-pad;
+  padding: $medium-pad $medium-large-pad;
+  border-radius: 100px;
+  background: $green-200;
+  color: $grey-800;
+  @include gs-font($xx-small-font, $bold-font-weight, 1.5px);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.es-banner-pill-narrow {
+  display: none;
+}
+
+// Narrow shape (Figma's 300px card): stacked, no site preview, the primary
+// button stretching beside the two icon buttons, status left-aligned.
+@container (max-width: 560px) {
+  .es-banner-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: $x-large-pad;
+  }
+
+  .es-banner-actions {
+    gap: 10px;
+
+    gs-button:first-child {
+      flex: 1;
+    }
+  }
+
+  .es-banner-preview {
+    display: none;
+  }
+
+  .es-banner-status {
+    align-items: flex-start;
+    text-align: left;
+    gap: 12px;
+  }
+
+  .es-banner-pill-wide {
+    display: none;
+  }
+
+  .es-banner-pill-narrow {
+    display: inline;
+  }
+}
+
+// Phone (Figma): compact card — title and URL beside an icon-only edit
+// button; the link button, divider and registration row drop away.
+@media (max-width: 700px) {
+  .es-banner {
+    padding: $x-large-pad;
+  }
+
+  .es-banner-top {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .es-banner-actions {
+    gs-button:first-child {
+      flex: none;
+    }
+
+    .button-title,
+    gs-button:not(:first-child) {
+      display: none;
+    }
+  }
+
+  .es-banner-divider,
+  .es-banner-bottom {
+    display: none;
+  }
+}

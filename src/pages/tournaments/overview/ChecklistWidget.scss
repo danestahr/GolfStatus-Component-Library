@@ -1,0 +1,96 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+// Event Planner card (Figma): same dark card as the event site card.
+.cl-widget {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  height: 100%;
+  padding: 36px $x-large-pad;
+  border-radius: $large-radius;
+  background: $grey-800;
+  color: $white;
+  font-family: $font-family;
+  box-sizing: border-box;
+}
+
+.cl-widget-head {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+}
+
+.cl-widget-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
+}
+
+.cl-widget-title {
+  @include gs-font($large-font, $bold-font-weight, normal);
+  line-height: 1.2;
+}
+
+.cl-widget-subtitle {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  opacity: $medium-opacity;
+}
+
+.cl-widget-divider {
+  width: 100%;
+  height: 0;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid rgba($white, 0.2);
+}
+
+.cl-widget-progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  cursor: pointer;
+}
+
+.cl-widget-ring {
+  flex: none;
+}
+
+.cl-widget-ring-track {
+  stroke: $black;
+}
+
+.cl-widget-ring-bar {
+  stroke: $white;
+  transition: stroke-dashoffset 0.3s;
+}
+
+.cl-widget-stats {
+  display: flex;
+  flex-direction: column;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+}
+
+.cl-widget-percent {
+  font-weight: $bold-font-weight;
+}
+
+.cl-widget-count {
+  opacity: $medium-opacity;
+}
+
+// Phone (Figma): title and arrow only.
+@media (max-width: 700px) {
+  .cl-widget {
+    padding: $x-large-pad;
+  }
+
+  .cl-widget-divider,
+  .cl-widget-progress {
+    display: none;
+  }
+}

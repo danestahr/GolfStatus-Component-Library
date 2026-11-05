@@ -62,92 +62,40 @@ $to-breakpoint: 1100px;
 
 // ── Hero: page title, countdown, tournament card ──
 
+// Black hero (Figma): tournament header, then the bento row of event site
+// and checklist cards.
 .to-hero {
   display: flex;
   flex-direction: column;
-  gap: $large-pad;
-  padding: 0 24px 56px;
-  background: linear-gradient(180deg, #000 0%, #3a3a3a 100%);
+  gap: 56px;
+  padding: 56px 24px;
+  background: $grey-900;
   color: $white;
-
-  @media (max-width: $to-breakpoint) {
-    padding-bottom: $x-large-pad;
-  }
 }
 
-.to-hero-bar {
+// Header: image, name, organization and status on the left; Copy and
+// Settings on the right.
+.to-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 0 0;
-
-  h1 {
-    margin: 0;
-    @include gs-font($large-font, $bold-font-weight, normal);
-  }
-
-  // Settings & Preferences: white, transparent.
-  gs-button.transparent {
-    color: $white;
-  }
-
-  // Icon-only on tablet and phone.
-  @media (max-width: $to-breakpoint) {
-    padding-top: $large-pad;
-
-    .button-title {
-      display: none;
-    }
-  }
-}
-
-.to-starts {
-  margin: 56px 0 0;
-  @include gs-font($medium-font, $bold-font-weight, normal);
-
-  @media (max-width: $to-breakpoint) {
-    margin-top: $x-large-pad;
-  }
-}
-
-.to-card {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   gap: $x-large-pad;
-  padding: $x-large-pad;
-  border-radius: $large-radius;
-  background: rgba($white, 0.14);
-
-  @media (max-width: $to-breakpoint) {
-    flex-direction: column;
-    align-items: stretch;
-  }
 }
 
-.to-card-info {
+.to-header-info {
   display: flex;
   flex-direction: column;
-  gap: $medium-large-pad;
+  align-items: flex-start;
+  gap: 12px;
   min-width: 0;
 }
 
-.to-card-top {
-  display: flex;
-  align-items: center;
-  gap: $large-pad;
-
-  gs-button.transparent {
-    color: $white;
-  }
-}
-
-.to-card-image {
-  width: 114px;
-  height: 58px;
+.to-header-image {
+  width: 112px;
+  height: 56px;
   overflow: hidden;
-  border: 1px solid rgba($white, 0.6);
-  border-radius: $medium-radius;
+  border: 1px solid rgba($white, 0.9);
+  border-radius: 4px;
   background: #808080;
 
   img {
@@ -158,60 +106,108 @@ $to-breakpoint: 1100px;
   }
 }
 
-.to-card-text {
-  @include gs-font($small-font, $regular-font-weight, normal);
-  line-height: $regular-line-height;
-
-  > div {
-    opacity: $medium-opacity;
-  }
-
-  .to-card-name {
-    font-weight: $bold-font-weight;
-    opacity: 1;
-  }
+.to-header-text {
+  min-width: 0;
 }
 
-.to-card-actions {
+.to-header-name {
+  @include gs-font($x-large-font, $bold-font-weight, normal);
+  line-height: 1.2;
+}
+
+.to-header-org {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+  opacity: $medium-opacity;
+}
+
+.to-header-actions {
   display: flex;
   flex-direction: column;
   gap: $medium-pad;
-  width: 300px;
   flex: none;
 
-  gs-button {
-    width: 100%;
+  // Icon-only on tablet and phone.
+  @media (max-width: $to-breakpoint) {
+    .button-title {
+      display: none;
+    }
   }
 
+}
+
+// Bento row: event site details (75%) beside the checklist (25%, never
+// narrower than its min width); stacks on tablet and phone.
+.to-bento {
+  display: grid;
+  grid-template-columns: 3fr minmax(400px, 1fr);
+  gap: 16px;
+
+  > * {
+    min-width: 0;
+  }
+
+  // Tablet: the two cards split the row evenly.
   @media (max-width: $to-breakpoint) {
-    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  // Phone: stacked.
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 // ── Sections ──
+// Bento grid on light grey: two columns (one on phone). Each tile is half
+// width or, with span 4 in SECTIONS, the full row.
 
 .to-sections {
   flex: 1;
-  background: $white;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $large-pad;
+  padding: ($small-layout-pad + $large-pad) 24px $small-layout-pad;
+  background: $grey-50;
+
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .to-section {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $large-pad;
+  flex-direction: column;
+  gap: $x-large-pad;
+  min-width: 0;
   padding: $x-large-pad;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  cursor: pointer;
+  border-radius: $large-radius;
+  background: $white;
+  box-shadow: $first-layer-shadow;
+}
 
-  &:hover {
-    background: $grey-100;
-  }
+// Tiles are either half width or full width.
+.to-section--span-4 { grid-column: 1 / -1; }
+
+// Header: same as the Event Planner card's head (cl-widget-head) — title and
+// subtitle on the left, the action button on the right.
+.to-section-header {
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+}
+
+.to-section-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $small-pad;
 }
 
 .to-section-title {
-  @include gs-font($small-font, $bold-font-weight, normal);
-  line-height: $regular-line-height;
+  @include gs-font($large-font, $bold-font-weight, normal);
+  line-height: 1.2;
   color: $grey-800;
 }
 
@@ -224,12 +220,16 @@ $to-breakpoint: 1100px;
 
 // ── Round cards ──
 
+// Scrolls edge to edge inside its card: negative margins pull the scroller
+// out to the card's edges and padding puts the first/last tile back in line
+// with the header, so tiles slide under the card edge instead of being cut
+// off at its padding.
 .to-rounds {
   display: flex;
   gap: $large-pad;
-  padding: $x-large-pad;
+  margin: 0 (-$x-large-pad) (-$x-large-pad);
+  padding: 0 $x-large-pad $x-large-pad;
   overflow-x: auto;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .to-round {
@@ -240,7 +240,7 @@ $to-breakpoint: 1100px;
   padding: $x-large-pad;
   border-radius: $medium-radius;
   background: $white;
-  box-shadow: $first-layer-shadow;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .to-round-info {

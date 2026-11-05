@@ -158,7 +158,7 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
       content: (
         <>
           {stepper('tournament')}
-          <QuickStartStepHeader title="Tournament Setup" subtitle="All information can be edited at any time." />
+          <QuickStartStepHeader title="Tournament Setup" />
           <TournamentDetailsStep quickStart={quickStart} onChange={update} onCropImage={startCrop} />
         </>
       ),
@@ -174,7 +174,7 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
       content: (
         <>
           {stepper('rounds')}
-          <QuickStartStepHeader title="Round Setup" subtitle="All information can be edited at any time." />
+          <QuickStartStepHeader title="Round Setup" />
           <RoundDetailsStep quickStart={quickStart} onChange={update} />
         </>
       ),
@@ -190,7 +190,7 @@ export default function QuickStartPanel({ isOpen, onClose, prospect }) {
       content: (
         <>
           {stepper('website')}
-          <QuickStartStepHeader title="Website Setup" subtitle="All information can be edited at any time." />
+          <QuickStartStepHeader title="Website Setup" />
           <WebsiteDetailsStep quickStart={quickStart} onChange={update} onGallery={() => setStep('banners')} onCropImage={startCrop} />
         </>
       ),

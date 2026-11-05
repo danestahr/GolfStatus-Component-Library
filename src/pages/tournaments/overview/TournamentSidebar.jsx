@@ -23,7 +23,16 @@ export const NAV_ITEMS = [
 
 // Dark left rail on desktop; below 1100px it becomes a drawer the top bar's
 // menu button opens (see TournamentOverviewPage.scss for the breakpoint).
-export default function TournamentSidebar({ tournamentName, activeId, isOpen, onClose, onNavigate, onBack }) {
+// Where an item goes for a given tournament: Overview and Event Site live
+// under /tournaments/:id; everything else keeps its prototype route for now.
+export const navTarget = (item, tournamentId) => {
+  if (!tournamentId) return item.to
+  if (item.id === 'overview') return `/tournaments/${tournamentId}`
+  if (item.id === 'event-site') return `/tournaments/${tournamentId}/event-site-packages`
+  return item.to
+}
+
+export default function TournamentSidebar({ tournamentId, tournamentName, activeId, isOpen, onClose, onNavigate, onBack }) {
   return (
     <>
       {isOpen && <div className="ts-overlay" onClick={onClose} />}
@@ -46,7 +55,7 @@ export default function TournamentSidebar({ tournamentName, activeId, isOpen, on
               key={item.id}
               type="button"
               className={`ts-item${item.id === activeId ? ' ts-item--active' : ''}`}
-              onClick={() => item.to && onNavigate(item.to)}
+              onClick={() => navTarget(item, tournamentId) && onNavigate(navTarget(item, tournamentId))}
             >
               <span>{item.label}</span>
               {item.external && <FontAwesomeIcon icon={faSquareUpRight} />}

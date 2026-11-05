@@ -24,6 +24,7 @@ import OrdersFormsHubPage from './pages/orders-forms/OrdersFormsHubPage.jsx'
 import SponsorsListPage from './pages/orders-forms/SponsorsListPage.jsx'
 import TeamsListPage from './pages/orders-forms/TeamsListPage.jsx'
 import EventSitePackagesListPage from './pages/orders-forms/EventSitePackagesListPage.jsx'
+import TournamentSection from './pages/tournaments/overview/TournamentSection.jsx'
 import EventWebsitePage from './pages/event-site/EventWebsitePage.jsx'
 
 // To add a new prototype page:
@@ -106,6 +107,17 @@ function AppShell() {
             <Route path="/tournaments" element={<TournamentsPage />} />
             <Route path="/tournaments/quick-start/*" element={<TournamentsPage />} />
             <Route path="/tournaments/:tournamentId" element={<TournamentOverviewPage />} />
+            <Route path="/tournaments/:tournamentId/event-site-packages" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/forms" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/forms/:formId" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/forms/:formId/responses" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/homepage" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/homepage/:homepageSectionId" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/website-colors" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/color-exploration" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/pages" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/packages" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
+            <Route path="/tournaments/:tournamentId/event-site-packages/packages/category/:categoryKey" element={<TournamentSection activeId="event-site"><EventSitePackagesListPage /></TournamentSection>} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/compare" element={<ComparisonPage />} />
             <Route path="/infinite-list" element={<InfiniteListPage />} />

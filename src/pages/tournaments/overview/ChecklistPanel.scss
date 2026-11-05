@@ -1,0 +1,283 @@
+@import '../../../gs-lib/styles/golfstatus.scss';
+
+.cl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  font-family: $font-family;
+  color: $grey-800;
+}
+
+.cl-panel-why {
+  display: flex;
+  gap: $medium-large-pad;
+  padding: $large-pad;
+  border-radius: $medium-radius;
+  background: $grey-50;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  line-height: $regular-line-height;
+
+  p {
+    margin: 2px 0 $small-pad;
+  }
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $link-green;
+    font: inherit;
+    font-weight: $bold-font-weight;
+    cursor: pointer;
+  }
+}
+
+.cl-panel-auto-note {
+  color: $green-700;
+  @include gs-font($x-small-font, $bold-font-weight, normal);
+}
+
+.cl-panel-date {
+  width: 100%;
+  height: $form-element-height;
+  padding: 0 $medium-large-pad;
+  border: 1px solid $grey-300;
+  border-radius: $medium-radius;
+  font-family: inherit;
+  @include gs-font($small-font, $regular-font-weight, normal);
+}
+
+.cl-panel-complete {
+  padding-top: $small-pad;
+}
+
+// The form section brings its own gutters.
+.cl-panel--item {
+  padding-left: 0;
+  padding-right: 0;
+
+  > .cl-panel-why,
+  > .cl-panel-auto-note,
+  > .cl-panel-complete {
+    margin: 0 $x-large-pad;
+  }
+}
+
+
+.clp-body {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+}
+
+.clp-title {
+  @include gs-font($small-font, $bold-font-weight, normal);
+  line-height: $regular-line-height;
+}
+
+.clp-meta {
+  @include gs-font($small-font, $regular-font-weight, normal);
+  color: $grey-600;
+
+  &.overdue {
+    color: $red-600;
+    font-weight: $bold-font-weight;
+  }
+}
+
+.clp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 16px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+
+  &--orange { background: $orange-100; color: $orange-800; }
+  &--green { background: $green-100; color: $green-700; }
+  &--blue { background: #e3f0ff; color: #1b5fb5; }
+  &--red { background: $red-100; color: $red-700; }
+}
+
+// ── Progress rings ──
+.clp-ring {
+  flex: none;
+
+  &-track { fill: none; stroke: $grey-200; }
+  &-arc { fill: none; stroke: $grey-900; stroke-linecap: butt; transition: stroke-dasharray 0.3s; }
+  &-check { fill: none; stroke: $grey-900; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+  &.complete {
+    .clp-ring-track { stroke: $green-200; }
+    .clp-ring-arc { stroke: $green-600; }
+    .clp-ring-check { stroke: $green-700; }
+  }
+}
+
+// ── Hero ──
+.clp-hero {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: $x-large-pad;
+  padding: $x-large-pad;
+  border-radius: $large-radius;
+  background: linear-gradient(135deg, $green-50, $white 70%);
+
+  .clp-ring-arc { stroke: $green-600; }
+}
+
+.clp-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  @include gs-font($small-font, $regular-font-weight, normal);
+  color: $grey-600;
+
+  strong {
+    color: $grey-900;
+  }
+
+  .clp-pill {
+    margin-top: $medium-pad;
+  }
+}
+
+.clp-hero-start {
+  margin-top: $medium-pad;
+}
+
+// ── Suggested carousel ──
+.clp-suggested {
+  display: flex;
+  gap: $large-pad;
+  margin: 0 (-$x-large-pad);
+  padding: $medium-pad $x-large-pad $x-large-pad;
+  overflow-x: auto;
+}
+
+// Tile: white, 8px radius, 24px padding, soft drop shadow; title + due on top,
+// grey "Suggested" pill below, grey plus button vertically centered.
+.clp-suggested-card {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: $x-large-pad;
+  width: 300px;
+  padding: $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.clp-suggested-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $medium-large-pad;
+
+  .clp-meta { opacity: 0.7; color: inherit; }
+}
+
+// ── Search ──
+.clp-search gs-input {
+  width: 100%;
+}
+
+.clp {
+  > gs-action-bar {
+    border-bottom: $light-border;
+  }
+}
+
+// ── Phases ──
+.clp-phases {
+  display: flex;
+  flex-direction: column;
+  gap: $x-large-pad;
+}
+
+.clp-phase {
+  display: flex;
+  flex-direction: column;
+  gap: $large-pad;
+  padding: $x-large-pad;
+  border-radius: $large-radius;
+  background: $grey-50;
+
+  &.complete { background: $green-50; }
+
+  > header {
+    display: flex;
+    align-items: center;
+    gap: $large-pad;
+  }
+}
+
+.clp-phase-text { flex: 1; }
+
+.clp-phase-title {
+  @include gs-font($medium-font, $bold-font-weight, normal);
+}
+
+.clp-hide {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-transform: uppercase;
+  color: $grey-700;
+  cursor: pointer;
+  @include gs-font($xx-small-font, $bold-font-weight, $small-medium-letter-spacing);
+}
+
+.clp-card {
+  display: flex;
+  align-items: center;
+  gap: $large-pad;
+  padding: $large-pad $x-large-pad;
+  border-radius: $medium-radius;
+  background: $white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+
+  &.complete .clp-title { color: $grey-600; }
+}
+
+.clp-check {
+  flex: none;
+
+  &.locked { cursor: default; opacity: 0.7; }
+}
+
+.clp-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clp-why { margin-top: $small-pad; }
+
+.clp-empty {
+  padding: $x-large-pad 0;
+  text-align: center;
+  color: $grey-600;
+}
+
+@include large-phone {
+  .clp-suggested-card { width: 260px; }
+}

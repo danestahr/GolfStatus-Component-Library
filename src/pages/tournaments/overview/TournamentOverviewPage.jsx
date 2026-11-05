@@ -1,11 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  faBars, faBolt, faChevronRight, faClone, faGear, faListCheck, faMessage, faPen, faSquareUpRight,
+  faArrowRight, faBars, faBolt, faClone, faGear, faListCheck, faMessage, faPen,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import GSButton from '../../../gs-lib/components/gs-button'
 import TournamentSidebar from './TournamentSidebar.jsx'
+import ChecklistWidget from './ChecklistWidget.jsx'
+import ChecklistPanel from './ChecklistPanel.jsx'
+import EventSiteBanner from './EventSiteBanner.jsx'
+import { getChecklist } from '../../../data/mockChecklist'
 import { findTournament, statusMeta, TOURNAMENTS } from '../../../data/mockTournaments'
 import { findCreatedTournament } from '../../../data/createdTournaments'
 import { roundsFor } from '../../../data/mockTournamentRounds'
@@ -16,17 +20,17 @@ import './TournamentOverviewPage.scss'
 // Each section below the header is a row that leads to its own area of
 // tournament management; Messages and Revenue Enhancements open elsewhere.
 const SECTIONS = [
-  { id: 'rounds', title: 'Rounds & Scorecards', description: 'Manage hole assignments, scorecards, leaderboards, rules, tees, and more.', to: '/scheduler' },
-  { id: 'event-site', title: 'Event Site & Packages', description: 'Manage event website, tournament registration, packages, forms, event details, and more.', to: '/orders-forms/event-site-packages' },
-  { id: 'players', title: 'Players & Teams', description: 'Add and manage players & teams, unassigned players, and waitlists.', to: '/teams' },
-  { id: 'sponsors', title: 'Sponsors', description: 'Manage sponsors and mobile scorecard assignments.', to: '/sponsors' },
-  { id: 'flights', title: 'Flights', description: 'Add and manage tournament flights.' },
-  { id: 'leaderboards', title: 'Leaderboards & Skins', description: 'Manage tournament leaderboards & skins games.' },
-  { id: 'documents', title: 'Documents', description: 'Download tournament printouts, reports, and exports, and more.' },
-  { id: 'orders', title: 'Orders & Payouts', description: 'Manage registration orders, payouts, reporting documents, and more.', to: '/orders' },
-  { id: 'messages', title: 'Messages', description: 'Send emails and in-app notifications to players and teams.', to: '/messaging', external: true },
-  { id: 'revenue', title: 'Revenue Enhancements', description: 'Leverage exclusive packages and sponsorships to raise more money.', external: true },
-  { id: 'settings', title: 'Settings & Preferences', description: 'Manage tournament details, users and permissions, donations, invoices, and more.' },
+  { id: 'rounds', span: 4, title: 'Rounds & Scorecards', description: 'Manage hole assignments, scorecards, leaderboards, rules, tees, and more.', to: '/scheduler' },
+  { id: 'event-site', span: 2, title: 'Event Site & Packages', description: 'Manage event website, tournament registration, packages, forms, event details, and more.', to: '/tournaments/:id/event-site-packages' },
+  { id: 'players', span: 1, title: 'Players & Teams', description: 'Add and manage players & teams, unassigned players, and waitlists.', to: '/teams' },
+  { id: 'sponsors', span: 1, title: 'Sponsors', description: 'Manage sponsors and mobile scorecard assignments.', to: '/sponsors' },
+  { id: 'flights', span: 1, title: 'Flights', description: 'Add and manage tournament flights.' },
+  { id: 'leaderboards', span: 1, title: 'Leaderboards & Skins', description: 'Manage tournament leaderboards & skins games.' },
+  { id: 'documents', span: 2, title: 'Documents', description: 'Download tournament printouts, reports, and exports, and more.' },
+  { id: 'orders', span: 2, title: 'Orders & Payouts', description: 'Manage registration orders, payouts, reporting documents, and more.', to: '/orders' },
+  { id: 'messages', span: 1, title: 'Messages', description: 'Send emails and in-app notifications to players and teams.', to: '/messaging', external: true },
+  { id: 'revenue', span: 1, title: 'Revenue Enhancements', description: 'Leverage exclusive packages and sponsorships to raise more money.', external: true },
+  { id: 'settings', span: 1, title: 'Settings & Preferences', description: 'Manage tournament details, users and permissions, donations, invoices, and more.' },
 ]
 
 // What a round card offers at each stage: a status pill and two actions.
@@ -43,22 +47,6 @@ const ROUND_ACTIONS = {
   ready: [{ label: 'Hole Assignments', icon: faBolt, to: '/scheduler' }, { label: 'Start Round', primary: true }],
   live: [{ label: 'Team Check In', icon: faListCheck }, { label: 'Scorecards', icon: faPen }],
   final: [{ label: 'Scorecards', icon: faPen }, { label: 'Leaderboards & Skins' }],
-}
-
-const daysUntil = iso => {
-  const [y, m, d] = iso.split('-').map(Number)
-  const start = new Date(y, m - 1, d)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return Math.round((start - today) / 86400000)
-}
-
-const startsIn = iso => {
-  const days = daysUntil(iso)
-  if (days > 1) return `Starts in ${days} Days`
-  if (days === 1) return 'Starts Tomorrow'
-  if (days === 0) return 'Starts Today'
-  return 'Tournament Started'
 }
 
 // "2026-11-05T08:00" -> "8:00 AM on Thu, Nov 5, 2026"
@@ -114,14 +102,24 @@ export default function TournamentOverviewPage() {
   const rounds = roundsFor(tournament)
   const image = tournament.image ?? (tournament.hasBanner ? eventHero : null)
 
+  // Checklist items are held here so the widget and the slide-out stay in sync.
+  const [items, setItems] = useState(() => getChecklist(tournament))
+  const [panelOpen, setPanelOpen] = useState(false)
+
+  useEffect(() => {
+    setItems(getChecklist(tournament))
+    setPanelOpen(false)
+  }, [tournament.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const go = to => {
     setMenuOpen(false)
-    navigate(to)
+    navigate(to.replace(':id', tournament.id))
   }
 
   return (
     <div className="to-page">
       <TournamentSidebar
+        tournamentId={tournament.id}
         tournamentName={tournament.name}
         activeId="overview"
         isOpen={menuOpen}
@@ -141,59 +139,69 @@ export default function TournamentOverviewPage() {
         </header>
 
         <div className="to-hero">
-          <div className="to-hero-bar">
-            <h1>Overview</h1>
-            <GSButton buttonIcon={faGear} title="Settings & Preferences" type="transparent" isFocusable />
+          <div className="to-header">
+            <div className="to-header-info">
+              <div className="to-header-image">{image && <img src={image} alt="" />}</div>
+              <div className="to-header-text">
+                <div className="to-header-name">{tournament.name}</div>
+                <div className="to-header-org">{tournament.organization}</div>
+              </div>
+              <GSButton type={status.buttonType} title={status.label} isPill hoverType="none" style={{ cursor: 'default' }} />
+            </div>
+            <div className="to-header-actions">
+              <GSButton buttonIcon={faPen} type="black" isFocusable />
+              <GSButton buttonIcon={faGear} type="black" isFocusable />
+              <GSButton buttonIcon={faClone} type="black" isFocusable />
+            </div>
           </div>
 
-          <h2 className="to-starts">{startsIn(tournament.startISO)}</h2>
-
-          <div className="to-card">
-            <div className="to-card-info">
-              <div className="to-card-top">
-                <div className="to-card-image">{image && <img src={image} alt="" />}</div>
-                <GSButton type={status.buttonType} title={status.label} isPill hoverType="none" style={{ cursor: 'default' }} />
-                <GSButton buttonIcon={faClone} type="transparent" size="secondary" isFocusable />
-              </div>
-              <div className="to-card-text">
-                <div className="to-card-name">{tournament.name}</div>
-                <div>{tournament.organization}</div>
-              </div>
-              <div className="to-card-text">
-                <div>{tournament.dates}</div>
-                <div>{tournament.course}</div>
-              </div>
-            </div>
-
-            <div className="to-card-actions">
-              <GSButton title="Add Players" type="status active" onClick={() => go('/teams')} isFocusable />
-              <GSButton title="Message Players" type="black" onClick={() => go('/messaging')} isFocusable />
-              <GSButton title="View Website" type="black" onClick={() => window.open('/event-site', '_blank')} isFocusable />
-            </div>
+          <div className="to-bento">
+            <EventSiteBanner
+              tournament={tournament}
+              onView={() => window.open('/event-site', '_blank')}
+              onEdit={() => go(`/tournaments/${tournament.id}/event-site-packages`)}
+            />
+            <ChecklistWidget items={items} tournament={tournament} onOpen={() => setPanelOpen(true)} />
           </div>
         </div>
 
+        {/* Bento grid: each area of management is a card with a header, a
+            description and an action button, plus a body that can hold its own
+            grid or flex content. `span` is its width in grid columns. */}
         <div className="to-sections">
           {SECTIONS.map(section => (
-            <div key={section.id}>
-              <div className="to-section" onClick={() => section.to && go(section.to)}>
-                <div>
+            <section key={section.id} className={`to-section to-section--span-${section.span}`}>
+              <div className="to-section-header">
+                <div className="to-section-text">
                   <div className="to-section-title">{section.title}</div>
                   <div className="to-section-description">{section.description}</div>
                 </div>
-                <FontAwesomeIcon icon={section.external ? faSquareUpRight : faChevronRight} />
+                <GSButton
+                  buttonIcon={faArrowRight}
+                  type="light-grey"
+                  onClick={() => section.to && go(section.to)}
+                  isFocusable
+                />
               </div>
 
               {section.id === 'rounds' && rounds.length > 0 && (
-                <div className="to-rounds">
+                <div className="to-section-body to-rounds">
                   {rounds.map(round => (
                     <RoundCard key={round.number} round={round} onAction={action => action.to && go(action.to)} />
                   ))}
                 </div>
               )}
-            </div>
+            </section>
           ))}
         </div>
+
+        <ChecklistPanel
+          isOpen={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          tournament={tournament}
+          items={items}
+          onItemsChange={setItems}
+        />
 
         <button type="button" className="to-chat" aria-label="Support chat">
           <FontAwesomeIcon icon={faMessage} />
